@@ -14,6 +14,12 @@ _DEFAULT_HEADERS = {
     'accept': 'application/json'
 }
 
+def _get_flow_version(cookie):
+    return (int(cookie) & 0x00000000FF000000) >> 24
+
+def _get_flow_bscid(cookie):
+    return (int(cookie) & 0x00FFFFFF00000000) >> 32
+
 def _check_mandatory_values(obj, names):
     for name in names:
         if name not in obj or not obj[name]:
@@ -50,7 +56,8 @@ def _get_flows_groups_from_ovs(node, name):
                     'bytes': match.group(3)
                 }
                 node['cookies'][str(number)] = nodes[name]['flows'][str(number)]
-
+                bscid = _get_flow_bscid(cookie)
+                node['bscids'][str(bscid)] = cookie
 
 
 
@@ -65,9 +72,12 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password):
     flows = trans.flows(return_type='dict')
     if flows:
         node['cookies']={}
+        node['bscids']={}
         for table in flows:
             for flowid, flow in flows[table].iteritems():
-                node['cookies'][int(flowid,16)]=flow
+                cookie = int(flowid,16)
+                node['cookies'][cookie]=flow
+                node['bscids'][_get_flow_bscid(cookie)] = cookie
                 bytes_count = flow.get('Byte_count')
                 packets_count = flow.get('Packet_count')
                 if bytes_count:
@@ -187,7 +197,7 @@ class Topo(object):
         threads = []
         for name, switch in self.switches.iteritems():
             oname = switch['oname']
-            node = {'flows': {}, 'cookies': {}, 'groups': {}}
+            node = {'flows': {}, 'cookies': {}, 'groups': {}, 'bscids': {}}
             nodes[oname] = node
             if switch['type'] == 'noviflow':
                 t = threading.Thread(target=_get_flows_groups_from_noviflow, args=(node,switch['ip'],switch['port'],switch['user'],switch['password'],))
@@ -242,54 +252,83 @@ class Topo(object):
         config_nodes = self._get_flow_group(self._get_config_openflow(), prefix)
         operational_nodes = self._get_flow_group(self._get_operational_openflow(), prefix)
 
-        for nodeid in config_nodes:
-            node = config_nodes[nodeid]
+        for nodeid, node in config_nodes.iteritems():
 
-            for cookie in node['cookies']:
+            for bscid, cookie in node['bscids'].iteritems():
                 flowid = node['cookies'][cookie]
-                if nodeid not in operational_nodes or cookie not in operational_nodes[nodeid]['cookies']:
-                    print "ERROR: node {} flow {} not running, not found in operational data store".format(nodeid, node['cookies'][cookie])
+                version = _get_flow_version(cookie)
+                if nodeid not in operational_nodes or bscid not in operational_nodes[nodeid]['bscids']:
+                    print "ERROR: (config) node {} flow {} bscid {} not running, not found in operational data store".format(nodeid, flowid, bscid)
                     error_found = True
-                if nodeid not in switch_flows_groups or cookie not in switch_flows_groups[nodeid]['cookies']:
-                    print "ERROR: node {} flow {} not running, not found in the switch".format(nodeid, node['cookies'][cookie])
+                elif version != _get_flow_version(operational_nodes[nodeid]['bscids'][bscid]):
+                    print "WARNING: (config) node {} flow {} bscid {} operational version is different. Config version {}, operational version {}".format(nodeid, flowid, bscid,version,_get_flow_version(operational_nodes[nodeid]['bscids'][bscid]))
+
+                if nodeid not in switch_flows_groups or bscid not in switch_flows_groups[nodeid]['bscids']:
+                    print "ERROR: (config) node {} flow {} bscid {} not running, not found in the switch".format(nodeid, flowid, bscid)
                     error_found = True
+                elif version != _get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]):
+                    print "WARNING: (config) node {} flow {} bscid {} switch version is different. Config version {}, switch version {}".format(nodeid, flowid, bscid,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
+
                 if flowid not in calculated_flow_exception and (nodeid not in calculated_nodes or flowid not in calculated_nodes[nodeid]['flows']):
-                    print "ERROR: node {} flow {} not present in calculated nodes".format(nodeid, flowid)
+                    print "ERROR: (config) node {} flow {} bscid {} not present in calculated nodes".format(nodeid, flowid, bscid)
                     error_found = True
 
             for groupid in node['groups']:
                 if nodeid not in operational_nodes or 'groups' not in operational_nodes[nodeid] or groupid not in operational_nodes[nodeid]['groups']:
-                    print "ERROR: node {} group {} not running".format(nodeid, groupid)
+                    print "ERROR: (config) node {} group {} not running".format(nodeid, groupid)
                     error_found = True
                 if nodeid not in calculated_nodes or groupid not in calculated_nodes[nodeid]['groups']:
-                    print "ERROR: node {} group {} group not present in calculated groups".format(nodeid, groupid)
+                    print "ERROR: (config) node {} group {} group not present in calculated groups".format(nodeid, groupid)
                     error_found = True
                 if nodeid not in switch_flows_groups or groupid not in switch_flows_groups[nodeid]['groups']:
-                    print "ERROR: node {} group {} configured but not in the switch".format(nodeid, groupid)
+                    print "ERROR: (config) node {} group {} configured but not in the switch".format(nodeid, groupid)
                     error_found = True
 
         for nodeid in operational_nodes:
             node = operational_nodes[nodeid]
-            for cookie in node['cookies']:
-                if nodeid not in config_nodes or cookie not in config_nodes[nodeid]['cookies']:
-                    print "ERROR: node {} flow {} running but not configured".format(nodeid, node['cookies'][cookie])
+            for bscid, cookie in node['bscids'].iteritems():
+                version = _get_flow_version(cookie)
+
+                if nodeid not in config_nodes or bscid not in config_nodes[nodeid]['bscids']:
+                    print "ERROR: (operational) node {} cookie {} bscid {} running but not configured".format(nodeid, cookie, bscid)
                     error_found = True
+                elif version != _get_flow_version(config_nodes[nodeid]['bscids'][bscid]):
+                    print "WARNING: (operational) node {} cookie {} bscid {} config version is different. Operational version {}, config version {}".format(nodeid, cookie, bscid,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
+
+                if nodeid not in switch_flows_groups or bscid not in switch_flows_groups[nodeid]['bscids']:
+                    print "ERROR: (operational) node {} cookie {} bscid {} in operational store but not in switch".format(nodeid, cookie, bscid)
+                    error_found = True
+                elif version != _get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]):
+                    print "WARNING: (operational) node {} cookie {} bscid {} switch version is different. Operational version {}, switch version {}".format(nodeid, cookie, bscid,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
+
 
             for groupid in node['groups']:
                 if nodeid not in config_nodes or groupid not in config_nodes[nodeid]['groups']:
-                    print "ERROR: node {} group {} running but not configured".format(nodeid, groupid)
+                    print "ERROR: (operational) node {} group {} running but not configured".format(nodeid, groupid)
+                    error_found = True
+                if nodeid not in switch_flows_groups or groupid not in switch_flows_groups[nodeid]['groups']:
+                    print "ERROR: (operational) node {} group {} running but not in switch".format(nodeid, groupid)
                     error_found = True
 
         for nodeid in switch_flows_groups:
             node = switch_flows_groups[nodeid]
-            for cookie in node['cookies']:
-                if nodeid not in config_nodes or cookie not in config_nodes[nodeid]['cookies']:
-                    print "ERROR: node {} flow {} running in switch but not configured".format(nodeid, cookie)
+
+            for bscid, cookie in node['bscids'].iteritems():
+                if nodeid not in config_nodes or bscid not in config_nodes[nodeid]['bscids']:
+                    print "ERROR: (switch) node {} cookie {} bscid {} running in switch but not configured".format(nodeid, cookie, bscid)
                     error_found = True
+                elif version != _get_flow_version(config_nodes[nodeid]['bscids'][bscid]):
+                    print "WARNING: (switch) node {} cookie {} bscid {} switch version is different. Switch version {}, config version {}".format(nodeid, cookie, bscid,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
+
+                if nodeid not in operational_nodes or bscid not in operational_nodes[nodeid]['bscids']:
+                    print "ERROR: (switch) node {} cookie {} bscid {} running in switch but not in operational".format(nodeid, cookie, bscid)
+                    error_found = True
+                elif version != _get_flow_version(operational_nodes[nodeid]['bscids'][bscid]):
+                    print "WARNING: (switch) node {} cookie {} bscid {} switch version is different. Switch version {}, operational version {}".format(nodeid, cookie, bscid,version,_get_flow_version(operational_nodes[nodeid]['bscids'][bscid]))
 
             for groupid in node['groups']:
                 if nodeid not in config_nodes or groupid not in config_nodes[nodeid]['groups']:
-                    print "ERROR: node {} group {} running in switch but not configured".format(nodeid, groupid)
+                    print "ERROR: (switch) node {} group {} running in switch but not configured".format(nodeid, groupid)
                     error_found = True
 
         filename = ".previous_flows_groups.json"
@@ -435,12 +474,14 @@ class Topo(object):
                 continue
 
             flows = {}
-            cookies = {}
             groups = {}
+            cookies = {}
+            bscids = {}
             nodes[nodeid] = {
                 'flows': flows,
                 'groups': groups,
-                'cookies': cookies
+                'cookies': cookies,
+                'bscids': bscids
             }
 
             thegroups = node.get('flow-node-inventory:group')
@@ -473,6 +514,8 @@ class Topo(object):
                                 print "ERROR: unexpected duplicated cookie {}, between {} and {}".format(cookie, flowid, cookies[cookie])
                             else:
                                 cookies[cookie] = flowid
+                                bscid = _get_flow_bscid(cookie)
+                                bscids[bscid] = cookie
 
         return nodes
 
