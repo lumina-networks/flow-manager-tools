@@ -54,8 +54,8 @@ def _get_flows_groups_from_ovs(node, name):
 
 
 
-def _get_flows_groups_from_noviflow(node, ip, user, password):
-    trans = noviflow(host=ip, username=user, password=password, method='ssh')
+def _get_flows_groups_from_noviflow(node, ip, port, user, password):
+    trans = noviflow(host=ip, port=int(port), username=user, password=password, method='ssh')
     if not trans.connected:
         return False
     groups = trans.groups(return_type='dict')
@@ -100,6 +100,7 @@ class Topo(object):
                 host['type'] = 'mininet' if not host.get('type') else host['type']
                 host['user'] = 'vagrant' if not host.get('user') else host['user']
                 host['password'] = 'vagrant' if not host.get('password') else host['password']
+                host['port'] = 22 if not host.get('port') else host['port']
 
         self.number_of_switches = 0
         if props.get('switch'):
@@ -112,6 +113,7 @@ class Topo(object):
                 switch['user'] = 'vagrant' if not switch.get('user') else switch['user']
                 switch['password'] = 'vagrant' if not switch.get('password') else switch['password']
                 switch['ip'] = '127.0.0.1' if not switch.get('ip') else switch['ip']
+                switch['port'] = 22 if not switch.get('port') else switch['port']
                 switch['oname'] = "openflow:" + str(int(switch['dpid'], 16))
 
         if props.get('link'):
@@ -188,7 +190,7 @@ class Topo(object):
             node = {'flows': {}, 'cookies': {}, 'groups': {}}
             nodes[oname] = node
             if switch['type'] == 'noviflow':
-                t = threading.Thread(target=_get_flows_groups_from_noviflow, args=(node,switch['ip'],switch['user'],switch['password'],))
+                t = threading.Thread(target=_get_flows_groups_from_noviflow, args=(node,switch['ip'],switch['port'],switch['user'],switch['password'],))
             else:
                 t = threading.Thread(target=_get_flows_groups_from_ovs, args=(node,name,))
             threads.append(t)
