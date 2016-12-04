@@ -258,19 +258,21 @@ class Topo(object):
                 flowid = node['cookies'][cookie]
                 version = _get_flow_version(cookie)
                 if nodeid not in operational_nodes or bscid not in operational_nodes[nodeid]['bscids']:
-                    print "ERROR: (config) node {} flow {} bscid {} not running, not found in operational data store".format(nodeid, flowid, bscid)
+                    print "ERROR: (config) node {} flow {} bscid {} cookie {} not running, not found in operational data store".format(nodeid, flowid, bscid, cookie)
                     error_found = True
                 elif version != _get_flow_version(operational_nodes[nodeid]['bscids'][bscid]):
-                    print "WARNING: (config) node {} flow {} bscid {} operational version is different. Config version {}, operational version {}".format(nodeid, flowid, bscid,version,_get_flow_version(operational_nodes[nodeid]['bscids'][bscid]))
+                    print "WARNING: (config) node {} flow {} bscid {} cookie {} operational version is different. Config version {}, operational version {}".format(nodeid, flowid, bscid,cookie, version,_get_flow_version(operational_nodes[nodeid]['bscids'][bscid]))
+                    error_found = True
 
                 if nodeid not in switch_flows_groups or bscid not in switch_flows_groups[nodeid]['bscids']:
-                    print "ERROR: (config) node {} flow {} bscid {} not running, not found in the switch".format(nodeid, flowid, bscid)
+                    print "ERROR: (config) node {} flow {} bscid {} cookie {} not running, not found in the switch".format(nodeid, flowid, bscid,cookie)
                     error_found = True
                 elif version != _get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]):
-                    print "WARNING: (config) node {} flow {} bscid {} switch version is different. Config version {}, switch version {}".format(nodeid, flowid, bscid,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
+                    print "WARNING: (config) node {} flow {} bscid {} cookie {} switch version is different. Config version {}, switch version {}".format(nodeid, flowid, bscid,cookie,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
+                    error_found = True
 
                 if flowid not in calculated_flow_exception and (nodeid not in calculated_nodes or flowid not in calculated_nodes[nodeid]['flows']):
-                    print "ERROR: (config) node {} flow {} bscid {} not present in calculated nodes".format(nodeid, flowid, bscid)
+                    print "ERROR: (config) node {} flow {} bscid {} cookie {} not present in calculated nodes".format(nodeid, flowid, bscid,cookie)
                     error_found = True
 
             for groupid in node['groups']:
@@ -288,19 +290,21 @@ class Topo(object):
             node = operational_nodes[nodeid]
             for bscid, cookie in node['bscids'].iteritems():
                 version = _get_flow_version(cookie)
+                flowid = node['cookies'][cookie]
 
                 if nodeid not in config_nodes or bscid not in config_nodes[nodeid]['bscids']:
-                    print "ERROR: (operational) node {} cookie {} bscid {} running but not configured".format(nodeid, cookie, bscid)
+                    print "ERROR: (operational) node {} flowid {} bscid {} cookie {}  cookie {} running but not configured".format(nodeid, flowid, bscid, cookie)
                     error_found = True
                 elif version != _get_flow_version(config_nodes[nodeid]['bscids'][bscid]):
-                    print "WARNING: (operational) node {} cookie {} bscid {} config version is different. Operational version {}, config version {}".format(nodeid, cookie, bscid,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
+                    print "WARNING: (operational) node {} flowid {} bscid {} cookie {}  cookie {} config version is different. Operational version {}, config version {}".format(nodeid, flowid, bscid, cookie,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
+                    error_found = True
 
                 if nodeid not in switch_flows_groups or bscid not in switch_flows_groups[nodeid]['bscids']:
-                    print "ERROR: (operational) node {} cookie {} bscid {} in operational store but not in switch".format(nodeid, cookie, bscid)
+                    print "ERROR: (operational) node {} flowid {} bscid {} cookie {}  cookie {} in operational store but not in switch".format(nodeid, flowid, bscid, cookie)
                     error_found = True
                 elif version != _get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]):
-                    print "WARNING: (operational) node {} cookie {} bscid {} switch version is different. Operational version {}, switch version {}".format(nodeid, cookie, bscid,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
-
+                    print "WARNING: (operational) node {} flowid {} bscid {} cookie {} switch version is different. Operational version {}, switch version {}".format(nodeid, flowid, bscid, cookie,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
+                    error_found = True
 
             for groupid in node['groups']:
                 if nodeid not in config_nodes or groupid not in config_nodes[nodeid]['groups']:
@@ -314,17 +318,21 @@ class Topo(object):
             node = switch_flows_groups[nodeid]
 
             for bscid, cookie in node['bscids'].iteritems():
+                version = _get_flow_version(cookie)
+
                 if nodeid not in config_nodes or bscid not in config_nodes[nodeid]['bscids']:
                     print "ERROR: (switch) node {} cookie {} bscid {} running in switch but not configured".format(nodeid, cookie, bscid)
                     error_found = True
                 elif version != _get_flow_version(config_nodes[nodeid]['bscids'][bscid]):
                     print "WARNING: (switch) node {} cookie {} bscid {} switch version is different. Switch version {}, config version {}".format(nodeid, cookie, bscid,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
+                    error_found = True
 
                 if nodeid not in operational_nodes or bscid not in operational_nodes[nodeid]['bscids']:
                     print "ERROR: (switch) node {} cookie {} bscid {} running in switch but not in operational".format(nodeid, cookie, bscid)
                     error_found = True
                 elif version != _get_flow_version(operational_nodes[nodeid]['bscids'][bscid]):
                     print "WARNING: (switch) node {} cookie {} bscid {} switch version is different. Switch version {}, operational version {}".format(nodeid, cookie, bscid,version,_get_flow_version(operational_nodes[nodeid]['bscids'][bscid]))
+                    error_found = True
 
             for groupid in node['groups']:
                 if nodeid not in config_nodes or groupid not in config_nodes[nodeid]['groups']:
