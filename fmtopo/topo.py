@@ -1,5 +1,6 @@
 import threading
 import re
+import os
 import requests
 from requests.auth import HTTPBasicAuth
 import subprocess
@@ -66,9 +67,10 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password):
     if not trans.connected:
         return False
     groups = trans.groups(return_type='dict')
-    for groupid,group in groups.iteritems():
-        groups[int(groupid)]=group
-    node['groups'] = groups
+    if groups:
+        for groupid,group in groups.iteritems():
+            groups[int(groupid)]=group
+        node['groups'] = groups
     flows = trans.flows(return_type='dict')
     if flows:
         node['cookies']={}
@@ -223,24 +225,27 @@ class Topo(object):
                 found_error = True
 
         if not found_error:
-            print "all nodes has been detected properly for topology {}".format(topology_name)
+            print "OK: {} nodes has been detected properly.".format(len(self.switches_openflow_names))
             return True
         return False
 
     def check_links(self, running=True, topology_name='flow:1'):
         nodes, links = self._get_nodes_and_links(topology_name)
         found_error = False
-        for name in self.switches_openflow_names:
-            oname = self.switches_openflow_names[name]
-            if running and oname not in nodes:
-                print "ERROR: {} node not found".format(oname)
+        for openflowport in self.openflowportmap:
+            dstSwitch = self.openflowportmap[openflowport]
+            if running and openflowport not in links:
+                print "ERROR: {} port link not found".format(openflowport)
                 found_error = True
-            elif not running and oname in nodes:
-                print "ERROR: {}  node is still up when network is not running".format(oname)
+            elif running and links[openflowport].get('destination').get('dest-node') != dstSwitch:
+                print "ERROR: unexpected destination switch for {} port and link {}".format(openflowport,links[openflowport])
+                found_error = True
+            elif not running and openflowport in links:
+                print "ERROR: {} port is still up when network is not running".format(openflowport)
                 found_error = True
 
         if not found_error:
-            print "all nodes has been detected properly for topology {}".format(topology_name)
+            print "OK: {} links has been detected properly.".format(len(self.openflowportmap))
             return True
 
         return False
@@ -293,14 +298,14 @@ class Topo(object):
                 flowid = node['cookies'][cookie]
 
                 if nodeid not in config_nodes or bscid not in config_nodes[nodeid]['bscids']:
-                    print "ERROR: (operational) node {} flowid {} bscid {} cookie {}  cookie {} running but not configured".format(nodeid, flowid, bscid, cookie)
+                    print "ERROR: (operational) node {} flowid {} bscid {} cookie {} running but not configured".format(nodeid, flowid, bscid, cookie)
                     error_found = True
                 elif version != _get_flow_version(config_nodes[nodeid]['bscids'][bscid]):
-                    print "WARNING: (operational) node {} flowid {} bscid {} cookie {}  cookie {} config version is different. Operational version {}, config version {}".format(nodeid, flowid, bscid, cookie,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
+                    print "WARNING: (operational) node {} flowid {} bscid {} cookie {} config version is different. Operational version {}, config version {}".format(nodeid, flowid, bscid, cookie,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
                     error_found = True
 
                 if nodeid not in switch_flows_groups or bscid not in switch_flows_groups[nodeid]['bscids']:
-                    print "ERROR: (operational) node {} flowid {} bscid {} cookie {}  cookie {} in operational store but not in switch".format(nodeid, flowid, bscid, cookie)
+                    print "ERROR: (operational) node {} flowid {} bscid {} cookie {} in operational store but not in switch".format(nodeid, flowid, bscid, cookie)
                     error_found = True
                 elif version != _get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]):
                     print "WARNING: (operational) node {} flowid {} bscid {} cookie {} switch version is different. Operational version {}, switch version {}".format(nodeid, flowid, bscid, cookie,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
@@ -369,6 +374,7 @@ class Topo(object):
             json.dump(switch_flows_groups, outfile)
 
         if not error_found:
+            print "OK: all flows/groups are in sync for given {} nodes.".format(len(self.switches_openflow_names))
             return True
 
         return False
