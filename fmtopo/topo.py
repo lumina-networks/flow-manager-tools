@@ -26,7 +26,7 @@ def _check_mandatory_values(obj, names):
         if name not in obj or not obj[name]:
             raise Exception("{} is missing in object {}".format(name, obj))
 
-def _get_flows_groups_from_ovs(node, name):
+def _get_flows_groups_from_ovs(node, name,prefix=None):
     output = subprocess.check_output(
         "sudo ovs-ofctl dump-group-stats {} --protocol=Openflow13".format(name), shell=True)
     pattern = r'group_id=(\d+)'
@@ -37,7 +37,7 @@ def _get_flows_groups_from_ovs(node, name):
     for linematch in regex.finditer(output):
         line = linematch.group(1)
         for match in regexvalues.finditer(line):
-            node['groups'][match.group(1)] = {
+            node['groups'][int(match.group(1))] = {
                 'packets': match.group(2),
                 'bytes': match.group(3)
             }
@@ -56,9 +56,11 @@ def _get_flows_groups_from_ovs(node, name):
                     'packets': match.group(2),
                     'bytes': match.group(3)
                 }
-                node['cookies'][str(number)] = nodes[name]['flows'][str(number)]
-                bscid = _get_flow_bscid(cookie)
-                node['bscids'][str(bscid)] = cookie
+                node['cookies'][str(number)] = node['flows'][str(number)]
+                bscid = _get_flow_bscid(number)
+                if bscid in node['bscids']:
+                    print "ERROR: duplicated bsc id {} in node {}".format(bscid,node)
+                node['bscids'][int(bscid)] = number
 
 
 
@@ -151,7 +153,7 @@ class Topo(object):
                     if not dst_port:
                         if dst_name not in ports:
                             ports[dst_name] = 1
-                        link['destination_port'] = ports[src_name]
+                        link['destination_port'] = ports[dst_name]
                         ports[dst_name] = ports[dst_name] + 1
 
                 if src_name in self.switches and dst_name in self.switches:
@@ -166,6 +168,8 @@ class Topo(object):
                     self.portmap[dst_name][src_name] = link['destination_port']
                     self.openflowportmap[self.switches_openflow_names[src_name] +
                                          ':' + str(src_port)] = self.switches_openflow_names[dst_name]
+                    self.openflowportmap[self.switches_openflow_names[dst_name] +
+                                         ':' + str(dst_port)] = self.switches_openflow_names[src_name]
 
                 if (src_name in self.hosts and dst_name in self.switches):
                     self.host_connected_switch[src_name] = dst_name
@@ -204,7 +208,7 @@ class Topo(object):
             if switch['type'] == 'noviflow':
                 t = threading.Thread(target=_get_flows_groups_from_noviflow, args=(node,switch['ip'],switch['port'],switch['user'],switch['password'],))
             else:
-                t = threading.Thread(target=_get_flows_groups_from_ovs, args=(node,name,))
+                t = threading.Thread(target=_get_flows_groups_from_ovs, args=(node,name,prefix,))
             threads.append(t)
             t.start()
 
@@ -232,10 +236,12 @@ class Topo(object):
     def check_links(self, running=True, topology_name='flow:1'):
         nodes, links = self._get_nodes_and_links(topology_name)
         found_error = False
+        all_ports=[]
         for openflowport in self.openflowportmap:
             dstSwitch = self.openflowportmap[openflowport]
+            all_ports.append(openflowport)
             if running and openflowport not in links:
-                print "ERROR: {} port link not found".format(openflowport)
+                print "ERROR: {} port link not found to {}".format(openflowport,dstSwitch)
                 found_error = True
             elif running and links[openflowport].get('destination').get('dest-node') != dstSwitch:
                 print "ERROR: unexpected destination switch for {} port and link {}".format(openflowport,links[openflowport])
@@ -243,6 +249,14 @@ class Topo(object):
             elif not running and openflowport in links:
                 print "ERROR: {} port is still up when network is not running".format(openflowport)
                 found_error = True
+
+        if len(all_ports) != len(links):
+            print "WARNING: {} links expected and {} has been detected by the controller.".format(len(all_ports),len(links))
+
+        for link in links:
+            if link not in all_ports:
+                print "WARNING: {} link exists but not defined in the topology.".format(link)
+
 
         if not found_error:
             print "OK: {} links has been detected properly.".format(len(self.openflowportmap))
