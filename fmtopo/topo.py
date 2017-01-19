@@ -59,7 +59,7 @@ def _get_flows_groups_from_ovs(node, name,prefix=None):
                 node['cookies'][str(number)] = node['flows'][str(number)]
                 bscid = _get_flow_bscid(number)
                 if bscid in node['bscids']:
-                    print "ERROR: duplicated bsc id {} in node {}".format(bscid,node)
+                    print "ERROR: duplicated bsc id {} in node {}".format(bscid,name)
                 node['bscids'][int(bscid)] = number
 
 
