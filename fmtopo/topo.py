@@ -196,6 +196,8 @@ class Topo(object):
         self.ctrl_user = 'admin' if not ctrl.get('user') else ctrl['user']
         self.ctrl_password = 'admin' if not ctrl.get('password') else ctrl['password']
         self.ctrl_timeout = 60000 if not ctrl.get('timeout') else int(ctrl['timeout'])
+        if props.get('controller_vip'):
+            self.ctrl_ip = props.get('controller_vip')
 
     def containsSwitch(self, name):
         return str(name) in self.switches_openflow_names or str(name) in self.switches_openflow_names.values()
