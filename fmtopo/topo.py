@@ -145,6 +145,7 @@ class Topo(object):
                         if src_name not in ports:
                             ports[src_name] = 1
                         link['source_port'] = ports[src_name]
+                        src_port = ports[src_name]
                         ports[src_name] = ports[src_name] + 1
 
                 destination = None
@@ -154,6 +155,7 @@ class Topo(object):
                         if dst_name not in ports:
                             ports[dst_name] = 1
                         link['destination_port'] = ports[dst_name]
+                        dst_port = ports[dst_name]
                         ports[dst_name] = ports[dst_name] + 1
 
                 if src_name in self.switches and dst_name in self.switches:
