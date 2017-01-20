@@ -39,7 +39,7 @@ class Shell(object):
 
         if props is None:
             print "ERROR: yml topology file not found"
-            sys.exit()
+            sys.exit(1)
 
         if arguments['--controller']:
             props['controller'] = []
