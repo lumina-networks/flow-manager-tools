@@ -62,14 +62,12 @@ def _get_flows_groups_from_ovs(node, name,prefix=None):
                     print "ERROR: duplicated bsc id {} in node {}".format(bscid,name)
                 node['bscids'][int(bscid)] = number
 
-
-
-def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None):
+def _get_noviflow_connection_prompt(ip, port, user, password):
     child = pexpect.spawn('ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(port, user, ip))
     i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
     if i == 0:
         print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
-        return False
+        return None, None
 
     child.sendline(password)
     i = child.expect([pexpect.TIMEOUT, unicode('#')])
@@ -78,7 +76,7 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
         child.sendline('exit')
         child.expect(pexpect.EOF)
         child.close()
-        return False
+        return None, None
 
     child.sendline('show config switch hostname')
     i = child.expect([pexpect.TIMEOUT, unicode('#')])
@@ -87,26 +85,30 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
         child.sendline('exit')
         child.expect(pexpect.EOF)
         child.close()
-        return False
+        return None, None
 
     hostnameIdRegex = re.compile(r'Hostname:\s*(\S+)', re.IGNORECASE)
     match = hostnameIdRegex.findall(child.before)
     PROMPT = '{}#'.format(match[0]) if match else None
 
-    if not PROMPT:
-        print('ERROR: cannot get hostname for {}@{} port ({})'.format(user, ip, port))
-        child.sendline('exit')
-        child.expect(pexpect.EOF)
-        child.close()
+    return child, PROMPT
+
+def _close_noviflow_connection(child):
+    child.sendline('exit')
+    child.expect(pexpect.EOF)
+    child.close()
+
+def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None):
+    child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
+    if  not child or not PROMPT:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
         return False
 
     child.sendline('show stats group groupid all')
     i = child.expect([pexpect.TIMEOUT, PROMPT])
     if i == 0 or not child.before:
         print('ERROR: cannot get groups for {}@{} port ({})'.format(user, ip, port))
-        child.sendline('exit')
-        child.expect(pexpect.EOF)
-        child.close()
+        _close_noviflow_connection(child)
         return False
 
     groupIdRegex = re.compile(r'Group id:\s*(\d+)', re.IGNORECASE)
@@ -141,9 +143,7 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
     i = child.expect([pexpect.TIMEOUT, PROMPT])
     if i == 0 or not child.before:
         print('ERROR: cannot get flows for {}@{} port ({})'.format(user, ip, port))
-        child.sendline('exit')
-        child.expect(pexpect.EOF)
-        child.close()
+        _close_noviflow_connection(child)
         return False
 
     cookies = re.compile(r'Cookie\s*=\s*(\S+)', re.IGNORECASE).findall(child.before)
@@ -155,16 +155,12 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
     if cookiesLen >0:
         if not packetCounts or cookiesLen != len(packetCounts):
             print('ERROR: flows packets length is different for {}@{} port ({})'.format(user, ip, port))
-            child.sendline('exit')
-            child.expect(pexpect.EOF)
-            child.close()
+            _close_noviflow_connection(child)
             return False
 
         if not byteCounts or cookiesLen != len(byteCounts):
             print('ERROR: flows bytes length is different for {}@{} port ({})'.format(user, ip, port))
-            child.sendline('exit')
-            child.expect(pexpect.EOF)
-            child.close()
+            _close_noviflow_connection(child)
             return False
 
     while cookiesLen > 0:
@@ -181,9 +177,7 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
                 print "ERROR: duplicated bsc id {} in node {}".format(bscid,name)
             node['bscids'][int(bscid)] = number
 
-    child.sendline('exit')
-    child.expect(pexpect.EOF)
-    child.close()
+    _close_noviflow_connection(child)
     return True
 
 class Topo(object):
