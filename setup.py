@@ -14,7 +14,7 @@ setup(
     description='Flow Manager tools',
     license='LICENSE',
     install_requires=[
-        "pyyaml","requests"
+        "pyyaml","requests",'pexpect'
     ],
     entry_points={
         'console_scripts': [

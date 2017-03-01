@@ -18,7 +18,9 @@ sudo python setup.py install
 
 ### Dependencies
 
-* **clicrud**
+* **pexpect**
+* **pyyaml**
+* **requests**
 
 ## Usage
 

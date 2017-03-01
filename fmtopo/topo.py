@@ -5,8 +5,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 import subprocess
 import json
+import pexpect
 from functools import partial
-from clicrud.device.noviflow import noviflow
 
 calculated_flow_exception = ['table/0/flow/fm-sr-link-discovery']
 
@@ -64,30 +64,127 @@ def _get_flows_groups_from_ovs(node, name,prefix=None):
 
 
 
-def _get_flows_groups_from_noviflow(node, ip, port, user, password):
-    trans = noviflow(host=ip, port=int(port), username=user, password=password, method='ssh')
-    if not trans.connected:
+def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None):
+    child = pexpect.spawn('ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(port, user, ip))
+    i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
+    if i == 0:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
         return False
-    groups = trans.groups(return_type='dict')
-    if groups:
-        for groupid,group in groups.iteritems():
-            groups[int(groupid)]=group
-        node['groups'] = groups
-    flows = trans.flows(return_type='dict')
-    if flows:
-        node['cookies']={}
-        node['bscids']={}
-        for table in flows:
-            for flowid, flow in flows[table].iteritems():
-                cookie = int(flowid,16)
-                node['cookies'][cookie]=flow
-                node['bscids'][_get_flow_bscid(cookie)] = cookie
-                bytes_count = flow.get('Byte_count')
-                packets_count = flow.get('Packet_count')
-                if bytes_count:
-                    flow['bytes']=bytes_count
-                if packets_count:
-                    flow['packets']=packets_count
+
+    child.sendline(password)
+    i = child.expect([pexpect.TIMEOUT, unicode('#')])
+    if i == 0:
+        print('ERROR: cannot get prompt after entering password for {}@{} port ({})'.format(user, ip, port))
+        child.sendline('exit')
+        child.expect(pexpect.EOF)
+        child.close()
+        return False
+
+    child.sendline('show config switch hostname')
+    i = child.expect([pexpect.TIMEOUT, unicode('#')])
+    if i == 0 or not child.before:
+        print('ERROR: cannot prompt after sending get hostname command for {}@{} port ({})'.format(user, ip, port))
+        child.sendline('exit')
+        child.expect(pexpect.EOF)
+        child.close()
+        return False
+
+    hostnameIdRegex = re.compile(r'Hostname:\s*(\S+)', re.IGNORECASE)
+    match = hostnameIdRegex.findall(child.before)
+    PROMPT = '{}#'.format(match[0]) if match else None
+
+    if not PROMPT:
+        print('ERROR: cannot get hostname for {}@{} port ({})'.format(user, ip, port))
+        child.sendline('exit')
+        child.expect(pexpect.EOF)
+        child.close()
+        return False
+
+    child.sendline('show stats group groupid all')
+    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    if i == 0 or not child.before:
+        print('ERROR: cannot get groups for {}@{} port ({})'.format(user, ip, port))
+        child.sendline('exit')
+        child.expect(pexpect.EOF)
+        child.close()
+        return False
+
+    groupIdRegex = re.compile(r'Group id:\s*(\d+)', re.IGNORECASE)
+    packetCountRegex = re.compile(r'Reference count:\s*\d+\s*\S\s+Packet count:\s*(\d+)', re.IGNORECASE)
+    byteCountRegex = re.compile(r'Byte count:\s*(\d+)', re.IGNORECASE)
+
+    current_group = None
+    for line in child.before.splitlines():
+        match = groupIdRegex.findall(line)
+        if match:
+            current_group = {}
+            node['groups'][int(match[0])] = current_group
+            continue
+        elif current_group is None:
+            continue
+
+        match = packetCountRegex.findall(line)
+        if match:
+            current_group['packets']=match[0]
+            if 'bytes' in current_group:
+                current_group = None
+            continue
+
+        match = byteCountRegex.findall(line)
+        if match:
+            current_group['bytes']=match[0]
+            if 'packets' in current_group:
+                current_group = None
+            continue
+
+    child.sendline('show status flow tableid all')
+    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    if i == 0 or not child.before:
+        print('ERROR: cannot get flows for {}@{} port ({})'.format(user, ip, port))
+        child.sendline('exit')
+        child.expect(pexpect.EOF)
+        child.close()
+        return False
+
+    cookies = re.compile(r'Cookie\s*=\s*(\S+)', re.IGNORECASE).findall(child.before)
+    packetCounts = re.compile(r'Packet_count\s*=\s*(\d+)', re.IGNORECASE).findall(child.before)
+    byteCounts = re.compile(r'Byte_count\s*=\s*(\d+)', re.IGNORECASE).findall(child.before)
+
+    cookiesLen = len(cookies) if cookies else 0
+
+    if cookiesLen >0:
+        if not packetCounts or cookiesLen != len(packetCounts):
+            print('ERROR: flows packets length is different for {}@{} port ({})'.format(user, ip, port))
+            child.sendline('exit')
+            child.expect(pexpect.EOF)
+            child.close()
+            return False
+
+        if not byteCounts or cookiesLen != len(byteCounts):
+            print('ERROR: flows bytes length is different for {}@{} port ({})'.format(user, ip, port))
+            child.sendline('exit')
+            child.expect(pexpect.EOF)
+            child.close()
+            return False
+
+    while cookiesLen > 0:
+        cookiesLen -= 1
+        number = int('0x{}'.format(cookies[cookiesLen]), 16)
+        if prefix is None or number >> 56 == prefix:
+            node['flows'][str(number)] = {
+                'packets': packetCounts[cookiesLen],
+                'bytes': byteCounts[cookiesLen]
+            }
+            node['cookies'][str(number)] = node['flows'][str(number)]
+            bscid = _get_flow_bscid(number)
+            if bscid in node['bscids']:
+                print "ERROR: duplicated bsc id {} in node {}".format(bscid,name)
+            node['bscids'][int(bscid)] = number
+
+    child.sendline('exit')
+    child.expect(pexpect.EOF)
+    child.close()
+    return True
 
 class Topo(object):
 
@@ -210,7 +307,7 @@ class Topo(object):
             node = {'flows': {}, 'cookies': {}, 'groups': {}, 'bscids': {}}
             nodes[oname] = node
             if switch['type'] == 'noviflow':
-                t = threading.Thread(target=_get_flows_groups_from_noviflow, args=(node,switch['ip'],switch['port'],switch['user'],switch['password'],))
+                t = threading.Thread(target=_get_flows_groups_from_noviflow, args=(node,switch['ip'],switch['port'],switch['user'],switch['password'],prefix,))
             else:
                 t = threading.Thread(target=_get_flows_groups_from_ovs, args=(node,name,prefix,))
             threads.append(t)
