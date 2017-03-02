@@ -6,6 +6,8 @@ from requests.auth import HTTPBasicAuth
 import subprocess
 import json
 import pexpect
+import random
+import time
 from functools import partial
 
 calculated_flow_exception = ['table/0/flow/fm-sr-link-discovery']
@@ -25,6 +27,31 @@ def _check_mandatory_values(obj, names):
     for name in names:
         if name not in obj or not obj[name]:
             raise Exception("{} is missing in object {}".format(name, obj))
+
+def _reboot_switch_ovs(name):
+    output = subprocess.check_output(
+        "sudo ovs-vsctl get-controller {}".format(name), shell=True)
+    controllersRegex = re.compile(r'(tcp:\d+\.\d+\.\d+\.\d+\:\d+)', re.IGNORECASE)
+    match = controllersRegex.findall(output)
+    if not match:
+        print "ERROR: cannot get controllers for {}".format(name)
+        return False
+    controllers = ' '.join(match)
+    output =  subprocess.check_output("sudo ovs-vsctl del-controller {}".format(name), shell=True)
+    _delete_flows_ovs(name)
+    _delete_groups_ovs(name)
+    time.sleep(5)
+    output =  subprocess.check_output("sudo ovs-vsctl set-controller {} {}".format(name,controllers), shell=True)
+
+
+def _delete_flows_ovs(name):
+    output =  subprocess.check_output(
+        "sudo ovs-ofctl del-flows {} --protocol=Openflow13".format(name), shell=True)
+
+def _delete_groups_ovs(name):
+    output =  subprocess.check_output(
+        "sudo ovs-ofctl del-groups {} --protocol=Openflow13".format(name), shell=True)
+
 
 def _get_flows_groups_from_ovs(node, name,prefix=None):
     output = subprocess.check_output(
@@ -97,6 +124,52 @@ def _close_noviflow_connection(child):
     child.sendline('exit')
     child.expect(pexpect.EOF)
     child.close()
+
+def _reboot_switch_noviflow(ip, port, user, password):
+    child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
+    if  not child or not PROMPT:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
+        return False
+    child.sendline('set status switch reboot')
+    i = child.expect([pexpect.TIMEOUT, 'none'])
+    if i == 0 or not child.before:
+        print('ERROR: cannot reboot switch for {}@{} port ({})'.format(user, ip, port))
+        _close_noviflow_connection(child)
+        return False
+    child.sendline('none')
+    child.expect(pexpect.EOF)
+    child.close()
+    return True
+
+def _delete_flows_noviflow(ip, port, user, password):
+    child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
+    if  not child or not PROMPT:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
+        return False
+
+    child.sendline('del config flow tableid all')
+    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    if i == 0 or not child.before:
+        print('ERROR: cannot delete flows for {}@{} port ({})'.format(user, ip, port))
+        _close_noviflow_connection(child)
+        return False
+    _close_noviflow_connection(child)
+    return True
+
+def _delete_groups_noviflow(ip, port, user, password):
+    child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
+    if  not child or not PROMPT:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
+        return False
+
+    child.sendline('del config group tableid all')
+    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    if i == 0 or not child.before:
+        print('ERROR: cannot delete groups for {}@{} port ({})'.format(user, ip, port))
+        _close_noviflow_connection(child)
+        return False
+    _close_noviflow_connection(child)
+    return True
 
 def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None):
     child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
@@ -292,6 +365,39 @@ class Topo(object):
 
     def containsSwitch(self, name):
         return str(name) in self.switches_openflow_names or str(name) in self.switches_openflow_names.values()
+
+    def get_random_switch(self):
+        return random.choice(self.switches.keys())
+
+    def reboot_switch(self, name):
+        switch = self.switches.get(name)
+        if not switch:
+            print "ERROR: {} switch does not exists".format(name)
+            return False
+        if switch['type'] == 'noviflow':
+            _reboot_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
+        else:
+            _reboot_switch_ovs(name)
+
+    def delete_groups(self, name):
+        switch = self.switches.get(name)
+        if not switch:
+            print "ERROR: {} switch does not exists".format(name)
+            return False
+        if switch['type'] == 'noviflow':
+            _delete_groups_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
+        else:
+            _delete_groups_ovs(name)
+
+    def delete_flows(self, name):
+        switch = self.switches.get(name)
+        if not switch:
+            print "ERROR: {} switch does not exists".format(name)
+            return False
+        if switch['type'] == 'noviflow':
+            _delete_flows_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
+        else:
+            _delete_flows_ovs(name)
 
     def get_flows_groups_from_switches(self, prefix=None):
         nodes = {}

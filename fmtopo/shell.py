@@ -4,6 +4,12 @@ Usage:
   fmcheck links [-s] [--topology=FILE] [--controller=IP]...
   fmcheck nodes [-s] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-a] [--topology=FILE] [--controller=IP]...
+  fmcheck random-reboot-switch [--topology=FILE]
+  fmcheck reboot-switch <switch> [--topology=FILE]
+  fmcheck random-delete-groups [--topology=FILE]
+  fmcheck delete-groups <switch> [--topology=FILE]
+  fmcheck random-delete-flows [--topology=FILE]
+  fmcheck delete-flows <switch> [--topology=FILE]
   fmcheck (-h | --help)
 
 Options:
@@ -64,6 +70,18 @@ class Shell(object):
             result = checker.check_nodes(False)
         elif arguments['nodes']:
             result = checker.check_nodes()
+        elif arguments['random-reboot-switch']:
+            result = checker.reboot_switch(checker.get_random_switch())
+        elif arguments['reboot-switch']:
+            result = checker.reboot_switch(arguments['<switch>'])
+        elif arguments['random-delete-groups']:
+            result = checker.delete_groups(checker.get_random_switch())
+        elif arguments['delete-groups']:
+            result = checker.delete_groups(arguments['<switch>'])
+        elif arguments['random-delete-flows']:
+            result = checker.delete_flows(checker.get_random_switch())
+        elif arguments['delete-flows']:
+            result = checker.delete_flows(arguments['<switch>'])
 
         if not result:
             sys.exit(1)
