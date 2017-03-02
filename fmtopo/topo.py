@@ -266,7 +266,8 @@ class Topo(object):
         self.links = []
         self.interfaces = {}
         self.portmap = {}
-        self.openflowportmap = {}
+        self.portdestinationswitch = {}
+        self.portdestinationport = {}
         self.host_connected_switch = {}
         self.number_of_swiches_links = 0
         self.number_of_switches = 0
@@ -326,17 +327,12 @@ class Topo(object):
                 if src_name in self.switches and dst_name in self.switches:
                     self.number_of_swiches_links = self.number_of_swiches_links + 2
 
-                    if src_name not in self.portmap:
-                        self.portmap[src_name] = {}
-                    if dst_name not in self.portmap:
-                        self.portmap[dst_name] = {}
-
-                    self.portmap[src_name][dst_name] = link['source_port']
-                    self.portmap[dst_name][src_name] = link['destination_port']
-                    self.openflowportmap[self.switches_openflow_names[src_name] +
-                                         ':' + str(src_port)] = self.switches_openflow_names[dst_name]
-                    self.openflowportmap[self.switches_openflow_names[dst_name] +
-                                         ':' + str(dst_port)] = self.switches_openflow_names[src_name]
+                    src_name_port = self.switches_openflow_names[src_name] + ':' + str(src_port)
+                    dst_name_port = self.switches_openflow_names[dst_name] + ':' + str(dst_port)
+                    self.portdestinationswitch[src_name_port] = self.switches_openflow_names[dst_name]
+                    self.portdestinationswitch[dst_name_port] = self.switches_openflow_names[src_name]
+                    self.portdestinationport[src_name_port] = dst_name_port
+                    self.portdestinationport[dst_name_port] = src_name_port
 
                 if (src_name in self.hosts and dst_name in self.switches):
                     self.host_connected_switch[src_name] = dst_name
@@ -481,14 +477,19 @@ class Topo(object):
         nodes, links = self._get_nodes_and_links(topology_name)
         found_error = False
         all_ports=[]
-        for openflowport in self.openflowportmap:
-            dstSwitch = self.openflowportmap[openflowport]
+        for openflowport in self.portdestinationswitch:
+            dstSwitch = self.portdestinationswitch[openflowport]
+            dstPort = self.portdestinationport[openflowport]
+
             all_ports.append(openflowport)
             if running and openflowport not in links:
-                print "ERROR: {} port link not found to {}".format(openflowport,dstSwitch)
+                print "ERROR: {} port link not found to {}".format(openflowport,dstPort)
                 found_error = True
             elif running and links[openflowport].get('destination').get('dest-node') != dstSwitch:
-                print "ERROR: unexpected destination switch for {} port and link {}".format(openflowport,links[openflowport])
+                print "ERROR: unexpected destination switch for {} port and link {}. Expected {}".format(openflowport,links[openflowport], dstSwitch)
+                found_error = True
+            elif running and links[openflowport].get('destination').get('dest-tp') != dstPort:
+                print "ERROR: unexpected destination port for {} port and link {}. Expected {}".format(openflowport,links[openflowport], dstPort)
                 found_error = True
             elif not running and openflowport in links:
                 print "ERROR: {} port is still up when network is not running".format(openflowport)
@@ -503,7 +504,7 @@ class Topo(object):
 
 
         if not found_error:
-            print "OK: {} links has been detected properly.".format(len(self.openflowportmap))
+            print "OK: {} links has been detected properly.".format(len(self.portdestinationswitch))
             return True
 
         return False
