@@ -258,6 +258,7 @@ class Topo(object):
     def __init__(self, props):
         self.props = props
         self.controllers = []
+        self.controllers_name = {}
         self.hosts = {}
         self.hosts_ip = {}
         self.switches = {}
@@ -351,8 +352,10 @@ class Topo(object):
             for ctrl in props['controller']:
                 _check_mandatory_values(ctrl, ['name', 'ip'])
                 self.controllers.append(ctrl)
+                self.controllers_name[ctrl['name']] = ctrl
         else:
             self.controllers.append({'name': 'c0', 'ip': '127.0.0.1'})
+            self.controllers_name[self.controllers[0]['name']] = self.controllers[0]
 
         ctrl = self.controllers[0]
         self.ctrl_ip = '127.0.0.1' if not ctrl.get('ip') else ctrl['ip']
@@ -368,6 +371,37 @@ class Topo(object):
 
     def get_random_switch(self):
         return random.choice(self.switches.keys())
+
+    def get_random_controller(self):
+        return random.choice(self.controllers_name.keys())
+
+    def reboot_controller(self, name):
+        ctrl = self.controllers_name.get(name)
+        if not ctrl:
+            print "ERROR: {} controller does not exists".format(name)
+            return False
+
+        sshuser = ctrl.get('sshuser')
+        sshpassword = ctrl.get('sshpassword')
+        sshport = ctrl.get('sshport')
+
+        target = "{}@{}".format(sshuser,ctrl['ip']) if sshuser else ctrl['ip']
+        port = sshport if sshport else 22
+
+        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {} 'sudo service brcd-bsc stop; sleep 5; sudo service brcd-bsc start'".format(port, target)
+        if sshpassword:
+            child = pexpect.spawn(cmd)
+            i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
+            if i == 0:
+                print('ERROR: could not connect to controller via SSH. {} port ({})'.format(target, port))
+                return False
+
+            child.sendline(sshpassword)
+            child.expect(pexpect.EOF)
+            child.close()
+
+        else:
+            output = subprocess.check_output(cmd, shell=True)
 
     def reboot_switch(self, name):
         switch = self.switches.get(name)
