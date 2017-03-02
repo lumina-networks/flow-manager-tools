@@ -381,6 +381,7 @@ class Topo(object):
             print "ERROR: {} controller does not exists".format(name)
             return False
 
+        print "INFO: rebooting {} controller with ip {}".format(name, ctrl['ip'])
         sshuser = ctrl.get('sshuser')
         sshpassword = ctrl.get('sshpassword')
         sshport = ctrl.get('sshport')
@@ -403,35 +404,43 @@ class Topo(object):
         else:
             output = subprocess.check_output(cmd, shell=True)
 
+        return True
+
     def reboot_switch(self, name):
         switch = self.switches.get(name)
         if not switch:
             print "ERROR: {} switch does not exists".format(name)
             return False
+
+        print "INFO: rebooting {} switch".format(name)
         if switch['type'] == 'noviflow':
-            _reboot_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
+            return _reboot_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
         else:
-            _reboot_switch_ovs(name)
+            return _reboot_switch_ovs(name)
 
     def delete_groups(self, name):
         switch = self.switches.get(name)
         if not switch:
             print "ERROR: {} switch does not exists".format(name)
             return False
+
+        print "INFO: deleting groups on {} switch".format(name)
         if switch['type'] == 'noviflow':
-            _delete_groups_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
+            return _delete_groups_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
         else:
-            _delete_groups_ovs(name)
+            return _delete_groups_ovs(name)
 
     def delete_flows(self, name):
         switch = self.switches.get(name)
         if not switch:
             print "ERROR: {} switch does not exists".format(name)
             return False
+
+        print "INFO: deleting flows on {} switch".format(name)
         if switch['type'] == 'noviflow':
-            _delete_flows_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
+            return _delete_flows_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
         else:
-            _delete_flows_ovs(name)
+            return _delete_flows_ovs(name)
 
     def get_flows_groups_from_switches(self, prefix=None):
         nodes = {}
