@@ -162,7 +162,7 @@ def _delete_groups_noviflow(ip, port, user, password):
         print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
         return False
 
-    child.sendline('del config group tableid all')
+    child.sendline('del config group groupid all')
     i = child.expect([pexpect.TIMEOUT, PROMPT])
     if i == 0 or not child.before:
         print('ERROR: cannot delete groups for {}@{} port ({})'.format(user, ip, port))
