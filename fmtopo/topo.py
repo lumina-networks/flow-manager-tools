@@ -89,6 +89,9 @@ def _get_flows_groups_from_ovs(node, name,prefix=None):
                     print "ERROR: duplicated bsc id {} in node {}".format(bscid,name)
                 node['bscids'][int(bscid)] = number
 
+def _get_controller_roles_switch_ovs(node, name):
+    return None
+
 def _get_noviflow_connection_prompt(ip, port, user, password):
     child = pexpect.spawn('ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(port, user, ip))
     i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
@@ -252,6 +255,26 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
 
     _close_noviflow_connection(child)
     return True
+
+def _get_controller_roles_switch_noviflow(ip, port, user, password):
+    child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
+    if  not child or not PROMPT:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
+        return False
+    child.sendline('show status ofchannel')
+    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    if i == 0 or not child.before:
+        print('ERROR: cannot get groups for {}@{} port ({})'.format(user, ip, port))
+        _close_noviflow_connection(child)
+        return False
+
+    rolesRegex = re.compile(r'Role\s+-\s+(\S+)', re.IGNORECASE)
+    roles = rolesRegex.findall(child.before)
+
+    child.sendline('exit')
+    child.expect(pexpect.EOF)
+    child.close()
+    return roles
 
 class Topo(object):
 
@@ -455,6 +478,31 @@ class Topo(object):
         for t in threads:
             t.join()
         return nodes
+
+    def get_controller_role(self, name):
+        switch = self.switches.get(name)
+        if not switch:
+            print "ERROR: {} switch does not exists".format(name)
+            return False
+
+        if switch['type'] == 'noviflow':
+            return _get_controller_roles_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
+        else:
+            return _get_controller_roles_switch_ovs(name)
+
+    def check_roles(self, topology_name='flow:1'):
+        found_error = False
+        for name in self.switches_openflow_names:
+            oname = self.switches_openflow_names[name]
+            roles = self.get_controller_role(name)
+            owner = self._get_node_cluster_owner(oname)
+            if owner and roles and 'Master' not in roles:
+                print "ERROR: {} node does not contain master in the switch".format(oname)
+                found_error = True
+        if not found_error:
+            print "OK: {} nodes roles has been detected properly.".format(len(self.switches_openflow_names))
+            return True
+        return False
 
     def check_nodes(self, running=True, topology_name='flow:1'):
         nodes, links = self._get_nodes_and_links(topology_name)
@@ -692,6 +740,20 @@ class Topo(object):
                                                   self.ctrl_password),
                                headers=_DEFAULT_HEADERS,
                                timeout=self.ctrl_timeout)
+
+    def _get_node_cluster_status(self, openflow_name):
+        resp = self._http_get(self._get_operational_url() +
+                              '/entity-owners:entity-owners/entity-type/org.opendaylight.mdsal.ServiceEntityType/entity/%2Fodl-general-entity%3Aentity%5Bodl-general-entity%3Aname%3D%27{}%27%5D'.format(openflow_name))
+        if resp is not None and resp.status_code == 200 and resp.content is not None:
+            data = json.loads(resp.content)
+            entity = data.get('entity')
+            if entity and len(entity) > 0:
+                return entity[0]
+
+    def _get_node_cluster_owner(self, openflow_name):
+        entity = self._get_node_cluster_status(openflow_name)
+        if entity:
+            return entity.get('owner')
 
     def _get_nodes_and_links(self, topology_name):
         nodelist = {}

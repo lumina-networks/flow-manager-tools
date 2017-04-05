@@ -4,6 +4,7 @@ Usage:
   fmcheck links [-s] [--topology=FILE] [--controller=IP]...
   fmcheck nodes [-s] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-a] [--topology=FILE] [--controller=IP]...
+  fmcheck roles [--topology=FILE] [--controller=IP]...
   fmcheck random-reboot-controller [--topology=FILE]
   fmcheck reboot-controller <name> [--topology=FILE]
   fmcheck random-reboot-switch [--topology=FILE]
@@ -72,6 +73,8 @@ class Shell(object):
             result = checker.check_nodes(False)
         elif arguments['nodes']:
             result = checker.check_nodes()
+        elif arguments['roles']:
+            result = checker.check_roles()
         elif arguments['random-reboot-controller']:
             result = checker.reboot_controller(checker.get_random_controller())
         elif arguments['reboot-controller']:
