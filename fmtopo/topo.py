@@ -872,15 +872,7 @@ class Topo(object):
                         brocadesr = node.get('brocade-bsc-sr:sr')
                         groups = None
                         if brocadesr is not None:
-                            groups = brocadesr.get('calculated-groups')
-                        if groups is not None:
-                            cgroups = groups.get('calculated-group')
-                            if cgroups is not None:
-                                for group in cgroups:
-                                    srnodes[nodeid]['groups'].append(group['group-id'])
-
-                        flows = None
-                        if brocadesr is not None:
+                            self.append_calculated_groups(srnodes, brocadesr.get('calculated-groups'))
                             self.append_calculated_flows(srnodes, brocadesr.get('calculated-flows'))
 
         resp = self._http_get(self._get_operational_url() + '/brocade-bsc-path:paths')
@@ -892,8 +884,6 @@ class Topo(object):
                     for path in paths.get('path'):
                         self.append_calculated_flows(srnodes, path.get('calculated-flows'))
 
-                if paths.get('mpls-nodes') is not None:
-                    self.append_calculated_flow_nodes(srnodes, paths.get('mpls-nodes').get('calculated-flow-nodes'))
 
         resp = self._http_get(self._get_operational_url() + '/brocade-bsc-eline:elines')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
@@ -903,6 +893,27 @@ class Topo(object):
                 if elines.get('eline') is not None:
                     for eline in elines.get('eline'):
                         self.append_calculated_flows(srnodes, eline.get('calculated-flows'))
+
+
+        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-tree-path:paths')
+        if resp is not None and resp.status_code == 200 and resp.content is not None:
+            data = json.loads(resp.content)
+            if data.get('paths') is not None:
+                paths = data.get('paths')
+                if paths.get('path') is not None:
+                    for path in paths.get('path'):
+                        self.append_calculated_flows(srnodes, path.get('calculated-flows'))
+                        self.append_calculated_groups(srnodes, path.get('calculated-groups'))
+
+        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-etree:etrees')
+        if resp is not None and resp.status_code == 200 and resp.content is not None:
+            data = json.loads(resp.content)
+            if data.get('etrees') is not None:
+                etrees = data.get('etrees')
+                if etrees.get('etree') is not None:
+                    for etree in etrees.get('etree'):
+                        self.append_calculated_flows(srnodes, etree.get('calculated-flows'))
+                        self.append_calculated_groups(srnodes, etree.get('calculated-groups'))
 
         resp = self._http_get(self._get_operational_url() + '/brocade-bsc-path-mpls:mpls-nodes')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
@@ -915,6 +926,13 @@ class Topo(object):
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             mpls_nodes = data.get('eline-nodes')
+            if mpls_nodes is not None:
+                self.append_calculated_flow_nodes(srnodes, mpls_nodes.get('calculated-flow-nodes'))
+
+        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-etree-sr:etree-nodes')
+        if resp is not None and resp.status_code == 200 and resp.content is not None:
+            data = json.loads(resp.content)
+            mpls_nodes = data.get('etree-nodes')
             if mpls_nodes is not None:
                 self.append_calculated_flow_nodes(srnodes, mpls_nodes.get('calculated-flow-nodes'))
 
@@ -939,6 +957,16 @@ class Topo(object):
                     if nodeid not in nodes:
                         nodes[nodeid] = {'groups': [], 'flows': []}
                     nodes[nodeid]['flows'].append(flowid)
+
+    def append_calculated_groups(self, nodes, groups):
+        if groups is not None:
+            cgroups = groups.get('calculated-group')
+            if cgroups is not None:
+                for group in cgroups:
+                    nodeid = group['node-id']
+                    if nodeid not in nodes:
+                        nodes[nodeid] = {'groups': [], 'flows': []}
+                    nodes[nodeid]['groups'].append(group['group-id'])
 
 
 def exists_bridge(name):
