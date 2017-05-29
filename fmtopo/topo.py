@@ -250,7 +250,7 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
             node['cookies'][str(number)] = node['flows'][str(number)]
             bscid = _get_flow_bscid(number)
             if bscid in node['bscids']:
-                print "ERROR: duplicated bsc id {} in node {}".format(bscid,name)
+                print "ERROR: duplicated bsc id {} in node with ip {} and port {}".format(bscid,ip,port)
             node['bscids'][int(bscid)] = number
 
     _close_noviflow_connection(child)
