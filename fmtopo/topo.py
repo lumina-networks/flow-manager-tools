@@ -898,8 +898,8 @@ class Topo(object):
         resp = self._http_get(self._get_operational_url() + '/brocade-bsc-tree-path:treepaths')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
-            if data.get('paths') is not None:
-                paths = data.get('paths')
+            if data.get('treepaths') is not None:
+                paths = data.get('treepaths')
                 if paths.get('path') is not None:
                     for path in paths.get('path'):
                         self.append_calculated_flows(srnodes, path.get('calculated-flows'))
