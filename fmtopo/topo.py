@@ -276,6 +276,18 @@ def _get_controller_roles_switch_noviflow(ip, port, user, password):
     child.close()
     return roles
 
+
+def contains_filters(filters=None,value=None):
+    if not value:
+        return False
+    if not filters or len(filters) <= 0:
+        return True
+    for fil in filters:
+        if fil not in value:
+            return False
+    return True
+
+
 class Topo(object):
 
     def __init__(self, props):
@@ -377,6 +389,7 @@ class Topo(object):
             self.controllers_name[self.controllers[0]['name']] = self.controllers[0]
 
         ctrl = self.controllers[0]
+        self.ctrl_protocol = 'http' if not ctrl.get('protocol') else ctrl['protocol']
         self.ctrl_ip = '127.0.0.1' if not ctrl.get('ip') else ctrl['ip']
         self.ctrl_port = '8181' if not ctrl.get('port') else int(ctrl['port'])
         self.ctrl_user = 'admin' if not ctrl.get('user') else ctrl['user']
@@ -686,14 +699,139 @@ class Topo(object):
 
         return False
 
+
+    def print_flow_stats(self,filters=None, node_name=None):
+
+        resp = self._http_get(self._get_operational_openflow())
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            print 'ERROR: no data found while trying to get openflow information'
+            return
+
+        data = json.loads(resp.content)
+        if 'nodes' not in data or 'node' not in data['nodes']:
+            print 'ERROR: no nodes found while trying to get openflow information'
+            return
+
+        for node in data['nodes']['node']:
+            nodeid = node['id']
+            if not self.containsSwitch(nodeid):
+                continue
+
+            if node_name and node['id'] != node_name:
+                continue
+
+            tables = node.get('flow-node-inventory:table')
+            if tables is None:
+                tables = node.get('table')
+
+            if tables is not None:
+                for table in tables:
+                    tableid = table['id']
+                    theflows = table.get('flow')
+                    if theflows is not None:
+                        for flow in theflows:
+                            if not contains_filters(filters,flow['id']):
+                                continue
+
+                            flowid = 'node/{}/table/{}/flow/{}'.format(node['id'],tableid, flow['id'])
+                            stats = flow.get('flow-statistics')
+                            if stats is None:
+                                stats = flow.get('opendaylight-flow-statistics:flow-statistics')
+                            if stats:
+                                print flowid
+                                print json.dumps(stats,indent=2)
+
+
+    def print_group_stats(self,filters=None, node_name=None):
+
+        resp = self._http_get(self._get_operational_openflow())
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            print 'ERROR: no data found while trying to get openflow information'
+            return
+
+        data = json.loads(resp.content)
+        if 'nodes' not in data or 'node' not in data['nodes']:
+            print 'ERROR: no nodes found while trying to get openflow information'
+            return
+
+        for node in data['nodes']['node']:
+
+            nodeid = node['id']
+            if not self.containsSwitch(nodeid):
+                continue
+
+            if node_name and node['id'] != node_name:
+                continue
+
+            thegroups = node.get('flow-node-inventory:group')
+            if thegroups is None:
+                thegroups = node.get('group')
+
+            if thegroups is not None:
+                for group in thegroups:
+
+                    if 'name' not in group and not contains_filters(filters,group['group-id']):
+                        continue
+                    if 'name' in group and not contains_filters(filters,group['name']):
+                        continue
+
+                    groupid = 'node/{}/group/{}'.format(node['id'], group['group-id'])
+                    stats = group.get('group-statistics')
+                    if stats is None:
+                        stats = group.get('opendaylight-group-statistics:group-statistics')
+
+                    if stats:
+                        print groupid
+                        print json.dumps(stats,indent=2)
+
+
+    def print_eline_stats(self, filters=None):
+
+        resp = self._http_get(self._get_config_url() + '/brocade-bsc-eline:elines')
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            print 'ERROR: no data found while trying to get openflow information'
+            return
+
+        data = json.loads(resp.content)
+        if 'elines' not in data or 'eline' not in data['elines'] or data['elines']['eline'] is None:
+            return
+
+        for eline in data['elines']['eline']:
+            if contains_filters(filters,eline['name']):
+                print 'eline: ' + eline['name']
+                resp = self._http_post(self._get_operations_url()+'/brocade-bsc-eline:get-stats','{"input":{"name": "'+eline['name']+'"}}')
+                print json.dumps(json.loads(resp.content),indent=2)
+
+
+    def print_etree_stats(self, filters=None):
+
+        resp = self._http_get(self._get_config_url() + '/brocade-bsc-etree:etrees')
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            print 'ERROR: no data found while trying to get openflow information'
+            return
+
+        data = json.loads(resp.content)
+        if 'etrees' not in data or 'etree' not in data['etrees'] or data['etrees']['etree'] is None:
+            return
+
+        for etree in data['etrees']['etree']:
+            if contains_filters(filters,etree['name']):
+                print 'etree: ' + etree['name']
+                resp = self._http_post(self._get_operations_url()+'/brocade-bsc-etree:get-stats','{"input":{"name": "'+etree['name']+'"}}')
+                print json.dumps(json.loads(resp.content),indent=2)
+
+
     def _get_base_url(self):
-        return 'http://' + self.ctrl_ip + ':' + str(self.ctrl_port) + '/restconf'
+        return self.ctrl_protocol + '://' + self.ctrl_ip + ':' + str(self.ctrl_port) + '/restconf'
 
     def _get_config_url(self):
         return self._get_base_url() + '/config'
 
     def _get_operational_url(self):
         return self._get_base_url() + '/operational'
+
+    def _get_operations_url(self):
+        return self._get_base_url() + '/operations'
 
     def _get_config_openflow(self):
         return self._get_config_url() + '/opendaylight-inventory:nodes'
@@ -718,28 +856,32 @@ class Topo(object):
                             auth=HTTPBasicAuth(self.ctrl_user,
                                                self.ctrl_password),
                             headers=_DEFAULT_HEADERS,
-                            timeout=self.ctrl_timeout)
+                            timeout=self.ctrl_timeout,
+                            verify=False)
 
     def _http_post(self, url, data):
         return requests.post(url,
                              auth=HTTPBasicAuth(self.ctrl_user,
                                                 self.ctrl_password),
                              data=data, headers=_DEFAULT_HEADERS,
-                             timeout=self.ctrl_timeout)
+                             timeout=self.ctrl_timeout,
+                             verify=False)
 
     def _http_put(self, url, data):
         return requests.put(url,
                             auth=HTTPBasicAuth(self.ctrl_user,
                                                self.ctrl_password),
                             data=data, headers=_DEFAULT_HEADERS,
-                            timeout=self.ctrl_timeout)
+                            timeout=self.ctrl_timeout,
+                            verify=False)
 
     def _http_delete(self, url):
         return requests.delete(url,
                                auth=HTTPBasicAuth(self.ctrl_user,
                                                   self.ctrl_password),
                                headers=_DEFAULT_HEADERS,
-                               timeout=self.ctrl_timeout)
+                               timeout=self.ctrl_timeout,
+                               verify=False)
 
     def _get_node_cluster_status(self, openflow_name):
         resp = self._http_get(self._get_operational_url() +

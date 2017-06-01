@@ -13,6 +13,18 @@ Usage:
   fmcheck delete-groups <name> [--topology=FILE]
   fmcheck random-delete-flows [--topology=FILE]
   fmcheck delete-flows <name> [--topology=FILE]
+  fmcheck get-flow-stats-all [--topology=FILE]
+  fmcheck get-flow-stats <filter>... [--topology=FILE]
+  fmcheck get-flow-node-stats-all <node> [--topology=FILE]
+  fmcheck get-flow-node-stats <node> <filter>... [--topology=FILE]
+  fmcheck get-group-stats-all [--topology=FILE]
+  fmcheck get-group-stats <filter>... [--topology=FILE]
+  fmcheck get-group-node-stats-all <node> [--topology=FILE]
+  fmcheck get-group-node-stats <node> <filter>... [--topology=FILE]
+  fmcheck get-eline-stats-all [--topology=FILE]
+  fmcheck get-eline-stats <filter>... [--topology=FILE]
+  fmcheck get-etree-stats-all [--topology=FILE]
+  fmcheck get-etree-stats <filter>... [--topology=FILE]
   fmcheck (-h | --help)
 
 Options:
@@ -91,6 +103,30 @@ class Shell(object):
             result = checker.delete_flows(checker.get_random_switch())
         elif arguments['delete-flows']:
             result = checker.delete_flows(arguments['<name>'])
+        elif arguments['get-flow-stats-all']:
+            result = checker.print_flow_stats()
+        elif arguments['get-flow-stats']:
+            result = checker.print_flow_stats(filters=arguments['<filter>'])
+        elif arguments['get-flow-node-stats-all']:
+            result = checker.print_flow_stats(node_name=arguments['<node>'])
+        elif arguments['get-flow-node-stats']:
+            result = checker.print_flow_stats(filters=arguments['<filter>'], node_name=arguments['<node>'])
+        elif arguments['get-group-stats-all']:
+            result = checker.print_group_stats()
+        elif arguments['get-group-stats']:
+            result = checker.print_group_stats(filters=arguments['<filter>'])
+        elif arguments['get-group-node-stats-all']:
+            result = checker.print_group_stats(node_name=arguments['<node>'])
+        elif arguments['get-group-node-stats']:
+            result = checker.print_group_stats(filters=arguments['<filter>'], node_name=arguments['<node>'])
+        elif arguments['get-eline-stats-all']:
+            result = checker.print_eline_stats()
+        elif arguments['get-eline-stats']:
+            result = checker.print_eline_stats(filters=arguments['<filter>'])
+        elif arguments['get-etree-stats-all']:
+            result = checker.print_etree_stats()
+        elif arguments['get-etree-stats']:
+            result = checker.print_etree_stats(filters=arguments['<filter>'])
 
         if not result:
             sys.exit(1)
