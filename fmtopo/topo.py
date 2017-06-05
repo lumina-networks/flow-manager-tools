@@ -10,6 +10,8 @@ import random
 import time
 from functools import partial
 
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
 calculated_flow_exception = ['table/0/flow/fm-sr-link-discovery']
 
 _DEFAULT_HEADERS = {
@@ -291,6 +293,9 @@ def contains_filters(filters=None,value=None):
 class Topo(object):
 
     def __init__(self, props):
+        # Disable warnings
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
         self.props = props
         self.controllers = []
         self.controllers_name = {}
