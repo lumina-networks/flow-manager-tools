@@ -1,0 +1,98 @@
+controller:
+- ip: 10.61.80.240
+  name: bsc1
+- ip: 10.61.80.241
+  name: bsc2
+- ip: 10.61.80.242
+  name: bsc3
+switch:
+- dpid: '1020001'
+  name: 'RQCR-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.4
+  type: noviflow
+
+- dpid: '2020001'
+  name: 'RNK9-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.36
+  type: noviflow
+
+- dpid: '3020001'
+  name: 'RVWI-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.68
+  type: noviflow
+
+- dpid: '5020001'
+  name: 'RSFL-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.100
+  type: noviflow
+
+- dpid: '7020001'
+  name: 'RWWE-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.132
+  type: noviflow
+
+link:
+- destination: 'RQCR-OR-001'
+  destination_port: 6
+  source: 'RNK9-OR-001'
+  source_port: 6
+
+- destination: 'RNK9-OR-001'
+  destination_port: 6
+  source: 'RQCR-OR-001'
+  source_port: 6
+
+- destination: 'RNK9-OR-001'
+  destination_port: 7
+  source: 'RVWI-OR-001'
+  source_port: 7
+
+- destination: 'RVWI-OR-001'
+  destination_port: 7
+  source: 'RNK9-OR-001'
+  source_port: 7
+
+- destination: 'RNK9-OR-001'
+  destination_port: 8
+  source: 'RWWE-OR-001'
+  source_port: 8
+
+- destination: 'RWWE-OR-001'
+  destination_port: 8
+  source: 'RNK9-OR-001'
+  source_port: 8
+
+- destination: 'RVWI-OR-001'
+  destination_port: 6
+  source: 'RSFL-OR-001'
+  source_port: 6
+
+- destination: 'RSFL-OR-001'
+  destination_port: 6
+  source: 'RVWI-OR-001'
+  source_port: 6
+
+- destination: 'RSFL-OR-001'
+  destination_port: 7
+  source: 'RWWE-OR-001'
+  source_port: 7
+
+- destination: 'RWWE-OR-001'
+  destination_port: 7
+  source: 'RSFL-OR-001'
+  source_port: 7
