@@ -1047,8 +1047,8 @@ class Topo(object):
             data = json.loads(resp.content)
             if data.get('treepaths') is not None:
                 paths = data.get('treepaths')
-                if paths.get('path') is not None:
-                    for path in paths.get('path'):
+                if paths.get('treepath') is not None:
+                    for path in paths.get('treepath'):
                         self.append_calculated_flows(srnodes, path.get('calculated-flows'))
                         self.append_calculated_groups(srnodes, path.get('calculated-groups'))
 
