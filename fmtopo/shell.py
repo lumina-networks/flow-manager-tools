@@ -52,11 +52,18 @@ class Shell(object):
         file = 'fm-topo.yml'
         if arguments['--topology']:
             file = arguments['--topology']
+        elif not (os.path.isfile(file)):
+            file = 'mn-topo.yml'
 
         props = None
         if (os.path.isfile(file)):
             with open(file, 'r') as f:
                 props = yaml.load(f)
+        if props is None:
+            file = 'mn-topo.yml'
+            if (os.path.isfile(file)):
+                with open(file, 'r') as f:
+                    props = yaml.load(f)
 
         if props is None:
             print "ERROR: yml topology file not found"
