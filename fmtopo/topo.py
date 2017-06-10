@@ -45,6 +45,10 @@ def _reboot_switch_ovs(name):
     time.sleep(5)
     output =  subprocess.check_output("sudo ovs-vsctl set-controller {} {}".format(name,controllers), shell=True)
 
+def _execute_commands_locally(cmds):
+    for cmd in cmds:
+        output = subprocess.check_output(cmd, shell=True)
+    return True
 
 def _delete_flows_ovs(name):
     output =  subprocess.check_output(
@@ -144,6 +148,22 @@ def _reboot_switch_noviflow(ip, port, user, password):
     child.sendline('none')
     child.expect(pexpect.EOF)
     child.close()
+    return True
+
+def _execute_commands_in_switch_noviflow(ip, port, user, password, cmds):
+    child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
+    if  not child or not PROMPT:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
+        return False
+    for cmd in cmds:
+        print "sending cmd {} to switch {}:{}".format(cmd,ip,port)
+        child.sendline(cmd)
+        i = child.expect([pexpect.TIMEOUT, PROMPT])
+        if i == 0 or not child.before:
+            print('ERROR: cannot send command {}{ to switch for {}@{} port ({})'.format(cmd, user, ip, port))
+            _close_noviflow_connection(child)
+            return False
+    _close_noviflow_connection(child)
     return True
 
 def _delete_flows_noviflow(ip, port, user, password):
@@ -336,6 +356,7 @@ class Topo(object):
                 switch['port'] = 22 if not switch.get('port') else switch['port']
                 switch['oname'] = "openflow:" + str(int(switch['dpid'], 16))
 
+
         if props.get('link'):
             ports = {}
             for link in props['link']:
@@ -454,6 +475,28 @@ class Topo(object):
             return _reboot_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
         else:
             return _reboot_switch_ovs(name)
+
+    def break_gw_switch(self, name, seconds=30):
+        switch = self.switches.get(name)
+        if not switch:
+            print "ERROR: {} switch does not exists".format(name)
+            return False
+        seconds = int(seconds)
+        seconds = 0 if not seconds or seconds <=0 else seconds
+        print "INFO: trying to break connectivity to the switch {} switch".format(name)
+        if not switch['disable_gw'] or len(switch['disable_gw']) <=0 or not switch['enable_gw'] or len(switch['enable_gw']) <=0:
+            print "ERROR: enable or disable gw commands not found in switch {} switch".format(name)
+            return False
+        if switch['type'] == 'noviflow':
+            if not _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],switch['disable_gw']):
+                return False
+            time.sleep(seconds)
+            return _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],switch['enable_gw'])
+        else:
+            if not _execute_commands_locally(switch['disable_gw']):
+                return False
+            time.sleep(seconds)
+            return _execute_commands_locally(switch['enable_gw'])
 
     def delete_groups(self, name):
         switch = self.switches.get(name)
