@@ -558,7 +558,7 @@ class Topo(object):
             roles = self.get_controller_role(name)
             owner = self._get_node_cluster_owner(oname)
             if owner and roles and 'Master' not in roles:
-                print "ERROR: {} node does not contain master in the switch".format(oname)
+                print "ERROR: {} node does not contain master in the switch. Current roles {}".format(oname,roles)
                 found_error = True
         if not found_error:
             print "OK: {} nodes roles has been detected properly.".format(len(self.switches_openflow_names))
