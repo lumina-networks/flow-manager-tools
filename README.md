@@ -1,6 +1,6 @@
 # Flow Manager Tools
 
-This tools provides a mechanism to quickly test flow manager with OVS and/or Noviflow switches.
+This tools provides a mechanism to quickly test flow manager with OVS and/or Noviflow switches and get eline/etree/flows/groups stats and summary information.
 
 - [Install](#install)
 - [Usage](#usage)
@@ -39,6 +39,8 @@ Usage:
   fmcheck reboot-controller <name> [--topology=FILE]
   fmcheck random-reboot-switch [--topology=FILE]
   fmcheck reboot-switch <name> [--topology=FILE]
+  fmcheck random-break-gw-switch <seconds> [--topology=FILE]
+  fmcheck break-gw-switch <name> <seconds> [--topology=FILE]
   fmcheck random-delete-groups [--topology=FILE]
   fmcheck delete-groups <name> [--topology=FILE]
   fmcheck random-delete-flows [--topology=FILE]
@@ -53,8 +55,12 @@ Usage:
   fmcheck get-group-node-stats <node> <filter>... [--topology=FILE]
   fmcheck get-eline-stats-all [--topology=FILE]
   fmcheck get-eline-stats <filter>... [--topology=FILE]
+  fmcheck get-eline-summary-all [--topology=FILE]
+  fmcheck get-eline-summary <filter>... [--topology=FILE]
   fmcheck get-etree-stats-all [--topology=FILE]
   fmcheck get-etree-stats <filter>... [--topology=FILE]
+  fmcheck get-etree-summary-all [--topology=FILE]
+  fmcheck get-etree-summary <filter>... [--topology=FILE]
   fmcheck (-h | --help)
 
 Options:
@@ -65,5 +71,3 @@ Options:
   -a --check-stats  Check flow/groups states with previous check
   --version     Show version.
 ```
-
-### Flow Manager Tester
