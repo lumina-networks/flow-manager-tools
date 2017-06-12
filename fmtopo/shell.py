@@ -25,8 +25,12 @@ Usage:
   fmcheck get-group-node-stats <node> <filter>... [--topology=FILE]
   fmcheck get-eline-stats-all [--topology=FILE]
   fmcheck get-eline-stats <filter>... [--topology=FILE]
+  fmcheck get-eline-summary-all [--topology=FILE]
+  fmcheck get-eline-summary <filter>... [--topology=FILE]
   fmcheck get-etree-stats-all [--topology=FILE]
   fmcheck get-etree-stats <filter>... [--topology=FILE]
+  fmcheck get-etree-summary-all [--topology=FILE]
+  fmcheck get-etree-summary <filter>... [--topology=FILE]
   fmcheck (-h | --help)
 
 Options:
@@ -136,10 +140,18 @@ class Shell(object):
             result = checker.print_eline_stats()
         elif arguments['get-eline-stats']:
             result = checker.print_eline_stats(filters=arguments['<filter>'])
+        elif arguments['get-eline-summary-all']:
+            result = checker.print_eline_summary()
+        elif arguments['get-eline-summary']:
+            result = checker.print_eline_summary(filters=arguments['<filter>'])
         elif arguments['get-etree-stats-all']:
             result = checker.print_etree_stats()
         elif arguments['get-etree-stats']:
             result = checker.print_etree_stats(filters=arguments['<filter>'])
+        elif arguments['get-etree-summary-all']:
+            result = checker.print_etree_summary()
+        elif arguments['get-etree-summary']:
+            result = checker.print_etree_summary(filters=arguments['<filter>'])
 
         if not result:
             sys.exit(1)
