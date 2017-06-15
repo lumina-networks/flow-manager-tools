@@ -420,7 +420,7 @@ class Topo(object):
         self.ctrl_port = '8181' if not ctrl.get('port') else int(ctrl['port'])
         self.ctrl_user = 'admin' if not ctrl.get('user') else ctrl['user']
         self.ctrl_password = 'admin' if not ctrl.get('password') else ctrl['password']
-        self.ctrl_timeout = 60000 if not ctrl.get('timeout') else int(ctrl['timeout'])
+        self.ctrl_timeout = 60 if not ctrl.get('timeout') else int(ctrl['timeout'])
         if props.get('controller_vip'):
             self.ctrl_ip = props.get('controller_vip')
 
