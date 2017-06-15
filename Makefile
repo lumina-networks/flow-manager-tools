@@ -4,7 +4,7 @@ help:
 	@echo "  package     creates a python package for distribution"
 
 clean:
-	rm -Rf mininet-topology.egg-info && \
+	rm -Rf flow-manager-tools.egg-info && \
 	rm -Rf build *.egg-info dist && \
 	rm -Rf ChangeLog && \
 	rm -Rf AUTHORS
