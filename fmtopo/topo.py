@@ -571,14 +571,14 @@ class Topo(object):
         for name in self.switches_openflow_names:
             oname = self.switches_openflow_names[name]
             if running and oname not in nodes:
-                print "ERROR: {} node not found".format(oname)
+                print "ERROR: topology({}) {} node not found".format(topology_name, oname)
                 found_error = True
             elif not running and oname in nodes:
-                print "ERROR: {}  node is still up when network is not running".format(oname)
+                print "ERROR: topology({}) {}  node is still up when network is not running".format(topology_name, oname)
                 found_error = True
 
         if not found_error:
-            print "OK: {} nodes has been detected properly.".format(len(self.switches_openflow_names))
+            print "OK: topology({})  {} nodes has been detected properly.".format(topology_name, len(self.switches_openflow_names))
             return True
         return False
 
@@ -592,28 +592,28 @@ class Topo(object):
 
             all_ports.append(openflowport)
             if running and openflowport not in links:
-                print "ERROR: {} port link not found to {}".format(openflowport,dstPort)
+                print "ERROR: topology({}) {} port link not found to {}".format(topology_name, openflowport,dstPort)
                 found_error = True
             elif running and links[openflowport].get('destination').get('dest-node') != dstSwitch:
-                print "ERROR: unexpected destination switch for {} port and link {}. Expected {}".format(openflowport,links[openflowport], dstSwitch)
+                print "ERROR: topology({}) unexpected destination switch for {} port and link {}. Expected {}".format(topology_name, openflowport,links[openflowport], dstSwitch)
                 found_error = True
             elif running and links[openflowport].get('destination').get('dest-tp') != dstPort:
-                print "ERROR: unexpected destination port for {} port and link {}. Expected {}".format(openflowport,links[openflowport], dstPort)
+                print "ERROR: topology({}) unexpected destination port for {} port and link {}. Expected {}".format(topology_name, openflowport,links[openflowport], dstPort)
                 found_error = True
             elif not running and openflowport in links:
-                print "ERROR: {} port is still up when network is not running".format(openflowport)
+                print "ERROR: topology({}) {} port is still up when network is not running".format(topology_name, openflowport)
                 found_error = True
 
         if len(all_ports) != len(links):
-            print "WARNING: {} links expected and {} has been detected by the controller.".format(len(all_ports),len(links))
+            print "WARNING: topology({}) {} links expected and {} has been detected by the controller.".format(topology_name, len(all_ports),len(links))
 
         for link in links:
             if link not in all_ports:
-                print "WARNING: {} link exists but not defined in the topology.".format(link)
+                print "WARNING: topology({}) {} link exists but not defined in the topology.".format(topology_name, link)
 
 
         if not found_error:
-            print "OK: {} links has been detected properly.".format(len(self.portdestinationswitch))
+            print "OK: topology({}) {} links has been detected properly.".format(topology_name, len(self.portdestinationswitch))
             return True
 
         return False
