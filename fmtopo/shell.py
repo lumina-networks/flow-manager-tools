@@ -1,8 +1,8 @@
 """Flow Manager Testing Tools
 
 Usage:
-  fmcheck links [-s] [--topology=FILE] [--controller=IP]...
-  fmcheck nodes [-s] [--topology=FILE] [--controller=IP]...
+  fmcheck links [-s] [-r] [--topology=FILE] [--controller=IP]...
+  fmcheck nodes [-s] [-r] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-a] [--topology=FILE] [--controller=IP]...
   fmcheck roles [--topology=FILE] [--controller=IP]...
   fmcheck random-reboot-controller [--topology=FILE]
@@ -38,6 +38,7 @@ Options:
   -t, --topology=FILE   Topolofy file name [default: fm-topo.yml].
   -c, --controller=IP   Controller IP address
   -s --stopped      If Mininet is not running.
+  -r --segementrouting  Use segment routing topology.
   -a --check-stats  Check flow/groups states with previous check
   --version     Show version.
 
@@ -87,17 +88,29 @@ class Shell(object):
 
         checker = fmtopo.topo.Topo(props)
         if arguments['links'] and arguments['--stopped']:
-            result = checker.check_links(False)
+            if arguments['--segementrouting']:
+                result = checker.check_links(False,'flow:1:sr')
+            else:
+                result = checker.check_links(False)
         elif arguments['links']:
-            result = checker.check_links()
+            if arguments['--segementrouting']:
+                result = checker.check_links(True,'flow:1:sr')
+            else:
+                result = checker.check_links()
         elif arguments['flows'] and arguments['--check-stats']:
             result = checker.check_flows(check_stats=True)
         elif arguments['flows']:
             result = checker.check_flows()
         elif arguments['nodes'] and arguments['--stopped']:
-            result = checker.check_nodes(False)
+            if arguments['--segementrouting']:
+                result = checker.check_nodes(False,'flow:1:sr')
+            else:
+                result = checker.check_nodes(False)
         elif arguments['nodes']:
-            result = checker.check_nodes()
+            if arguments['--segementrouting']:
+                result = checker.check_nodes(True,'flow:1:sr')
+            else:
+                result = checker.check_nodes()
         elif arguments['roles']:
             result = checker.check_roles()
         elif arguments['random-reboot-controller']:
