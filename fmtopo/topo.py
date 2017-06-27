@@ -627,6 +627,25 @@ class Topo(object):
 
         for nodeid, node in config_nodes.iteritems():
 
+            for flowid, flow in node['flows'].iteritems():
+                if 'match' not in flow:
+                    print "WARNING: flow {} does not have match".format(flowid)
+                    continue
+                for flowid2, flow2 in node['flows'].iteritems():
+                    if 'match' not in flow2:
+                        continue
+                    if flowid == flowid2:
+                        continue
+                    if compare_dictionaries(flow['match'],flow2['match']):
+                        if 'priority' in flow:
+                            if 'priority' not in flow2 or flow['priority'] != flow2['priority']:
+                                continue
+                        if 'priority' in flow2:
+                            if 'priority' not in flow or flow['priority'] != flow2['priority']:
+                                continue
+                        print "ERROR: flow id {} and {} contains the same match. Check elines/etree service with the same match criteria. {} {}".format(flowid, flowid2,flow['match'],flow2['match'])
+                        error_found = True
+
             for bscid, cookie in node['bscids'].iteritems():
                 flowid = node['cookies'][cookie]
                 version = _get_flow_version(cookie)
@@ -1273,3 +1292,27 @@ def exists_bridge(name):
         return True
     except subprocess.CalledProcessError as grepexc:
         return False
+
+def compare_dictionaries(dict1, dict2):
+    if dict1 is None:
+        return dict2 is None
+    if dict2 is None:
+        return False
+    if type(dict1) != type(dict2):
+        return False
+    if type(dict1) is not dict and type(dict1) is not list:
+        return dict1 == dict2
+    if len(dict1) != len(dict2):
+        return False
+    if type(dict1) is list:
+        for el in dict1:
+            if el not in dict2:
+                return False
+        return True
+    # is dict
+    for key in dict1:
+        if key not in dict2:
+            return False
+        if not compare_dictionaries(dict1[key], dict2[key]):
+            return False
+    return True
