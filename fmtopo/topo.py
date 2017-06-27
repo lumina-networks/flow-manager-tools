@@ -636,14 +636,10 @@ class Topo(object):
                         continue
                     if flowid == flowid2:
                         continue
-                    if compare_dictionaries(flow['match'],flow2['match']):
-                        if 'priority' in flow:
-                            if 'priority' not in flow2 or flow['priority'] != flow2['priority']:
-                                continue
-                        if 'priority' in flow2:
-                            if 'priority' not in flow or flow['priority'] != flow2['priority']:
-                                continue
-                        print "ERROR: flow id {} and {} contains the same match. Check elines/etree service with the same match criteria. {} {}".format(flowid, flowid2,flow['match'],flow2['match'])
+                    if flow.get('table') != flow2.get('table'):
+                        continue
+                    if compare_dictionaries(flow['match'],flow2['match']) and flow.get('priority') == flow2.get('priority'):
+                        print "ERROR: DUPLICATED MATCH CRITERIA flow id {} and {} contains the same match. Check elines/etree service with the same match criteria. {} {}".format(flowid, flowid2,flow['match'],flow2['match'])
                         error_found = True
 
             for bscid, cookie in node['bscids'].iteritems():
