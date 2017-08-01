@@ -1,22 +1,23 @@
 # Flow Manager Tools
 
-This tools provides a mechanism to quickly test flow manager with OVS and/or Noviflow switches and get eline/etree/flows/groups stats and summary information.
+This tool provides a mechanism to test and validate Flow Manager application with OVS and Noviflow switches. It also includes getting eline/etree/flows/groups stats and summary information and other intrusive disruptive actions such as rebooting switches or deleting flows/groups to validate system recovery.
 
 - [Install](#install)
 - [Usage](#usage)
-  - [Flow Manager Tester](flow-manager-tester)
 
 ## Install
 
 ### From source
 
 ```
-git clone <this-project-git-url>
+git clone https://github.com/lumina-networks/flow-manager-tools
 cd flow-manager-tools
 sudo python setup.py install
 ```
 
 ### Dependencies
+
+Following dependencies are installed with the installation.
 
 * **pexpect**
 * **pyyaml**
