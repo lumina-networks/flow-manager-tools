@@ -1,12 +1,34 @@
 controller:
 - ip: 10.61.80.240
   name: bsc1
+  protocol: https
+  port: 8443
 - ip: 10.61.80.241
   name: bsc2
+  protocol: https
+  port: 8443
 - ip: 10.61.80.242
   name: bsc3
+  protocol: https
+  port: 8443
 switch:
-- dpid: '1020001'
+- dpid: '0x00000000000fde81'
+  name: 'RQTV-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.193.49.20
+  type: noviflow
+
+- dpid: '0x00000000000fb771'
+  name: 'RQGV-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.193.49.4
+  type: noviflow
+
+- dpid: '0x00000000000f9061'
   name: 'RQCR-OR-001'
   protocols: OpenFlow13
   user: superuser
@@ -14,7 +36,15 @@ switch:
   ip: 10.192.29.4
   type: noviflow
 
-- dpid: '2020001'
+- dpid: '0x00000000000f6951'
+  name: 'RQWX-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.20
+  type: noviflow
+
+- dpid: '0x00000000001ed2a1'
   name: 'RNK9-OR-001'
   protocols: OpenFlow13
   user: superuser
@@ -22,7 +52,39 @@ switch:
   ip: 10.192.29.36
   type: noviflow
 
-- dpid: '3020001'
+- dpid: '0x00000000001eab91'
+  name: 'RNC6-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.52
+  type: noviflow
+
+- dpid: '0x00000000001Fe411'
+  name: 'RNSN-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.212
+  type: noviflow
+
+- dpid: '0x00000000001Fe412'
+  name: 'RNSN-OR-002'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.213
+  type: noviflow
+
+- dpid: '0x00000000001ef9b1'
+  name: 'RNHA-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.196
+  type: noviflow
+
+- dpid: '0x00000000002e14e1'
   name: 'RVWI-OR-001'
   protocols: OpenFlow13
   user: superuser
@@ -30,7 +92,39 @@ switch:
   ip: 10.192.29.68
   type: noviflow
 
-- dpid: '5020001'
+- dpid: '0x00000000002dedd1'
+  name: 'RVE3-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.84
+  type: noviflow
+
+- dpid: '0x00000000002e3bf1'
+  name: 'RVL2-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.193.49.68
+  type: noviflow
+
+- dpid: '0x00000000002f2651'
+  name: 'RVCZ-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.180
+  type: noviflow
+
+- dpid: '0x00000000002f2652'
+  name: 'RVCZ-OR-002'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.181
+  type: noviflow
+
+- dpid: '0x00000000004c9961'
   name: 'RSFL-OR-001'
   protocols: OpenFlow13
   user: superuser
@@ -38,7 +132,15 @@ switch:
   ip: 10.192.29.100
   type: noviflow
 
-- dpid: '7020001'
+- dpid: '0x00000000004c7251'
+  name: 'RSWU-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.116
+  type: noviflow
+
+- dpid: '0x00000000006b1de1'
   name: 'RWWE-OR-001'
   protocols: OpenFlow13
   user: superuser
@@ -46,10 +148,137 @@ switch:
   ip: 10.192.29.132
   type: noviflow
 
+- dpid: '0x00000000006af6d1'
+  name: 'RWP3-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.192.29.148
+  type: noviflow
+
+- dpid: '0x00000000003d3011'
+  name: 'RBTY-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.193.49.100
+  type: noviflow
+
+- dpid: '0x00000000003d5721'
+  name: 'RT3D-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.193.49.84
+  type: noviflow
+
+- dpid: '0x00000000007a3911'
+  name: 'RACI-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.193.49.52
+  type: noviflow
+
+- dpid: '0x00000000007a6021'
+  name: 'RADK-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.193.49.36
+  type: noviflow
+
+- dpid: '0x00000000005bb491'
+  name: 'RDDA-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.193.49.132
+  type: noviflow
+
+- dpid: '0x00000000005bdba1'
+  name: 'RDCU-OR-001'
+  protocols: OpenFlow13
+  user: superuser
+  password: Telstra123
+  ip: 10.193.49.116
+  type: noviflow
+
+
 link:
+- destination: 'RQTV-OR-001'
+  destination_port: 5
+  source: 'RQGV-OR-001'
+  source_port: 5
+
+- destination: 'RQGV-OR-001'
+  destination_port: 5
+  source: 'RQTV-OR-001'
+  source_port: 5
+
+- destination: 'RQTV-OR-001'
+  destination_port: 7
+  source: 'RQWX-OR-001'
+  source_port: 7
+
+- destination: 'RQWX-OR-001'
+  destination_port: 7
+  source: 'RQTV-OR-001'
+  source_port: 7
+
+- destination: 'RQGV-OR-001'
+  destination_port: 7
+  source: 'RQCR-OR-001'
+  source_port: 7
+
+- destination: 'RQCR-OR-001'
+  destination_port: 7
+  source: 'RQGV-OR-001'
+  source_port: 7
+
+- destination: 'RQWX-OR-001'
+  destination_port: 5
+  source: 'RQCR-OR-001'
+  source_port: 5
+
+- destination: 'RQCR-OR-001'
+  destination_port: 5
+  source: 'RQWX-OR-001'
+  source_port: 5
+
 - destination: 'RQCR-OR-001'
   destination_port: 6
   source: 'RNK9-OR-001'
+  source_port: 6
+
+- destination: 'rdcu-or-001'
+  destination_port: 5
+  source: 'rdda-or-001'
+  source_port: 5
+
+- destination: 'rdda-or-001'
+  destination_port: 5
+  source: 'rdcu-or-001'
+  source_port: 5
+
+- destination: 'rdcu-or-001'
+  destination_port: 6
+  source: 'rswu-or-001'
+  source_port: 9
+
+- destination: 'rswu-or-001'
+  destination_port: 9
+  source: 'rdcu-or-001'
+  source_port: 6
+
+- destination: 'rdda-or-001'
+  destination_port: 6
+  source: 'rwp3-or-001'
+  source_port: 9
+
+- destination: 'rwp3-or-001'
+  destination_port: 9
+  source: 'rdda-or-001'
   source_port: 6
 
 - destination: 'RNK9-OR-001'
@@ -57,6 +286,56 @@ link:
   source: 'RQCR-OR-001'
   source_port: 6
 
+- destination: 'RNC6-OR-001'
+  destination_port: 6
+  source: 'RQWX-OR-001'
+  source_port: 6
+
+- destination: 'RQWX-OR-001'
+  destination_port: 6
+  source: 'RNC6-OR-001'
+  source_port: 6
+
+- destination: 'RNSN-OR-001'
+  destination_port: 6
+  source: 'RNC6-OR-001'
+  source_port: 10
+
+- destination: 'RNC6-OR-001'
+  destination_port: 10
+  source: 'RNSN-OR-001'
+  source_port: 6
+
+- destination: 'RNSN-OR-002'
+  destination_port: 6
+  source: 'RNK9-OR-001'
+  source_port: 10
+
+- destination: 'RNK9-OR-001'
+  destination_port: 10
+  source: 'RNSN-OR-002'
+  source_port: 6
+
+- destination: 'RNHA-OR-001'
+  destination_port: 6
+  source: 'RNK9-OR-001'
+  source_port: 11
+
+- destination: 'RNK9-OR-001'
+  destination_port: 11
+  source: 'RNHA-OR-001'
+  source_port: 6
+
+- destination: 'RNHA-OR-001'
+  destination_port: 5
+  source: 'RNC6-OR-001'
+  source_port: 11
+
+- destination: 'RNC6-OR-001'
+  destination_port: 11
+  source: 'RNHA-OR-001'
+  source_port: 5
+
 - destination: 'RNK9-OR-001'
   destination_port: 7
   source: 'RVWI-OR-001'
@@ -77,6 +356,136 @@ link:
   source: 'RNK9-OR-001'
   source_port: 8
 
+- destination: 'RWWE-OR-001'
+  destination_port: 5
+  source: 'RWP3-OR-001'
+  source_port: 5
+
+- destination: 'RWP3-OR-001'
+  destination_port: 5
+  source: 'RWWE-OR-001'
+  source_port: 5
+
+- destination: 'RWP3-OR-001'
+  destination_port: 8
+  source: 'RNC6-OR-001'
+  source_port: 8
+
+- destination: 'RNC6-OR-001'
+  destination_port: 8
+  source: 'RWP3-OR-001'
+  source_port: 8
+
+- destination: 'RVWI-OR-001'
+  destination_port: 5
+  source: 'RVE3-OR-001'
+  source_port: 5
+
+- destination: 'RVE3-OR-001'
+  destination_port: 5
+  source: 'RVWI-OR-001'
+  source_port: 5
+
+- destination: 'RVCZ-OR-002'
+  destination_port: 6
+  source: 'RVCZ-OR-001'
+  source_port: 6
+
+- destination: 'RVCZ-OR-001'
+  destination_port: 6
+  source: 'RVCZ-OR-002'
+  source_port: 6
+
+- destination: 'RVCZ-OR-001'
+  destination_port: 5
+  source: 'RVE3-OR-001'
+  source_port: 10
+
+- destination: 'RVE3-OR-001'
+  destination_port: 10
+  source: 'RVCZ-OR-001'
+  source_port: 5
+
+- destination: 'RVCZ-OR-002'
+  destination_port: 5
+  source: 'RVWI-OR-001'
+  source_port: 10
+
+- destination: 'RVWI-OR-001'
+  destination_port: 10
+  source: 'RVCZ-OR-002'
+  source_port: 5
+
+- destination: 'RVL2-OR-001'
+  destination_port: 5
+  source: 'RVE3-OR-001'
+  source_port: 11
+
+- destination: 'RVE3-OR-001'
+  destination_port: 11
+  source: 'RVL2-OR-001'
+  source_port: 5
+
+- destination: 'RVL2-OR-001'
+  destination_port: 6
+  source: 'RVWI-OR-001'
+  source_port: 11
+
+- destination: 'RVWI-OR-001'
+  destination_port: 11
+  source: 'RVL2-OR-001'
+  source_port: 6
+
+- destination: 'RACI-OR-001'
+  destination_port: 5
+  source: 'RADK-OR-001'
+  source_port: 5
+
+- destination: 'RADK-OR-001'
+  destination_port: 5
+  source: 'RACI-OR-001'
+  source_port: 5
+
+- destination: 'RACI-OR-001'
+  destination_port: 6
+  source: 'RNC6-OR-001'
+  source_port: 9
+
+- destination: 'RNC6-OR-001'
+  destination_port: 9
+  source: 'RACI-OR-001'
+  source_port: 6
+
+- destination: 'RADK-OR-001'
+  destination_port: 6
+  source: 'RNK9-OR-001'
+  source_port: 9
+
+- destination: 'RNK9-OR-001'
+  destination_port: 9
+  source: 'RADK-OR-001'
+  source_port: 6
+
+- destination: 'RNK9-OR-001'
+  destination_port: 5
+  source: 'RNC6-OR-001'
+  source_port: 5
+
+- destination: 'RNC6-OR-001'
+  destination_port: 5
+  source: 'RNK9-OR-001'
+  source_port: 5
+
+- destination: 'RNSN-OR-001'
+  destination_port: 5
+  source: 'RNSN-OR-002'
+  source_port: 5
+
+- destination: 'RNSN-OR-002'
+  destination_port: 5
+  source: 'RNSN-OR-001'
+  source_port: 5
+
 - destination: 'RVWI-OR-001'
   destination_port: 6
   source: 'RSFL-OR-001'
@@ -88,6 +497,26 @@ link:
   source_port: 6
 
 - destination: 'RSFL-OR-001'
+  destination_port: 5
+  source: 'RSWU-OR-001'
+  source_port: 5
+
+- destination: 'RSWU-OR-001'
+  destination_port: 5
+  source: 'RSFL-OR-001'
+  source_port: 5
+
+- destination: 'RVE3-OR-001'
+  destination_port: 6
+  source: 'RSWU-OR-001'
+  source_port: 6
+
+- destination: 'RSWU-OR-001'
+  destination_port: 6
+  source: 'RVE3-OR-001'
+  source_port: 6
+
+- destination: 'RSFL-OR-001'
   destination_port: 7
   source: 'RWWE-OR-001'
   source_port: 7
@@ -96,3 +525,36 @@ link:
   destination_port: 7
   source: 'RSFL-OR-001'
   source_port: 7
+
+- destination: 'RT3D-OR-001'
+  destination_port: 5
+  source: 'RBTY-OR-001'
+  source_port: 5
+
+- destination: 'RBTY-OR-001'
+  destination_port: 5
+  source: 'RT3D-OR-001'
+  source_port: 5
+
+- destination: 'RT3D-OR-001'
+  destination_port: 6
+  source: 'RVWI-OR-001'
+  source_port: 8
+
+- destination: 'RVWI-OR-001'
+  destination_port: 8
+  source: 'RT3D-OR-001'
+  source_port: 6
+
+- destination: 'RBTY-OR-001'
+  destination_port: 6
+  source: 'RVE3-OR-001'
+  source_port: 8
+
+- destination: 'RVE3-OR-001'
+  destination_port: 8
+  source: 'RBTY-OR-001'
+  source_port: 6
+
+
+# Some comment
