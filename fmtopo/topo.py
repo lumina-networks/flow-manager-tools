@@ -127,6 +127,28 @@ def _get_noviflow_connection_prompt(ip, port, user, password):
     match = hostnameIdRegex.findall(child.before)
     PROMPT = '{}#'.format(match[0]) if match else None
 
+    child.sendline('show config page')
+    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    if i == 0 or not child.before:
+        print('ERROR: cannot prompt after getting page configuration command for {}@{} port ({})'.format(user, ip, port))
+        child.sendline('exit')
+        child.expect(pexpect.EOF)
+        child.close()
+        return None, None
+
+    pageRegex = re.compile(r'(off)', re.IGNORECASE)
+    pageConfig = pageRegex.findall(child.before)
+    if not pageConfig:
+        print('WARNING: page is not disabled and commands with long output might not work. Executing "set config page off" for {}@{} port ({})'.format(user, ip, port))
+        child.sendline('set config page off')
+        i = child.expect([pexpect.TIMEOUT, PROMPT])
+        if i == 0 or not child.before:
+            print('ERROR: cannot prompt after getting page configuration command for {}@{} port ({})'.format(user, ip, port))
+            child.sendline('exit')
+            child.expect(pexpect.EOF)
+            child.close()
+            return None, None
+
     return child, PROMPT
 
 def _close_noviflow_connection(child):
@@ -198,7 +220,7 @@ def _delete_groups_noviflow(ip, port, user, password):
 
 def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None):
     child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
-    if  not child or not PROMPT:
+    if not child or not PROMPT:
         print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
         return False
 
