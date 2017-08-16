@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+from pprint import pprint
+from prettytable import PrettyTable
+
+import argparse
+import requests
+import yaml
+
+# Suppress SSL warnings
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+def main():
+    args = get_args()
+    switches = get_switch_names(args.filename)
+    etrees = run_query_etrees()
+    treepaths = run_query_treepaths()
+    if args.raw:
+        print_raw(etrees)
+        print_raw(treepaths)
+    if not args.no_table:
+        print_table(etrees, treepaths, switches)
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--raw', dest='raw', action='store_const', const=True, default=False)
+    parser.add_argument('--no-table', dest='no_table', action='store_const', const=True, default=False)
+    parser.add_argument('--topology', dest='filename', default='prod-topo.yml')
+    args = parser.parse_args()
+    return args
+
+def get_switch_names(filename):
+    with open(filename, 'r') as infile:
+        data = yaml.load(infile)
+        return data['switch']
+
+def run_query_etrees():
+    url = 'https://10.61.80.243:8443/restconf/operational/brocade-bsc-etree:etrees'
+    headers = {'authorization': 'Basic YWRtaW46YWRtaW4='}
+    response = requests.request('GET', url, headers=headers, verify=False)
+    return response.json()['etrees']['etree']
+
+def run_query_treepaths():
+    url = 'https://10.61.80.243:8443/restconf/operational/brocade-bsc-tree-path:treepaths'
+    headers = {'authorization': 'Basic YWRtaW46YWRtaW4='}
+    response = requests.request('GET', url, headers=headers, verify=False)
+    return response.json()['treepaths']['treepath']
+
+def print_raw(result):
+    pprint(result)
+
+def print_table(etrees, treepaths, switches):
+    ptable = PrettyTable()
+    ptable.field_names = ['E-Tree', 'Tree Up', 'Treepath', 'Path Up', 'Root Switch', 'Root Port', 'Service-Label', 'Leaf']
+    ptable.align['Treepath'] = 'l'
+
+    for etree in etrees:
+       treepath = get_treepath(treepaths, etree['treepath-name'])
+
+       data = []
+       data.append(etree['name'])
+       data.append(etree['state']['successful'])
+       data.append(etree['treepath-name'])
+       data.append(treepath['state']['successful'])
+       data.append(get_switch_name(switches, treepath['root']['node']))
+       data.append(etree['root']['matches'][0]['match']['in-port'])
+
+       if 'brocade-bsc-etree-sr:mpls' in etree['root']:
+           data.append(etree['root']['brocade-bsc-etree-sr:mpls']['service-label'])
+       else:
+           data.append('n/a')
+
+       leaves = []
+       for leaf in etree['leaves']['leaf']:
+           for action in leaf['action']:
+               if 'output-action' in action:
+                   leaves.append(get_switch_name(switches, leaf['node']) + ' port ' + action['output-action']['output-node-connector'])
+
+       outports = ''
+       count = 1
+       for leaf in leaves:
+           if len(outports) > 0:
+               outports += '\n'
+           outports += str(count) + ': ' + leaf
+           count += 1
+       data.append(outports)
+
+       ptable.add_row(data)
+
+    print ptable
+
+def get_treepath(treepaths, name):
+    for treepath in treepaths:
+        if treepath['name'] == name:
+            return treepath
+
+def get_switch_name(switches, nodename):
+    dpid = nodename[9:]
+    for switch in switches:
+        if int(switch['dpid'], 16) == int(dpid):
+            return switch['name']
+    return dpid
+
+if __name__ == '__main__':
+    main()
+
