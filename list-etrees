@@ -88,7 +88,7 @@ def print_table(etrees, treepaths, switches):
 
        ptable.add_row(data)
 
-    print ptable
+    print ptable.get_string(sortby=('E-Tree'))
 
 def get_treepath(treepaths, name):
     for treepath in treepaths:
