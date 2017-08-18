@@ -72,10 +72,11 @@ def print_table(etrees, treepaths, switches):
            data.append('n/a')
 
        leaves = []
-       for leaf in etree['leaves']['leaf']:
-           for action in leaf['action']:
-               if 'output-action' in action:
-                   leaves.append(get_switch_name(switches, leaf['node']) + ' port ' + action['output-action']['output-node-connector'])
+       if 'leaf' in etree['leaves']:
+           for leaf in etree['leaves']['leaf']:
+               for action in leaf['action']:
+                   if 'output-action' in action:
+                       leaves.append(get_switch_name(switches, leaf['node']) + ' port ' + action['output-action']['output-node-connector'])
 
        outports = ''
        count = 1
