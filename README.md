@@ -62,6 +62,8 @@ Usage:
   fmcheck get-etree-stats <filter>... [--topology=FILE]
   fmcheck get-etree-summary-all [--topology=FILE]
   fmcheck get-etree-summary <filter>... [--topology=FILE]
+  fmcheck get-sr-summary-all [--topology=FILE]
+  fmcheck get-sr-summary <source> <destination> [--topology=FILE]
   fmcheck (-h | --help)
 
 Options:
