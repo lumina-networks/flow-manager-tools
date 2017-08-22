@@ -1016,6 +1016,85 @@ class Topo(object):
 
                 print ""
 
+    def print_sr_summary_all(self):
+        srnodes = self._get_sr_nodes_paths()
+
+        nodeslist = srnodes.keys()
+        for fromindex in range(len(nodeslist) - 1):
+            for toindex in range(fromindex + 1,len(nodeslist)):
+                self.print_sr_summary(nodeslist[fromindex], nodeslist[toindex], srnodes)
+
+    def print_sr_summary(self, source, destination, srnodes=None):
+        if srnodes is None:
+            srnodes = self._get_sr_nodes_paths()
+
+        source = str(source)
+        if not source.startswith('openflow:'):
+            if 'openflow:' + source in srnodes:
+                source = 'openflow:' + source
+            else:
+                for nodeid in srnodes:
+                    srnode = srnodes.get(nodeid)
+                    if srnode.get('mpls-label') and str(srnode.get('mpls-label')) == source:
+                        source = nodeid
+                        break
+        if not source.startswith('openflow:'):
+            print "ERROR: source {} not found".format(source)
+            return
+
+        destination = str(destination)
+        if not destination.startswith('openflow:'):
+            if 'openflow:' + destination in srnodes:
+                destination = 'openflow:' + destination
+            else:
+                for nodeid in srnodes:
+                    srnode = srnodes.get(nodeid)
+                    if srnode.get('mpls-label') and str(srnode.get('mpls-label')) == destination:
+                        destination = nodeid
+                        break
+        if not destination.startswith('openflow:'):
+            print "ERROR: destination {} not found".format(destination)
+            return
+
+        if destination not in srnodes[source]['primary-paths']:
+            print "ERROR: source {} cannot reach destination {}".format(source, destination)
+            return
+
+        if destination == source:
+            print "ERROR: source {} and destination {} cannot be the same".format(source, destination)
+            return
+
+        print "SR packects from: {} to: {}".format(source, destination)
+        sources = [{source: 1}]
+        while len(sources) > 0:
+            current = sources[0].keys()[0]
+            tabs = sources[0][current]
+            del sources[0]
+
+            srnode = srnodes[current]['primary-paths']
+            if destination not in srnode:
+                print "ERROR: {} cannot reach destination {}".format(current, destination)
+                continue
+
+            srdest = srnode[destination]
+            print "{} node: ({}) flow packets ({}) group packets ({})".format('\t' * tabs, current, self._get_flow_stats_packets(srnode[destination]['flow-id']), self._get_group_stats_packets(srnode[destination]['group-id']))
+            hops = srnode[destination].get('next-hops')
+            if not hops:
+                continue
+            for hop in hops:
+                if hop != destination:
+                    sources.insert(0, {hop: tabs + 1})
+
+        print ""
+
+
+
+
+
+
+
+
+
     def _get_base_url(self):
         return self.ctrl_protocol + '://' + self.ctrl_ip + ':' + str(self.ctrl_port) + '/restconf'
 
@@ -1190,6 +1269,99 @@ class Topo(object):
                                 bscids[bscid] = cookie
 
         return nodes
+
+    def _get_flow_stats_packets(self, flowid):
+        stats = self._get_flow_stats(flowid)
+        if stats:
+            return stats.get('packet-count')
+        return -1
+
+    def _get_flow_stats(self, flowid):
+        resp = self._http_get(self._get_operational_url() + '/opendaylight-inventory:nodes/{}'.format(flowid))
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            return None
+        data = json.loads(resp.content)
+        flowinv = data.get('flow-node-inventory:flow')
+        if flowinv is None or len(flowinv) <= 0:
+            return None
+        return flowinv[0].get('opendaylight-flow-statistics:flow-statistics')
+
+    def _get_group_stats_packets(self, groupid):
+        stats = self._get_group_stats(groupid)
+        if stats:
+            return stats.get('packet-count')
+        return -1
+
+    def _get_group_stats(self, groupid):
+        resp = self._http_get(self._get_operational_url() + '/opendaylight-inventory:nodes/{}'.format(groupid))
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            return None
+        data = json.loads(resp.content)
+        groupinv = data.get('flow-node-inventory:group')
+        if groupinv is None or len(groupinv) <= 0:
+            return None
+        return groupinv[0].get('opendaylight-group-statistics:group-statistics')
+
+    def _get_sr_nodes_paths(self):
+        srnodes = {}
+        resp = self._http_get(self._get_operational_url() + '/network-topology:network-topology/topology/flow:1:sr')
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            return None
+
+        data = json.loads(resp.content)
+        topology = data.get('topology')
+        if topology is None or len(topology) <= 0:
+            return None
+
+        nodes = topology[0].get('node')
+        if nodes is None:
+            return None
+
+        for node in nodes:
+            nodeid = node['node-id']
+            if not self.containsSwitch(nodeid):
+                continue
+            brocadesr = node.get('brocade-bsc-sr:sr')
+            if brocadesr is None:
+                continue
+
+            srnodes[nodeid] = {'mpls-label': brocadesr.get('mpls-label'), 'primary-paths': {}}
+
+            cppaths = brocadesr.get('calculated-primary-paths')
+            if cppaths is None:
+                continue
+            cppaths = cppaths.get('calculated-primary-path')
+            if cppaths is None:
+                continue
+            for cppath in cppaths:
+                path = {}
+                path['group-id'] = 'node/{}/group/{}'.format(nodeid, cppath['group-id'])
+                path['flow-id'] = 'node/{}/table/{}/flow/{}'.format(nodeid, cppath['table-id'], cppath['flow-name'])
+                srnodes[nodeid]['primary-paths'][cppath['node-id']] = path
+
+            cpaths = brocadesr.get('calculated-paths')
+            if cpaths is None:
+                continue
+            cpaths = cpaths.get('calculated-path')
+            if cpaths is None:
+                continue
+
+            for cpath in cpaths:
+                if cpath.get('primary') is None or cpath['primary'] is not True:
+                    continue
+                if cpath.get('ordered-hop') is None:
+                    continue
+
+                orderedHops = []
+                for oh in cpath.get('ordered-hop'):
+                    nexthop = oh.get('destination-node')
+                    if nexthop is None:
+                        continue
+                    if nexthop not in orderedHops:
+                        orderedHops.append(nexthop)
+                srnodes[nodeid]['primary-paths'][cpath['name']]['next-hops']= orderedHops
+
+        return srnodes
 
     def _get_calculated_flows_groups(self):
         srnodes = {}
