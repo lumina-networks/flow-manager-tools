@@ -31,6 +31,8 @@ Usage:
   fmcheck get-etree-stats <filter>... [--topology=FILE]
   fmcheck get-etree-summary-all [--topology=FILE]
   fmcheck get-etree-summary <filter>... [--topology=FILE]
+  fmcheck get-sr-summary-all [--topology=FILE]
+  fmcheck get-sr-summary <source> <destination> [--topology=FILE]
   fmcheck (-h | --help)
 
 Options:
@@ -165,6 +167,10 @@ class Shell(object):
             result = checker.print_etree_summary()
         elif arguments['get-etree-summary']:
             result = checker.print_etree_summary(filters=arguments['<filter>'])
+        elif arguments['get-sr-summary-all']:
+            result = checker.print_sr_summary_all()
+        elif arguments['get-sr-summary']:
+            result = checker.print_sr_summary(source=arguments['<source>'], destination=arguments['<destination>'])
 
         if not result:
             sys.exit(1)
