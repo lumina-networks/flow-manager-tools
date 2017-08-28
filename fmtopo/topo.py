@@ -20,7 +20,7 @@ _DEFAULT_HEADERS = {
 def _get_flow_version(cookie):
     return (int(cookie) & 0x00000000FF000000) >> 24
 
-def _get_flow_bscid(cookie):
+def _get_flow_fmid(cookie):
     return (int(cookie) & 0x00FFFFFF00000000) >> 32
 
 def _check_mandatory_values(obj, names):
@@ -88,10 +88,10 @@ def _get_flows_groups_from_ovs(node, name,prefix=None):
                     'bytes': match.group(3)
                 }
                 node['cookies'][str(number)] = node['flows'][str(number)]
-                bscid = _get_flow_bscid(number)
-                if bscid in node['bscids']:
-                    print "ERROR: duplicated bsc id {} in node {}".format(bscid,name)
-                node['bscids'][int(bscid)] = number
+                fmid = _get_flow_fmid(number)
+                if fmid in node['fmids']:
+                    print "ERROR: duplicated bsc id {} in node {}".format(fmid,name)
+                node['fmids'][int(fmid)] = number
 
 def _get_controller_roles_switch_ovs(node, name):
     return None
@@ -290,10 +290,10 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
                 'bytes': byteCounts[cookiesLen]
             }
             node['cookies'][str(number)] = node['flows'][str(number)]
-            bscid = _get_flow_bscid(number)
-            if bscid in node['bscids']:
-                print "ERROR: duplicated bsc id {} in node with ip {} and port {}".format(bscid,ip,port)
-            node['bscids'][int(bscid)] = number
+            fmid = _get_flow_fmid(number)
+            if fmid in node['fmids']:
+                print "ERROR: duplicated bsc id {} in node with ip {} and port {}".format(fmid,ip,port)
+            node['fmids'][int(fmid)] = number
 
     _close_noviflow_connection(child)
     return True
@@ -551,7 +551,7 @@ class Topo(object):
         threads = []
         for name, switch in self.switches.iteritems():
             oname = switch['oname']
-            node = {'flows': {}, 'cookies': {}, 'groups': {}, 'bscids': {}}
+            node = {'flows': {}, 'cookies': {}, 'groups': {}, 'fmids': {}}
             nodes[oname] = node
             if switch['type'] == 'noviflow':
                 t = threading.Thread(target=_get_flows_groups_from_noviflow, args=(node,switch['ip'],switch['port'],switch['user'],switch['password'],prefix,))
@@ -666,25 +666,25 @@ class Topo(object):
                         print "ERROR: DUPLICATED MATCH CRITERIA flow id {} and {} contains the same match. Check elines/etree service with the same match criteria. {} {}".format(flowid, flowid2,flow['match'],flow2['match'])
                         error_found = True
 
-            for bscid, cookie in node['bscids'].iteritems():
+            for fmid, cookie in node['fmids'].iteritems():
                 flowid = node['cookies'][cookie]
                 version = _get_flow_version(cookie)
-                if nodeid not in operational_nodes or bscid not in operational_nodes[nodeid]['bscids']:
-                    print "ERROR: (config) node {} flow {} bscid {} cookie {} not running, not found in operational data store".format(nodeid, flowid, bscid, cookie)
+                if nodeid not in operational_nodes or fmid not in operational_nodes[nodeid]['fmids']:
+                    print "ERROR: (config) node {} flow {} fmid {} cookie {} not running, not found in operational data store".format(nodeid, flowid, fmid, cookie)
                     error_found = True
-                elif version != _get_flow_version(operational_nodes[nodeid]['bscids'][bscid]):
-                    print "WARNING: (config) node {} flow {} bscid {} cookie {} operational version is different. Config version {}, operational version {}".format(nodeid, flowid, bscid,cookie, version,_get_flow_version(operational_nodes[nodeid]['bscids'][bscid]))
+                elif version != _get_flow_version(operational_nodes[nodeid]['fmids'][fmid]):
+                    print "WARNING: (config) node {} flow {} fmid {} cookie {} operational version is different. Config version {}, operational version {}".format(nodeid, flowid, fmid,cookie, version,_get_flow_version(operational_nodes[nodeid]['fmids'][fmid]))
                     error_found = True
 
-                if nodeid not in switch_flows_groups or bscid not in switch_flows_groups[nodeid]['bscids']:
-                    print "ERROR: (config) node {} flow {} bscid {} cookie {} not running, not found in the switch".format(nodeid, flowid, bscid,cookie)
+                if nodeid not in switch_flows_groups or fmid not in switch_flows_groups[nodeid]['fmids']:
+                    print "ERROR: (config) node {} flow {} fmid {} cookie {} not running, not found in the switch".format(nodeid, flowid, fmid,cookie)
                     error_found = True
-                elif version != _get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]):
-                    print "WARNING: (config) node {} flow {} bscid {} cookie {} switch version is different. Config version {}, switch version {}".format(nodeid, flowid, bscid,cookie,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
+                elif version != _get_flow_version(switch_flows_groups[nodeid]['fmids'][fmid]):
+                    print "WARNING: (config) node {} flow {} fmid {} cookie {} switch version is different. Config version {}, switch version {}".format(nodeid, flowid, fmid,cookie,version,_get_flow_version(switch_flows_groups[nodeid]['fmids'][fmid]))
                     error_found = True
 
                 if flowid not in calculated_flow_exception and (nodeid not in calculated_nodes or flowid not in calculated_nodes[nodeid]['flows']):
-                    print "ERROR: (config) node {} flow {} bscid {} cookie {} not present in calculated nodes".format(nodeid, flowid, bscid,cookie)
+                    print "ERROR: (config) node {} flow {} fmid {} cookie {} not present in calculated nodes".format(nodeid, flowid, fmid,cookie)
                     error_found = True
 
             for groupid in node['groups']:
@@ -700,22 +700,22 @@ class Topo(object):
 
         for nodeid in operational_nodes:
             node = operational_nodes[nodeid]
-            for bscid, cookie in node['bscids'].iteritems():
+            for fmid, cookie in node['fmids'].iteritems():
                 version = _get_flow_version(cookie)
                 flowid = node['cookies'][cookie]
 
-                if nodeid not in config_nodes or bscid not in config_nodes[nodeid]['bscids']:
-                    print "ERROR: (operational) node {} flowid {} bscid {} cookie {} running but not configured".format(nodeid, flowid, bscid, cookie)
+                if nodeid not in config_nodes or fmid not in config_nodes[nodeid]['fmids']:
+                    print "ERROR: (operational) node {} flowid {} fmid {} cookie {} running but not configured".format(nodeid, flowid, fmid, cookie)
                     error_found = True
-                elif version != _get_flow_version(config_nodes[nodeid]['bscids'][bscid]):
-                    print "WARNING: (operational) node {} flowid {} bscid {} cookie {} config version is different. Operational version {}, config version {}".format(nodeid, flowid, bscid, cookie,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
+                elif version != _get_flow_version(config_nodes[nodeid]['fmids'][fmid]):
+                    print "WARNING: (operational) node {} flowid {} fmid {} cookie {} config version is different. Operational version {}, config version {}".format(nodeid, flowid, fmid, cookie,version,_get_flow_version(config_nodes[nodeid]['fmids'][fmid]))
                     error_found = True
 
-                if nodeid not in switch_flows_groups or bscid not in switch_flows_groups[nodeid]['bscids']:
-                    print "ERROR: (operational) node {} flowid {} bscid {} cookie {} in operational store but not in switch".format(nodeid, flowid, bscid, cookie)
+                if nodeid not in switch_flows_groups or fmid not in switch_flows_groups[nodeid]['fmids']:
+                    print "ERROR: (operational) node {} flowid {} fmid {} cookie {} in operational store but not in switch".format(nodeid, flowid, fmid, cookie)
                     error_found = True
-                elif version != _get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]):
-                    print "WARNING: (operational) node {} flowid {} bscid {} cookie {} switch version is different. Operational version {}, switch version {}".format(nodeid, flowid, bscid, cookie,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
+                elif version != _get_flow_version(switch_flows_groups[nodeid]['fmids'][fmid]):
+                    print "WARNING: (operational) node {} flowid {} fmid {} cookie {} switch version is different. Operational version {}, switch version {}".format(nodeid, flowid, fmid, cookie,version,_get_flow_version(switch_flows_groups[nodeid]['fmids'][fmid]))
                     error_found = True
 
             for groupid in node['groups']:
@@ -729,21 +729,21 @@ class Topo(object):
         for nodeid in switch_flows_groups:
             node = switch_flows_groups[nodeid]
 
-            for bscid, cookie in node['bscids'].iteritems():
+            for fmid, cookie in node['fmids'].iteritems():
                 version = _get_flow_version(cookie)
 
-                if nodeid not in config_nodes or bscid not in config_nodes[nodeid]['bscids']:
-                    print "ERROR: (switch) node {} cookie {} bscid {} running in switch but not configured".format(nodeid, cookie, bscid)
+                if nodeid not in config_nodes or fmid not in config_nodes[nodeid]['fmids']:
+                    print "ERROR: (switch) node {} cookie {} fmid {} running in switch but not configured".format(nodeid, cookie, fmid)
                     error_found = True
-                elif version != _get_flow_version(config_nodes[nodeid]['bscids'][bscid]):
-                    print "WARNING: (switch) node {} cookie {} bscid {} switch version is different. Switch version {}, config version {}".format(nodeid, cookie, bscid,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
+                elif version != _get_flow_version(config_nodes[nodeid]['fmids'][fmid]):
+                    print "WARNING: (switch) node {} cookie {} fmid {} switch version is different. Switch version {}, config version {}".format(nodeid, cookie, fmid,version,_get_flow_version(config_nodes[nodeid]['fmids'][fmid]))
                     error_found = True
 
-                if nodeid not in operational_nodes or bscid not in operational_nodes[nodeid]['bscids']:
-                    print "ERROR: (switch) node {} cookie {} bscid {} running in switch but not in operational".format(nodeid, cookie, bscid)
+                if nodeid not in operational_nodes or fmid not in operational_nodes[nodeid]['fmids']:
+                    print "ERROR: (switch) node {} cookie {} fmid {} running in switch but not in operational".format(nodeid, cookie, fmid)
                     error_found = True
-                elif version != _get_flow_version(operational_nodes[nodeid]['bscids'][bscid]):
-                    print "WARNING: (switch) node {} cookie {} bscid {} switch version is different. Switch version {}, operational version {}".format(nodeid, cookie, bscid,version,_get_flow_version(operational_nodes[nodeid]['bscids'][bscid]))
+                elif version != _get_flow_version(operational_nodes[nodeid]['fmids'][fmid]):
+                    print "WARNING: (switch) node {} cookie {} fmid {} switch version is different. Switch version {}, operational version {}".format(nodeid, cookie, fmid,version,_get_flow_version(operational_nodes[nodeid]['fmids'][fmid]))
                     error_found = True
 
             for groupid in node['groups']:
@@ -874,7 +874,7 @@ class Topo(object):
 
     def print_eline_stats(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + '/brocade-bsc-eline:elines')
+        resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-eline:elines')
         if resp is None or resp.status_code != 200 or resp.content is None:
             print 'ERROR: no data found while trying to get openflow information'
             return
@@ -886,12 +886,12 @@ class Topo(object):
         for eline in data['elines']['eline']:
             if contains_filters(filters,eline['name']):
                 print 'eline: ' + eline['name']
-                resp = self._http_post(self._get_operations_url()+'/brocade-bsc-eline:get-stats','{"input":{"name": "'+eline['name']+'"}}')
+                resp = self._http_post(self._get_operations_url()+'/lumina-flowmanager-eline:get-stats','{"input":{"name": "'+eline['name']+'"}}')
                 print json.dumps(json.loads(resp.content),indent=2)
 
     def print_eline_summary(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + '/brocade-bsc-eline:elines')
+        resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-eline:elines')
         if resp is None or resp.status_code != 200 or resp.content is None:
             print 'ERROR: no data found while trying to get eline information'
             return
@@ -902,7 +902,7 @@ class Topo(object):
 
         for eline in data['elines']['eline']:
             if contains_filters(filters,eline['name']):
-                resp = self._http_post(self._get_operations_url()+'/brocade-bsc-eline:get-stats','{"input":{"name": "'+eline['name']+'"}}')
+                resp = self._http_post(self._get_operations_url()+'/lumina-flowmanager-eline:get-stats','{"input":{"name": "'+eline['name']+'"}}')
                 if resp is None or resp.status_code != 200 or resp.content is None:
                     print 'ERROR: cannot get stats for eline {}'.format(eline['name'])
                     continue
@@ -916,7 +916,7 @@ class Topo(object):
                 msg = 'state:OK' if successful else 'state: KO code:{} message:{}'.format(code,error_msg)
                 print "eline: '" + eline['name'] + "' " + msg
 
-                resp = self._http_get(self._get_config_url() + '/brocade-bsc-path:paths/path/{}'.format(eline['path-name']))
+                resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-path:paths/path/{}'.format(eline['path-name']))
                 if resp is None or resp.status_code != 200 or resp.content is None:
                     print 'ERROR: cannot get path for eline {}'.format(eline['name'])
                     continue
@@ -947,7 +947,7 @@ class Topo(object):
 
     def print_etree_stats(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + '/brocade-bsc-etree:etrees')
+        resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-etree:etrees')
         if resp is None or resp.status_code != 200 or resp.content is None:
             print 'ERROR: no data found while trying to get openflow information'
             return
@@ -959,13 +959,13 @@ class Topo(object):
         for etree in data['etrees']['etree']:
             if contains_filters(filters,etree['name']):
                 print 'etree: ' + etree['name']
-                resp = self._http_post(self._get_operations_url()+'/brocade-bsc-etree:get-stats','{"input":{"name": "'+etree['name']+'"}}')
+                resp = self._http_post(self._get_operations_url()+'/lumina-flowmanager-etree:get-stats','{"input":{"name": "'+etree['name']+'"}}')
                 print json.dumps(json.loads(resp.content),indent=2)
 
 
     def print_etree_summary(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + '/brocade-bsc-etree:etrees')
+        resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-etree:etrees')
         if resp is None or resp.status_code != 200 or resp.content is None:
             print 'ERROR: no data found while trying to get etree information'
             return
@@ -977,7 +977,7 @@ class Topo(object):
         for etree in data['etrees']['etree']:
             if contains_filters(filters,etree['name']):
 
-                resp = self._http_post(self._get_operations_url()+'/brocade-bsc-etree:get-stats','{"input":{"name": "'+etree['name']+'"}}')
+                resp = self._http_post(self._get_operations_url()+'/lumina-flowmanager-etree:get-stats','{"input":{"name": "'+etree['name']+'"}}')
                 if resp is None or resp.status_code != 200 or resp.content is None:
                     print 'ERROR: cannot get stats for etree {}'.format(etree['name'])
                     continue
@@ -991,7 +991,7 @@ class Topo(object):
                 msg = 'state:OK' if successful else 'state: KO code:{} message:{}'.format(code,error_msg)
                 print "etree: '" + etree['name'] + "' " + msg
 
-                resp = self._http_get(self._get_config_url() + '/brocade-bsc-tree-path:treepaths/treepath/{}'.format(etree['treepath-name']))
+                resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-tree-path:treepaths/treepath/{}'.format(etree['treepath-name']))
                 if resp is None or resp.status_code != 200 or resp.content is None:
                     print 'ERROR: cannot get treepath for etree {}'.format(etree['name'])
                     continue
@@ -1227,12 +1227,12 @@ class Topo(object):
             flows = {}
             groups = {}
             cookies = {}
-            bscids = {}
+            fmids = {}
             nodes[nodeid] = {
                 'flows': flows,
                 'groups': groups,
                 'cookies': cookies,
-                'bscids': bscids
+                'fmids': fmids
             }
 
             thegroups = node.get('flow-node-inventory:group')
@@ -1265,8 +1265,8 @@ class Topo(object):
                                 print "ERROR: unexpected duplicated cookie {}, between {} and {}".format(cookie, flowid, cookies[cookie])
                             else:
                                 cookies[cookie] = flowid
-                                bscid = _get_flow_bscid(cookie)
-                                bscids[bscid] = cookie
+                                fmid = _get_flow_fmid(cookie)
+                                fmids[fmid] = cookie
 
         return nodes
 
@@ -1321,7 +1321,7 @@ class Topo(object):
             nodeid = node['node-id']
             if not self.containsSwitch(nodeid):
                 continue
-            brocadesr = node.get('brocade-bsc-sr:sr')
+            brocadesr = node.get('lumina-flowmanager-sr:sr')
             if brocadesr is None:
                 continue
 
@@ -1378,13 +1378,13 @@ class Topo(object):
                         if not self.containsSwitch(nodeid):
                             continue
                         srnodes[nodeid] = {'groups': [], 'flows': []}
-                        brocadesr = node.get('brocade-bsc-sr:sr')
+                        brocadesr = node.get('lumina-flowmanager-sr:sr')
                         groups = None
                         if brocadesr is not None:
                             self.append_calculated_groups(srnodes, brocadesr.get('calculated-groups'))
                             self.append_calculated_flows(srnodes, brocadesr.get('calculated-flows'))
 
-        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-path:paths')
+        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-path:paths')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             if data.get('paths') is not None:
@@ -1394,7 +1394,7 @@ class Topo(object):
                         self.append_calculated_flows(srnodes, path.get('calculated-flows'))
 
 
-        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-eline:elines')
+        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-eline:elines')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             if data.get('elines') is not None:
@@ -1404,7 +1404,7 @@ class Topo(object):
                         self.append_calculated_flows(srnodes, eline.get('calculated-flows'))
 
 
-        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-tree-path:treepaths')
+        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-tree-path:treepaths')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             if data.get('treepaths') is not None:
@@ -1414,7 +1414,7 @@ class Topo(object):
                         self.append_calculated_flows(srnodes, path.get('calculated-flows'))
                         self.append_calculated_groups(srnodes, path.get('calculated-groups'))
 
-        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-etree:etrees')
+        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-etree:etrees')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             if data.get('etrees') is not None:
@@ -1424,21 +1424,21 @@ class Topo(object):
                         self.append_calculated_flows(srnodes, etree.get('calculated-flows'))
                         self.append_calculated_groups(srnodes, etree.get('calculated-groups'))
 
-        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-path-mpls:mpls-nodes')
+        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-path-mpls:mpls-nodes')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             mpls_nodes = data.get('mpls-nodes')
             if mpls_nodes is not None:
                 self.append_calculated_flow_nodes(srnodes, mpls_nodes.get('calculated-flow-nodes'))
 
-        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-eline-mpls:eline-nodes')
+        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-eline-mpls:eline-nodes')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             mpls_nodes = data.get('eline-nodes')
             if mpls_nodes is not None:
                 self.append_calculated_flow_nodes(srnodes, mpls_nodes.get('calculated-flow-nodes'))
 
-        resp = self._http_get(self._get_operational_url() + '/brocade-bsc-etree-sr:etree-nodes')
+        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-etree-sr:etree-nodes')
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             mpls_nodes = data.get('etree-nodes')
