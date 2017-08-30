@@ -20,13 +20,14 @@ def main():
         print_raw(etrees)
         print_raw(treepaths)
     if not args.no_table:
-        print_table(etrees, treepaths, switches)
+        print_table(etrees, treepaths, switches, args.show_errors)
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--raw', dest='raw', action='store_const', const=True, default=False)
     parser.add_argument('--no-table', dest='no_table', action='store_const', const=True, default=False)
     parser.add_argument('--topology', dest='filename', default='prod-topo.yml')
+    parser.add_argument('--show-errors', dest='show_errors', action='store_const', const=True, default=False)
     args = parser.parse_args()
     return args
 
@@ -50,10 +51,16 @@ def run_query_treepaths():
 def print_raw(result):
     pprint(result)
 
-def print_table(etrees, treepaths, switches):
+def print_table(etrees, treepaths, switches, show_errors):
     ptable = PrettyTable()
     ptable.field_names = ['E-Tree', 'Tree Up', 'Treepath', 'Path Up', 'Root Switch', 'Root Port', 'Service-Label', 'Leaf']
     ptable.align['Treepath'] = 'l'
+
+    error_table = PrettyTable()
+    error_table.field_names = ['Type', 'Name', 'Message']
+    #error_table.align['Type'] = 'l'
+    #error_table.align['Message'] = 'l'
+    error_table.align = 'l'
 
     for etree in etrees:
        treepath = get_treepath(treepaths, etree['treepath-name'])
@@ -89,7 +96,18 @@ def print_table(etrees, treepaths, switches):
 
        ptable.add_row(data)
 
+       # Collect errors
+       if not etree['state']['successful']:
+           error_table.add_row(['E-Tree', etree['name'], etree['state']['message']])
+
+       if not treepath['state']['successful']:
+           error_table.add_row(['Treepath', treepath['name'], treepath['state']['message']])
+
     print ptable.get_string(sortby=('E-Tree'))
+
+    if show_errors:
+        print '\nErrors:'
+        print error_table.get_string(sortby=('Type'))
 
 def get_treepath(treepaths, name):
     for treepath in treepaths:
