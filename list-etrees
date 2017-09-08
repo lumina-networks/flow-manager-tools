@@ -54,8 +54,9 @@ def print_raw(result):
 
 def print_table(etrees, treepaths, switches, args):
     ptable = PrettyTable()
-    ptable.field_names = ['E-Tree', 'Tree Up', 'Treepath', 'Path Up', 'Root Switch', 'Root Port', 'Service-Label', 'Leaf']
+    ptable.field_names = ['E-Tree', 'Tree Up', 'Path Up', 'Flows Up', 'Root Switch', 'Root Port', 'Service-Label', 'Leaf']
     ptable.align['Treepath'] = 'l'
+    ptable.align['Leaf'] = 'l'
 
     error_table = PrettyTable()
     error_table.field_names = ['Type', 'Name', 'Message']
@@ -65,12 +66,14 @@ def print_table(etrees, treepaths, switches, args):
 
     for etree in etrees:
        treepath = get_treepath(treepaths, etree['treepath-name'])
+       stats = get_stats(etree['name'])
 
        data = []
        data.append(etree['name'])
-       data.append(etree['state']['successful'])
-       data.append(etree['treepath-name'])
-       data.append(treepath['state']['successful'])
+       data.append(transform_bool(etree['state']['successful']))
+       data.append(transform_bool(treepath['state']['successful']))
+       data.append(transform_bool(stats['state']['successful']))
+
        data.append(get_switch_name(switches, treepath['root']['node']))
        data.append(etree['root']['matches'][0]['match']['in-port'])
 
@@ -82,9 +85,13 @@ def print_table(etrees, treepaths, switches, args):
        leaves = []
        if 'leaf' in etree['leaves']:
            for leaf in etree['leaves']['leaf']:
+               port_list = []
                for action in leaf['action']:
                    if 'output-action' in action:
-                       leaves.append(get_switch_name(switches, leaf['node']) + ' port ' + action['output-action']['output-node-connector'])
+                       port_list.append(action['output-action']['output-node-connector'])
+                       #leaves.append(get_switch_name(switches, leaf['node']) + ' port ' + action['output-action']['output-node-connector'])
+               if len(port_list) > 0:
+                   leaves.append(get_switch_name(switches, leaf['node']) + ' ' + ', '.join(port_list))
 
        outports = ''
        count = 1
@@ -104,6 +111,9 @@ def print_table(etrees, treepaths, switches, args):
        if not treepath['state']['successful']:
            error_table.add_row(['Treepath', treepath['name'], treepath['state']['message']])
 
+       if not stats['state']['successful']:
+           error_table.add_row(['Stats', etree['name'], stats['state']['message']])
+
 
     # Print table
     if not args.show_only_errors:
@@ -112,6 +122,13 @@ def print_table(etrees, treepaths, switches, args):
     if args.show_errors or args.show_only_errors:
         print '\nErrors:'
         print error_table.get_string(sortby=('Type'))
+
+def get_stats(etree_name):
+    url = "https://10.61.80.243:8443/restconf/operations/brocade-bsc-etree:get-stats"
+    headers = {'authorization': 'Basic YWRtaW46YWRtaW4=', 'content-type': 'application/json'}
+    payload = '{"input\":{"name": "' + etree_name + '"}}'
+    response = requests.request("POST", url, data=payload, headers=headers, verify=False)
+    return response.json()['output']
 
 def get_treepath(treepaths, name):
     for treepath in treepaths:
@@ -124,6 +141,12 @@ def get_switch_name(switches, nodename):
         if int(switch['dpid'], 16) == int(dpid):
             return switch['name']
     return dpid
+
+def transform_bool(value):
+   if value:
+       return 'Yes'
+   else:
+       return 'No'
 
 if __name__ == '__main__':
     main()
