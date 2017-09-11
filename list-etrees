@@ -115,7 +115,7 @@ def print_table(etrees, treepaths, switches, args):
         outports = ''
         count = 1
         for leaf in leaves:
-            if outports.count > 0:
+            if outports:
                 outports += '\n'
             outports += str(count) + ': ' + leaf
             count += 1
