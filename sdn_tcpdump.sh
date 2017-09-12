@@ -11,5 +11,10 @@ echo "gathering and restarting tcpdump on $ip"
 mkdir -p sdn_logs/$DIR
 ssh ${SDN_UNIX_USER}@${ip} 'killall tcpump; gzip -9 ser*pcap'
 scp ${SDN_UNIX_USER}@${ip}:~/ser*pcap.gz sdn_logs/$DIR
-ssh ${SDN_UNIX_USER}@${ip} 'rm -f server*pcap*; nohup tcpdump -i any -G 86400 -W 1 -w server_$HOSTNAME.pcap "port 6653" &'
+ssh ${SDN_UNIX_USER}@${ip} << EOF
+killall tcpdump
+rm -f server*pcap*
+nohup tcpdump -i any -G 86400 -W 1 -w server_\$HOSTNAME.pcap "port 6653" > /dev/null 2>&1 &
+EOF
+ssh ${SDN_UNIX_USER}@${ip} 'ps -ef | grep tcpdump'
 done
