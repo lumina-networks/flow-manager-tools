@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+"""
+Description: Tool to list Operational Status of SEN Network
+Author: Bhavish Khatri
+Company: Telstra
+
+Copyright Telstra 2017
+All Rights Reserved
+"""
+import argparse
+
+from pprint import pprint
+from prettytable import PrettyTable
+
+import operator
+import requests
+import yaml
+
+# Suppress SSL warnings
+requests.packages.urllib3.disable_warnings(
+    requests.packages.urllib3.exceptions.InsecureRequestWarning)
+
+SWITCHES = None
+
+def main():
+    global switches
+    """Main entry point"""
+    args = get_args()
+    load_switches(args.filename)
+    print_table()
+
+def get_args():
+    """Sets up and collects command line arguments from user"""
+    parser = argparse.ArgumentParser(description='List Operational Status of SEN Network')
+    parser.add_argument('--topology', dest='filename', default='prod-topo.yml',
+                        help='Specify a topology file [default=prod-topo.yml]')
+    args = parser.parse_args()
+    return args
+
+def load_switches(filename):
+    """Parse yaml data from topology file to get switch names"""
+    global SWITCHES
+    with open(filename, 'r') as infile:
+        data = yaml.load(infile)
+        SWITCHES = data['switch']
+
+def get_switch_name(nodename):
+    """Find a switch by its DPID and return the hostname"""
+    dpid = nodename[9:]
+    for switch in SWITCHES:
+        if int(switch['dpid'], 16) == int(dpid):
+            return switch['name']
+    return dpid
+
+def run_query_topology():
+    """API call against BSC to get topology information"""
+    url = 'https://10.61.80.243:8443/restconf/operational/network-topology:network-topology/topology/flow:1'
+    headers = {'authorization': 'Basic YWRtaW46YWRtaW4='}
+    response = requests.request('GET', url, headers=headers, verify=False)
+    return response.json()['topology'][0]
+
+
+def print_table():
+    """Print tabuler data of operational status"""
+
+    ptable = PrettyTable()
+    ptable.field_names = ['Device', 'Port', 'Connected To', 'On Port', 'Bidirectional']
+    ptable.align['Device'] = 'l'
+    ptable.align['Port'] = 'r'
+    ptable.align['Connected To'] = 'l'
+    ptable.align['On Port'] = 'r'
+
+    links = run_query_topology()['link']
+
+    rows = []
+    for link in links:
+        device = get_switch_name(link['source']['source-node'])
+        port = int(link['source']['source-tp'].split(':')[2])
+        connected_to = get_switch_name(link['destination']['dest-node'])
+        on_port = int(link['destination']['dest-tp'].split(':')[2])
+
+        # Find reverse path
+        bidirectional = 'No'
+        for other in links:
+            if other['source']['source-tp'] == link['destination']['dest-tp'] and \
+                other['destination']['dest-tp'] == link['source']['source-tp']:
+                bidirectional = 'Yes'
+
+        rows.append((device, port, connected_to, on_port, bidirectional))
+
+
+    # Sort and print table
+    rows = sorted(rows, key=operator.itemgetter(1, 0))
+    for row in rows:
+        ptable.add_row(row)
+    print ptable.get_string(sortby=('Device'))
+
+if __name__ == '__main__':
+    main()
