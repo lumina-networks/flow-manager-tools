@@ -9,7 +9,7 @@ do
 echo "gathering and restarting tcpdump on $ip"
 
 mkdir -p sdn_logs/$DIR
-ssh ${SDN_UNIX_USER}@${ip} 'killall tcpump; gzip -9 ser*pcap'
+ssh ${SDN_UNIX_USER}@${ip} 'killall tcpdump; gzip -9 ser*pcap'
 scp ${SDN_UNIX_USER}@${ip}:~/ser*pcap.gz sdn_logs/$DIR
 ssh ${SDN_UNIX_USER}@${ip} << EOF
 killall tcpdump
