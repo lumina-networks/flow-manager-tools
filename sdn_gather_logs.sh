@@ -76,9 +76,15 @@ do
   ssh ${SDN_UNIX_USER}@${ip} "mkdir $DIR; cp -r /opt/brocade/bsc/log/controller_logs/* $DIR; tar cvfz ${ip}-${DIR}.tar.gz $DIR; rm -rf $DIR;killall tcpdump"
   mkdir -p sdn_logs/$DIR
   scp ${SDN_UNIX_USER}@${ip}:~/${ip}-${DIR}.tar.gz sdn_logs/$DIR
+
   ssh ${SDN_UNIX_USER}@${ip} 'killall tcpump; gzip -9 ser*pcap'
   scp ${SDN_UNIX_USER}@${ip}:~/ser*pcap.gz sdn_logs/$DIR
-  ssh ${SDN_UNIX_USER}@${ip} 'rm -f server*pcap*; nohup tcpdump -i any -G 86400 -W 1 -w server_$HOSTNAME.pcap "port 6653" &'
+  ssh ${SDN_UNIX_USER}@${ip} << EOF
+  killall tcpdump
+  rm -f server*pcap*
+  nohup tcpdump -i any -G 86400 -W 1 -w server_\$HOSTNAME.pcap "port 6653" > /dev/null 2>&1 &
+  EOF
+  ssh ${SDN_UNIX_USER}@${ip} 'ps -ef | grep tcpdump'
   ssh ${SDN_UNIX_USER}@${ip} "rm ${ip}-${DIR}.tar.gz"
 
 done
