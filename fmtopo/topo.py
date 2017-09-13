@@ -582,8 +582,30 @@ class Topo(object):
             roles = self.get_controller_role(name)
             owner = self._get_node_cluster_owner(oname)
             if owner and roles and 'Master' not in roles:
-                print "ERROR: {} node does not contain master in the switch. Current roles {}".format(oname,roles)
+                print "ERROR: {}({}) node does not contain master in the switch. Current roles in switch{}".format(name, oname, roles)
                 found_error = True
+            if not owner:
+                print "ERROR: {}({}) node does not contain any master in the controller. Current roles in switch {}".format(name, oname, roles)
+                found_error = True
+            elif not roles:
+                print "ERROR: {}({}) node does not have any role. Current roles in switch {}".format(name, oname, roles)
+                found_error = True
+            else:
+                memberIdRegex = re.compile(r'member-(\d+)', re.IGNORECASE)
+                match = memberIdRegex.findall(owner)
+                memberId=None
+                if match:
+                    memberId = int(match[0])
+                if not memberId:
+                    print "ERROR: {}({}) node cannot find the member id {}. Current roles in switch {}".format(name, oname, owner, roles)
+                    found_error = True
+                elif memberId > len(roles) or memberId < 0:
+                    print "ERROR: {}({}) node master member id {}({}) is out of range. Current roles in switch {}".format(name, oname, memberId, owner, roles)
+                    found_error = True
+                elif roles[memberId-1] != 'Master':
+                    print "ERROR: {}({}) node, member {}({}) is not master on the switch as expected by the controller. Current roles in switch {}".format(name, oname, memberId, owner, roles)
+                    found_error = True
+
         if not found_error:
             print "OK: {} nodes roles has been detected properly.".format(len(self.switches_openflow_names))
             return True
