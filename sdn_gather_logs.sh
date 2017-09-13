@@ -83,7 +83,7 @@ do
   killall tcpdump
   rm -f server*pcap*
   nohup tcpdump -i any -G 86400 -W 1 -w server_\$HOSTNAME.pcap "port 6653" > /dev/null 2>&1 &
-  EOF
+EOF
   ssh ${SDN_UNIX_USER}@${ip} 'ps -ef | grep tcpdump'
   ssh ${SDN_UNIX_USER}@${ip} "rm ${ip}-${DIR}.tar.gz"
 
