@@ -9,12 +9,14 @@ All Rights Reserved
 """
 import argparse
 
+from fmtopo.topo import _get_switch_port_status_noviflow
 from pprint import pprint
 from prettytable import PrettyTable
 
 import operator
 import re
 import requests
+import threading
 import yaml
 
 # Suppress SSL warnings
@@ -24,6 +26,7 @@ requests.packages.urllib3.disable_warnings(
 SWITCHES = None
 ARGS = None
 LINKS = None
+PORTS = None
 
 def main():
     global ARGS
@@ -32,6 +35,7 @@ def main():
     ARGS = get_args()
     load_switches(ARGS.filename)
     load_links(ARGS.filename)
+    get_port_status_all()
     print_table()
 
 def get_args():
@@ -60,6 +64,26 @@ def load_links(filename):
         link['destination'] = link['destination'].upper()
         link['source'] = link['source'].upper()
 
+def get_port_status_all():
+    """Multi-threaded function to collect port stats from all switches"""
+    global PORTS
+    PORTS = {}
+    threads = []
+    # Create threads
+    for switch in SWITCHES:
+        thread = threading.Thread(target=get_port_status, args=(switch,))
+        threads.append(thread)
+        thread.start()
+
+    # Join
+    for thread in threads:
+        thread.join()
+
+def get_port_status(switch):
+    """Retrieve port stats from a single switch and add data to dict"""
+    ports = _get_switch_port_status_noviflow(switch['ip'], 22, switch['user'], switch['password'])
+    PORTS[switch['name']] = ports
+
 def get_switch_name(nodename):
     """Find a switch by its DPID and return the hostname"""
     dpid = nodename[9:]
@@ -85,8 +109,27 @@ def run_query_topology():
 def print_table():
     """Print tabuler data of operational status"""
 
+    fields = [
+        ['Device', 'Hostname + DPID (with --id option)'],
+        ['Port', 'Physical port on switch'],
+        ['Connected To', 'Hostname for other end of connection'],
+        ['On Port', 'Physical port on other end switch'],
+        ['Port Status', 'Operational Status of link as reported by Noviware'],
+        ['LLDP Status', 'Link discovery Status from Controller'],
+        ['Bidirectional', 'Yes if LLDP discovery successful in both directions'],
+        ['Build', 'Comparing against planned topology: Good or Required / Wrong Cabling if not good']
+    ]
+
+    print 'Network Topology Operational Status'
+    print '-----------------------------------'
+    print '\nKey:'
+    pfields = []
+    for field in fields:
+        pfields.append(field[0])
+        print ' :-', field[0], '-', field[1]
+
     ptable = PrettyTable()
-    ptable.field_names = ['Device', 'Port', 'Connected To', 'On Port', 'Status', 'Bidirectional', 'Build']
+    ptable.field_names = pfields
     ptable.align['Device'] = 'l'
     ptable.align['Port'] = 'r'
     ptable.align['Connected To'] = 'l'
@@ -100,7 +143,8 @@ def print_table():
         port = int(link['source']['source-tp'].split(':')[2])
         connected_to = get_switch_name(link['destination']['dest-node'])
         on_port = int(link['destination']['dest-tp'].split(':')[2])
-        status = 'Up'
+        port_status = PORTS[device][port]['oper'].title()
+        lldp_status = 'Found'
 
         # Find reverse path
         bidirectional = 'No'
@@ -122,9 +166,9 @@ def print_table():
             device += ' (' + link['source']['source-node'] + ')'
             connected_to += ' (' + link['destination']['dest-node'] + ')'
 
-        rows.append([device, port, connected_to, on_port, status, bidirectional, build])
+        rows.append([device, port, connected_to, on_port, port_status, lldp_status, bidirectional, build])
 
-    # Loop through configured links and check if alive
+    # Loop through configured links and add if not found in topology
     for defined in LINKS:
         found_forward = False
         found_reverse = False
@@ -151,10 +195,12 @@ def print_table():
             device += ' (' + get_switch_nodename(device) + ')'
             connected_to += ' (' + get_switch_nodename(connected_to) + ')' 
 
-        if not found_forward and found_reverse:
-            rows.append([device, port, connected_to, on_port, 'Down', '', 'Required'])
-        elif not found_forward and not found_reverse:
-            rows.append([device, port, connected_to, on_port, 'Not Connected', '', 'Required'])
+        if not found_forward:
+            lldp_status = 'Missing'
+            bidirectional = ''
+            build = 'Required'
+            port_status = PORTS[device][port]['oper'].title()
+            rows.append([device, port, connected_to, on_port, port_status, lldp_status, bidirectional, build])
 
     # Filter entries
     if ARGS.filter:

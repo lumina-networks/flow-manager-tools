@@ -336,13 +336,12 @@ def _get_switch_port_status_noviflow(ip, port, user, password):
     ports = {}
     for line in lines:
         values = line.split()
-        ports[values[0]] = {'admin': values[1], 'oper': values[2]}
-    pprint(ports)
+        ports[int(values[0])] = {'admin': values[1], 'oper': values[2]}
 
     child.sendline('exit')
     child.expect(pexpect.EOF)
     child.close()
-    return child.before
+    return ports
 
 
 def contains_filters(filters=None,value=None):
