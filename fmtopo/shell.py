@@ -37,7 +37,7 @@ Usage:
 
 Options:
   -h --help     Show this screen.
-  -t, --topology=FILE   Topolofy file name [default: fm-topo.yml].
+  -t, --topology=FILE   Topolofy file name [default: prod-topo.yml].
   -c, --controller=IP   Controller IP address
   -s --stopped      If Mininet is not running.
   -r --segementrouting  Use segment routing topology.
@@ -58,7 +58,7 @@ class Shell(object):
     def __init__(self):
         arguments = docopt(__doc__, version='Flow Manager Testing Tools 1.0')
 
-        file = 'fm-topo.yml'
+        file = 'prod-topo.yml'
         if arguments['--topology']:
             file = arguments['--topology']
         elif not (os.path.isfile(file)):
