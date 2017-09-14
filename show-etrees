@@ -40,9 +40,9 @@ def get_args():
                         help='Do no display tabular output of statuses', const=True, default=False)
     parser.add_argument('--topology', dest='filename', default='prod-topo.yml',
                         help='Specify a topology file [default=prod-topo.yml]')
-    parser.add_argument('--show-errors', dest='show_errors', action='store_const',
+    parser.add_argument('--errors', dest='show_errors', action='store_const',
                         help='Display error table with descriptions', const=True, default=False)
-    parser.add_argument('--show-only-errors', dest='show_only_errors', action='store_const',
+    parser.add_argument('--only-errors', dest='show_only_errors', action='store_const',
                         help='Display only the error table', const=True, default=False)
     args = parser.parse_args()
     return args
