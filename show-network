@@ -22,6 +22,7 @@ requests.packages.urllib3.disable_warnings(
 
 SWITCHES = None
 ARGS = None
+LINKS = None
 
 def main():
     global ARGS
@@ -29,6 +30,7 @@ def main():
     """Main entry point"""
     ARGS = get_args()
     load_switches(ARGS.filename)
+    load_links(ARGS.filename)
     print_table()
 
 def get_args():
@@ -47,6 +49,15 @@ def load_switches(filename):
         data = yaml.load(infile)
         SWITCHES = data['switch']
 
+def load_links(filename):
+    global LINKS
+    with open(filename, 'r') as infile:
+        data = yaml.load(infile)
+        LINKS = data['link']
+    for link in LINKS:
+        link['destination'] = link['destination'].upper()
+        link['source'] = link['source'].upper()
+
 def get_switch_name(nodename):
     """Find a switch by its DPID and return the hostname"""
     dpid = nodename[9:]
@@ -54,6 +65,12 @@ def get_switch_name(nodename):
         if int(switch['dpid'], 16) == int(dpid):
             return switch['name']
     return dpid
+
+def get_switch_nodename(name):
+    for switch in SWITCHES:
+        if switch['name'] == name:
+            return 'openflow:' + str(int(switch['dpid'], 16))
+    return name
 
 def run_query_topology():
     """API call against BSC to get topology information"""
@@ -67,7 +84,7 @@ def print_table():
     """Print tabuler data of operational status"""
 
     ptable = PrettyTable()
-    ptable.field_names = ['Device', 'Port', 'Connected To', 'On Port', 'Bidirectional']
+    ptable.field_names = ['Device', 'Port', 'Connected To', 'On Port', 'Status', 'Bidirectional', 'Build']
     ptable.align['Device'] = 'l'
     ptable.align['Port'] = 'r'
     ptable.align['Connected To'] = 'l'
@@ -81,20 +98,61 @@ def print_table():
         port = int(link['source']['source-tp'].split(':')[2])
         connected_to = get_switch_name(link['destination']['dest-node'])
         on_port = int(link['destination']['dest-tp'].split(':')[2])
+        status = 'Up'
 
         # Find reverse path
         bidirectional = 'No'
         for other in links:
             if other['source']['source-tp'] == link['destination']['dest-tp'] and \
                 other['destination']['dest-tp'] == link['source']['source-tp']:
-                bidirectional = 'Yes'
+                    bidirectional = 'Yes'
+                    break
+
+        # Find link in configuration
+        build = 'Wrong Cabling'
+        for defined in LINKS:
+            if defined['destination'] == device and defined['destination_port'] == port and \
+                defined['source'] == connected_to and defined['source_port'] == on_port:
+                    build = 'Good'
+                    break
 
         if ARGS.show_id:
             device += ' (' + link['source']['source-node'] + ')'
             connected_to += ' (' + link['destination']['dest-node'] + ')'
 
-        rows.append((device, port, connected_to, on_port, bidirectional))
+        rows.append((device, port, connected_to, on_port, status, bidirectional, build))
 
+    # Loop through configured links and check if alive
+    for defined in LINKS:
+        found_forward = False
+        found_reverse = False
+        for link in links:
+            device = get_switch_name(link['source']['source-node'])
+            port = int(link['source']['source-tp'].split(':')[2])
+            connected_to = get_switch_name(link['destination']['dest-node'])
+            on_port = int(link['destination']['dest-tp'].split(':')[2])
+            
+            if defined['destination'] == device and defined['destination_port'] == port and \
+                defined['source'] == connected_to and defined['source_port'] == on_port:
+                    found_forward = True
+                
+            if defined['destination'] == connected_to and defined['destination_port'] == on_port and \
+                defined['source'] == device and defined['source_port'] == port:
+                    found_reverse = True
+
+        device = defined['destination']
+        port = int(defined['destination_port'])
+        connected_to = defined['source']
+        on_port = int(defined['source_port'])
+
+        if ARGS.show_id:
+            device += ' (' + get_switch_nodename(device) + ')'
+            connected_to += ' (' + get_switch_nodename(connected_to) + ')' 
+
+        if not found_forward and found_reverse:
+            rows.append((device, port, connected_to, on_port, 'Down', '', 'Required'))
+        elif not found_forward and not found_reverse:
+            rows.append((device, port, connected_to, on_port, 'Not Connected', '', 'Required'))
 
     # Sort and print table
     rows = sorted(rows, key=operator.itemgetter(1, 0))
@@ -104,3 +162,4 @@ def print_table():
 
 if __name__ == '__main__':
     main()
+
