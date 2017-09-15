@@ -319,6 +319,47 @@ def _get_controller_roles_switch_noviflow(ip, port, user, password):
     return roles
 
 
+def _get_switch_port_status_noviflow(ip, port, user, password):
+    child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
+    if  not child or not PROMPT:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
+        return False
+    child.sendline('show status port portno all')
+    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    if i == 0 or not child.before:
+        print('ERROR: cannot get port status for {}@{} port ({})'.format(user, ip, port))
+        _close_noviflow_connection(child)
+        return False
+
+    lines = child.before.splitlines()
+    lines = lines[3:]
+    ports = {}
+    for line in lines:
+        values = line.split()
+        ports[int(values[0])] = {'admin': values[1], 'oper': values[2]}
+
+    child.sendline('exit')
+    child.expect(pexpect.EOF)
+    child.close()
+    return ports
+
+def _get_switch_version_noviflow(ip, port, user, password):
+    child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
+    if  not child or not PROMPT:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
+        return False
+    child.sendline('show status switch')
+    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    if i == 0 or not child.before:
+        print('ERROR: cannot get switch version for {}@{} port ({})'.format(user, ip, port))
+        _close_noviflow_connection(child)
+        return False
+
+    lines = child.before.splitlines()
+    version =  lines[14]
+    return version.split()[2]
+
+
 def contains_filters(filters=None,value=None):
     if not value:
         return False
