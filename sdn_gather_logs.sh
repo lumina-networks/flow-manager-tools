@@ -13,8 +13,8 @@ echo "gathering all services logs"
 
 mkdir -p sdn_logs/$DIR
 
-services=("eline" "path" "etree" "treepath" "cluster" "topology" "srtopology")
-services_url=("brocade-bsc-eline:elines" "brocade-bsc-path:paths" "brocade-bsc-etree:etrees" "brocade-bsc-tree-path:treepaths" "entity-owners:entity-owners" "network-topology:network-topology/topology/flow:1" "network-topology:network-topology/topology/flow:1:sr")
+services=("eline" "path" "etree" "treepath" "cluster" "topology" "srtopology" "openflow")
+services_url=("brocade-bsc-eline:elines" "brocade-bsc-path:paths" "brocade-bsc-etree:etrees" "brocade-bsc-tree-path:treepaths" "entity-owners:entity-owners" "network-topology:network-topology/topology/flow:1" "network-topology:network-topology/topology/flow:1:sr" "opendaylight-inventory:nodes")
 
 for ip in $SDN_IPS
 do
