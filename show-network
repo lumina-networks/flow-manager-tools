@@ -10,6 +10,7 @@ All Rights Reserved
 import argparse
 
 from fmtopo.topo import _get_switch_port_status_noviflow
+from fmtopo.topo import _get_switch_version_noviflow
 from pprint import pprint
 from prettytable import PrettyTable
 
@@ -27,6 +28,7 @@ SWITCHES = None
 ARGS = None
 LINKS = None
 PORTS = None
+VERSIONS = None
 
 def main():
     global ARGS
@@ -36,7 +38,10 @@ def main():
     load_switches(ARGS.filename)
     load_links(ARGS.filename)
     get_port_status_all()
-    print_table()
+    if ARGS.versions:
+        get_versions_all()
+        print_versions()
+    print_topology()
 
 def get_args():
     """Sets up and collects command line arguments from user"""
@@ -45,7 +50,8 @@ def get_args():
                         help='Specify a topology file [default=prod-topo.yml]')
     parser.add_argument('--id', dest='show_id', action='store_const', const=True, default=False)
     parser.add_argument('--filter', dest='filter', type=str)
-    parser.add_argument('--uni', dest='unidirectional')
+    parser.add_argument('--uni', dest='unidirectional', action='store_const', const=True, default=False)
+    parser.add_argument('--versions', dest='versions', action='store_const', const=True, default=False)
     args = parser.parse_args()
     return args
 
@@ -85,6 +91,24 @@ def get_port_status(switch):
     ports = _get_switch_port_status_noviflow(switch['ip'], 22, switch['user'], switch['password'])
     PORTS[switch['name']] = ports
 
+def get_versions_all():
+    global VERSIONS
+    VERSIONS = {}
+    threads = []
+    # Create threads
+    for switch in SWITCHES:
+        thread = threading.Thread(target=get_version, args=(switch,))
+        threads.append(thread)
+        thread.start()
+
+    # Join
+    for thread in threads:
+        thread.join()
+
+def get_version(switch):
+    version = _get_switch_version_noviflow(switch['ip'], 22, switch['user'], switch['password'])
+    VERSIONS[switch['name']] = version
+
 def get_switch_name(nodename):
     """Find a switch by its DPID and return the hostname"""
     dpid = nodename[9:]
@@ -106,8 +130,18 @@ def run_query_topology():
     response = requests.request('GET', url, headers=headers, verify=False)
     return response.json()['topology'][0]
 
+def print_versions():
+    """Tabular view of the version of the noviflow switch versions"""
+    ptable = PrettyTable()
+    ptable.field_names = ['Device', 'Version']
+    for switch, version in VERSIONS.items():
+        ptable.add_row([switch, version])
+    print 'Noviflow Operational Software Versions'
+    print '--------------------------------------'
+    print ptable.get_string(sortby='Device')
+    print ''
 
-def print_table():
+def print_topology():
     """Print tabuler data of operational status"""
 
     fields = [
