@@ -93,7 +93,10 @@ def print_table(etrees, treepaths, switches, args):
         data.append(transform_bool(stats['state']['successful']))
 
         data.append(get_switch_name(switches, treepath['root']['node']))
-        data.append(etree['root']['matches'][0]['match']['in-port'])
+        if 'matches' in etree['root']:
+            data.append(etree['root']['matches'][0]['match']['in-port'])
+        else:
+            data.append('none')
 
         if 'brocade-bsc-etree-sr:mpls' in etree['root']:
             data.append(etree['root']['brocade-bsc-etree-sr:mpls']['service-label'])
@@ -160,9 +163,10 @@ def get_treepath(treepaths, name):
 def get_switch_name(switches, nodename):
     """Find a switch by its DPID and return the hostname"""
     dpid = nodename[9:]
-    for switch in switches:
-        if int(switch['dpid'], 16) == int(dpid):
-            return switch['name']
+    if dpid:
+        for switch in switches:
+            if int(switch['dpid'], 16) == int(dpid):
+                return switch['name']
     return dpid
 
 def transform_bool(value):
