@@ -276,7 +276,7 @@ def print_topology():
                 port_status = 'n/a'
             rows.append([device, port, connected_to, on_port, port_status, lldp_status, build])
 
-    filter_and_print(ptable, rows, operator.itemgetter(1, 0))
+    filter_and_print(ptable, rows, operator.itemgetter(0, 1))
 
 def filter_and_print(ptable, rows, sort_key):
     # Filter entries

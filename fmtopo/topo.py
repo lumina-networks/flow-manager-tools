@@ -14,6 +14,7 @@ from pprint import pprint
 calculated_flow_exception = ['table/0/flow/fm-sr-link-discovery']
 
 TIMEOUT = 5
+SWITCH_ROLES = {}
 
 _DEFAULT_HEADERS = {
     'content-type': 'application/json',
@@ -321,6 +322,10 @@ def _get_controller_roles_switch_noviflow(ip, port, user, password):
     child.close()
     return roles
 
+def _get_controller_role(name, switch_type, ip, port, user, password):
+    if switch_type == 'noviflow':
+        SWITCH_ROLES[name] = _get_controller_roles_switch_noviflow(ip, port, user, password)
+
 def _get_switch_port_status_noviflow(ip, port, user, password):
     child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
     if  not child or not PROMPT:
@@ -607,22 +612,25 @@ class Topo(object):
             t.join()
         return nodes
 
-    def get_controller_role(self, name):
-        switch = self.switches.get(name)
-        if not switch:
-            print "ERROR: {} switch does not exists".format(name)
-            return False
-
-        if switch['type'] == 'noviflow':
-            return _get_controller_roles_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'])
-        else:
-            return _get_controller_roles_switch_ovs(name)
-
     def check_roles(self, topology_name='flow:1'):
+
+        threads = []
+        # Create threads
+        for name in self.switches_openflow_names:
+            switch = self.switches.get(name)
+            thread = threading.Thread(target=_get_controller_role, 
+                        args=(name, 'noviflow', switch['ip'], switch['port'],switch['user'],switch['password']))
+            threads.append(thread)
+            thread.start()
+
+        # Join
+        for thread in threads:
+            thread.join()        
+
         found_error = False
         for name in self.switches_openflow_names:
             oname = self.switches_openflow_names[name]
-            roles = self.get_controller_role(name)
+            roles = SWITCH_ROLES[name]
             owner = self._get_node_cluster_owner(oname)
             if owner and roles and 'Master' not in roles:
                 print "ERROR: {}({}) node does not contain master in the switch. Current roles in switch{}".format(name, oname, roles)
