@@ -173,13 +173,8 @@ def print_customers():
 
         rows.append([device, port, connects_to, customer_name, port_status])
 
-    # Sort and print table
-    rows = sorted(rows, key=operator.itemgetter(3, 0, 1))
-    for row in rows:
-        ptable.add_row(row)
-
     print 'Customer Connection Operational Status\n'
-    print ptable.get_string()
+    filter_and_print(ptable, rows, operator.itemgetter(3, 0, 1))
 
 def print_topology():
     """Print tabuler data of operational status"""
@@ -281,6 +276,9 @@ def print_topology():
                 port_status = 'n/a'
             rows.append([device, port, connected_to, on_port, port_status, lldp_status, build])
 
+    filter_and_print(ptable, rows, operator.itemgetter(1, 0))
+
+def filter_and_print(ptable, rows, sort_key):
     # Filter entries
     if ARGS.filter:
         test = re.compile(ARGS.filter, re.IGNORECASE)
@@ -296,10 +294,10 @@ def print_topology():
         rows = new_rows
 
     # Sort and print table
-    rows = sorted(rows, key=operator.itemgetter(1, 0))
+    rows = sorted(rows, key=sort_key)
     for row in rows:
         ptable.add_row(row)
-    print ptable.get_string()
+    print ptable.get_string()    
 
 if __name__ == '__main__':
     main()
