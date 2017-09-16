@@ -229,9 +229,16 @@ def print_topology():
             connected_to += ' (' + get_switch_nodename(connected_to) + ')' 
 
         if not found_forward:
-            lldp_status = 'Missing'
+            lldp_status = ''
             build = 'Required'
-            port_status = PORTS[device][port]['oper'].title()
+            if device in PORTS:
+                port_status = PORTS[device][port]['oper'].title()
+                if port_status == 'Up':
+                    lldp_status = 'Missing'
+                else:
+                    lldp_status == 'n/a'
+            else:
+                port_status = 'n/a'
             rows.append([device, port, connected_to, on_port, port_status, lldp_status, build])
 
     # Filter entries

@@ -13,6 +13,8 @@ from pprint import pprint
 
 calculated_flow_exception = ['table/0/flow/fm-sr-link-discovery']
 
+TIMEOUT = 5
+
 _DEFAULT_HEADERS = {
     'content-type': 'application/json',
     'accept': 'application/json'
@@ -99,26 +101,26 @@ def _get_controller_roles_switch_ovs(node, name):
 
 def _get_noviflow_connection_prompt(ip, port, user, password):
     child = pexpect.spawn('ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(port, user, ip))
-    i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
+    i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')], timeout=TIMEOUT)
     if i == 0:
         print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
         return None, None
 
     child.sendline(password)
-    i = child.expect([pexpect.TIMEOUT, unicode('#')])
+    i = child.expect([pexpect.TIMEOUT, unicode('#')], timeout=TIMEOUT)
     if i == 0:
         print('ERROR: cannot get prompt after entering password for {}@{} port ({})'.format(user, ip, port))
         child.sendline('exit')
-        child.expect(pexpect.EOF)
+        child.expect([pexpect.TIMEOUT,pexpect.EOF])
         child.close()
         return None, None
 
     child.sendline('show config switch hostname')
-    i = child.expect([pexpect.TIMEOUT, unicode('#')])
+    i = child.expect([pexpect.TIMEOUT, unicode('#')], timeout=TIMEOUT)
     if i == 0 or not child.before:
         print('ERROR: cannot prompt after sending get hostname command for {}@{} port ({})'.format(user, ip, port))
         child.sendline('exit')
-        child.expect(pexpect.EOF)
+        child.expect([pexpect.TIMEOUT,pexpect.EOF], timeout=TIMEOUT)
         child.close()
         return None, None
 
@@ -127,11 +129,11 @@ def _get_noviflow_connection_prompt(ip, port, user, password):
     PROMPT = '{}#'.format(match[0]) if match else None
 
     child.sendline('show config page')
-    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    i = child.expect([pexpect.TIMEOUT, PROMPT], timeout=TIMEOUT)
     if i == 0 or not child.before:
         print('ERROR: cannot prompt after getting page configuration command for {}@{} port ({})'.format(user, ip, port))
         child.sendline('exit')
-        child.expect(pexpect.EOF)
+        child.expect([pexpect.TIMEOUT,pexpect.EOF], timeout=TIMEOUT)
         child.close()
         return None, None
 
@@ -140,11 +142,11 @@ def _get_noviflow_connection_prompt(ip, port, user, password):
     if not pageConfig:
         print('WARNING: page is not disabled and commands with long output might not work. Executing "set config page off" for {}@{} port ({})'.format(user, ip, port))
         child.sendline('set config page off')
-        i = child.expect([pexpect.TIMEOUT, PROMPT])
+        i = child.expect([pexpect.TIMEOUT, PROMPT], timeout=TIMEOUT)
         if i == 0 or not child.before:
             print('ERROR: cannot prompt after getting page configuration command for {}@{} port ({})'.format(user, ip, port))
             child.sendline('exit')
-            child.expect(pexpect.EOF)
+            child.expect([pexpect.TIMEOUT, pexpect.EOF], timeout=TIMEOUT)
             child.close()
             return None, None
 
@@ -152,7 +154,7 @@ def _get_noviflow_connection_prompt(ip, port, user, password):
 
 def _close_noviflow_connection(child):
     child.sendline('exit')
-    child.expect(pexpect.EOF)
+    child.expect([pexpect.TIMEOUT, pexpect.EOF], timeout=TIMEOUT)
     child.close()
 
 def _reboot_switch_noviflow(ip, port, user, password):
@@ -161,13 +163,13 @@ def _reboot_switch_noviflow(ip, port, user, password):
         print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
         return False
     child.sendline('set status switch reboot')
-    i = child.expect([pexpect.TIMEOUT, 'none'])
+    i = child.expect([pexpect.TIMEOUT, 'none'], timeout=TIMEOUT)
     if i == 0 or not child.before:
         print('ERROR: cannot reboot switch for {}@{} port ({})'.format(user, ip, port))
         _close_noviflow_connection(child)
         return False
     child.sendline('none')
-    child.expect(pexpect.EOF)
+    child.expect([pexpect.TIMEOUT,pexpect.EOF], timeout=TIMEOUT)
     child.close()
     return True
 
@@ -179,7 +181,7 @@ def _execute_commands_in_switch_noviflow(ip, port, user, password, cmds):
     for cmd in cmds:
         print "sending cmd {} to switch {}:{}".format(cmd,ip,port)
         child.sendline(cmd)
-        i = child.expect([pexpect.TIMEOUT, PROMPT])
+        i = child.expect([pexpect.TIMEOUT, PROMPT], timeout=TIMEOUT)
         if i == 0 or not child.before:
             print('ERROR: cannot send command {}{ to switch for {}@{} port ({})'.format(cmd, user, ip, port))
             _close_noviflow_connection(child)
@@ -194,7 +196,7 @@ def _delete_flows_noviflow(ip, port, user, password):
         return False
 
     child.sendline('del config flow tableid all')
-    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    i = child.expect([pexpect.TIMEOUT, PROMPT], timeout=TIMEOUT)
     if i == 0 or not child.before:
         print('ERROR: cannot delete flows for {}@{} port ({})'.format(user, ip, port))
         _close_noviflow_connection(child)
@@ -209,7 +211,7 @@ def _delete_groups_noviflow(ip, port, user, password):
         return False
 
     child.sendline('del config group groupid all')
-    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    i = child.expect([pexpect.TIMEOUT, PROMPT], timeout=TIMEOUT)
     if i == 0 or not child.before:
         print('ERROR: cannot delete groups for {}@{} port ({})'.format(user, ip, port))
         _close_noviflow_connection(child)
@@ -224,7 +226,7 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
         return False
 
     child.sendline('show stats group groupid all')
-    i = child.expect([pexpect.TIMEOUT, PROMPT])
+    i = child.expect([pexpect.TIMEOUT, PROMPT], timeout=TIMEOUT)
     if i == 0 or not child.before:
         print('ERROR: cannot get groups for {}@{} port ({})'.format(user, ip, port))
         _close_noviflow_connection(child)
@@ -315,7 +317,7 @@ def _get_controller_roles_switch_noviflow(ip, port, user, password):
     roles = rolesRegex.findall(child.before)
 
     child.sendline('exit')
-    child.expect(pexpect.EOF)
+    child.expect([pexpect.TIMEOUT,pexpect.EOF])
     child.close()
     return roles
 
@@ -339,7 +341,7 @@ def _get_switch_port_status_noviflow(ip, port, user, password):
         ports[int(values[0])] = {'admin': values[1], 'oper': values[2]}
 
     child.sendline('exit')
-    child.expect(pexpect.EOF)
+    child.expect([pexpect.TIMEOUT,pexpect.EOF])
     child.close()
     return ports
 
@@ -521,7 +523,7 @@ class Topo(object):
                 return False
 
             child.sendline(sshpassword)
-            child.expect(pexpect.EOF)
+            child.expect([pexpect.TIMEOUT,pexpect.EOF])
             child.close()
 
         else:

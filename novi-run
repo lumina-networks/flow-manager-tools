@@ -1,0 +1,34 @@
+#!/usr/bin/env expect
+
+set hostname ""
+set command "show status switch"
+set user "superuser"
+set password "Telstra123"
+set prompt "# "
+
+if { $argc <= 1 } {
+    send_user "Syntax: novi-run <hostname> \"<command>\"\n"
+    exit
+}
+if { $argc > 1 } {
+    set hostname [lindex $argv 0];
+    set command [lindex $argv 1];
+}
+if { $argc > 2 } {
+    set user [lindex $argv 2];
+}
+if { $argc > 3 } {
+    set password [lindex $argv 3];
+}
+
+# Run command
+spawn ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 22 $user@$hostname
+expect "assword:"
+send "$password\r"
+expect $prompt
+send "$command\r"
+
+# Tidy up
+expect $prompt
+send "exit\r"
+expect eof
