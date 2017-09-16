@@ -24,9 +24,10 @@ import yaml
 requests.packages.urllib3.disable_warnings(
     requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
+CUSTOMERS = None
+LINKS = None
 SWITCHES = None
 ARGS = None
-LINKS = None
 PORTS = None
 VERSIONS = None
 
@@ -35,13 +36,17 @@ def main():
     global switches
     """Main entry point"""
     ARGS = get_args()
-    load_switches(ARGS.filename)
-    load_links(ARGS.filename)
-    get_port_status_all()
+    load_topology(ARGS.filename)
+
     if ARGS.versions:
         get_versions_all()
         print_versions()
-    print_topology()
+    else:
+        get_port_status_all()
+        if ARGS.customers:
+            print_customers()
+        else:
+            print_topology()
 
 def get_args():
     """Sets up and collects command line arguments from user"""
@@ -52,24 +57,31 @@ def get_args():
     parser.add_argument('--filter', dest='filter', type=str)
     parser.add_argument('--uni', dest='unidirectional', action='store_const', const=True, default=False)
     parser.add_argument('--versions', dest='versions', action='store_const', const=True, default=False)
+    parser.add_argument('--customers', dest='customers', action='store_const', const=True, default=False)
     args = parser.parse_args()
     return args
 
-def load_switches(filename):
-    """Parse yaml data from topology file to get switch names"""
-    global SWITCHES
-    with open(filename, 'r') as infile:
-        data = yaml.load(infile)
-        SWITCHES = data['switch']
-
-def load_links(filename):
+def load_topology(filename):
+    """Parse yaml data from topology file"""
+    global CUSTOMERS
     global LINKS
+    global SWITCHES
+
+    # Load from yaml into globals
     with open(filename, 'r') as infile:
         data = yaml.load(infile)
         LINKS = data['link']
+        SWITCHES = data['switch']
+        CUSTOMERS = data['customers']
+
+    # Normalize data
     for link in LINKS:
         link['destination'] = link['destination'].upper()
         link['source'] = link['source'].upper()
+    
+    for customer in CUSTOMERS:
+        customer['hostname'] = customer['hostname'].upper()
+        customer['port'] = int(customer['port'])
 
 def get_port_status_all():
     """Multi-threaded function to collect port stats from all switches"""
@@ -134,12 +146,40 @@ def print_versions():
     """Tabular view of the version of the noviflow switch versions"""
     ptable = PrettyTable()
     ptable.field_names = ['Device', 'Version']
+
     for switch, version in VERSIONS.items():
         ptable.add_row([switch, version])
-    print 'Noviflow Operational Software Versions'
-    print '--------------------------------------'
+
+    print 'Noviflow Operational Software Versions\n'
     print ptable.get_string(sortby='Device')
-    print ''
+    
+def print_customers():
+    """Print tabular data of Customer Connection Operational State"""
+    ptable = PrettyTable()
+    ptable.field_names = ['Device', 'Port', 'Connects To', 'Customer', 'Oper State']
+
+    rows = []
+    for customer in CUSTOMERS:
+        device = customer['hostname']
+        port = customer['port']
+        connects_to = customer['connects_to']
+        customer_name = customer['customer']
+        port_status = 'Down'
+
+        try:
+            port_status = PORTS[device][port]['oper'].title()
+        except:
+            pass
+
+        rows.append([device, port, connects_to, customer_name, port_status])
+
+    # Sort and print table
+    rows = sorted(rows, key=operator.itemgetter(3, 0, 1))
+    for row in rows:
+        ptable.add_row(row)
+
+    print 'Customer Connection Operational Status\n'
+    print ptable.get_string()
 
 def print_topology():
     """Print tabuler data of operational status"""
@@ -259,7 +299,7 @@ def print_topology():
     rows = sorted(rows, key=operator.itemgetter(1, 0))
     for row in rows:
         ptable.add_row(row)
-    print ptable.get_string(sortby=('Device'))
+    print ptable.get_string()
 
 if __name__ == '__main__':
     main()
