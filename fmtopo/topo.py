@@ -97,7 +97,7 @@ def _get_flows_groups_from_ovs(node, name,prefix=None):
                     print "ERROR: duplicated bsc id {} in node {}".format(bscid,name)
                 node['bscids'][int(bscid)] = number
 
-def _get_controller_roles_switch_ovs(node, name):
+def _get_controller_roles_switch_ovs(node):
     return None
 
 def _get_noviflow_connection_prompt(ip, port, user, password):
@@ -325,6 +325,8 @@ def _get_controller_roles_switch_noviflow(ip, port, user, password):
 def _get_controller_role(name, switch_type, ip, port, user, password):
     if switch_type == 'noviflow':
         SWITCH_ROLES[name] = _get_controller_roles_switch_noviflow(ip, port, user, password)
+    else:
+        SWITCH_ROLES[name] = _get_controller_roles_switch_ovs(name)
 
 def _get_switch_port_status_noviflow(ip, port, user, password):
     child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
@@ -618,14 +620,14 @@ class Topo(object):
         # Create threads
         for name in self.switches_openflow_names:
             switch = self.switches.get(name)
-            thread = threading.Thread(target=_get_controller_role, 
-                        args=(name, 'noviflow', switch['ip'], switch['port'],switch['user'],switch['password']))
+            thread = threading.Thread(target=_get_controller_role,
+                        args=(name, switch['type'], switch['ip'], switch['port'],switch['user'],switch['password']))
             threads.append(thread)
             thread.start()
 
         # Join
         for thread in threads:
-            thread.join()        
+            thread.join()
 
         found_error = False
         for name in self.switches_openflow_names:
