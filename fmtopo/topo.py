@@ -9,7 +9,6 @@ import pexpect
 import random
 import time
 from functools import partial
-from pprint import pprint
 
 calculated_flow_exception = ['table/0/flow/fm-sr-link-discovery']
 
