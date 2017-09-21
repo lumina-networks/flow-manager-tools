@@ -93,3 +93,5 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+.previous_flows_groups.json
