@@ -76,7 +76,7 @@ def print_raw(result):
 def print_table(etrees, treepaths, switches, args):
     """Print tabuler data of operational status"""
     ptable = PrettyTable()
-    ptable.field_names = ['E-Tree', 'Tree Up', 'Path Up', 'Flows Up', 'Root Switch', 'Root Port', 'Service-Label', 'Leaf']
+    ptable.field_names = ['E-Tree', 'Tree Up', 'Path Up', 'Flows Up', 'Overall', 'Root Switch', 'Root Port', 'Service-Label', 'Leaf']
     ptable.align['Treepath'] = 'l'
     ptable.align['Leaf'] = 'l'
 
@@ -104,6 +104,7 @@ def print_table(etrees, treepaths, switches, args):
         data.append(transform_bool(etree_state))
         data.append(transform_bool(treepath_state))
         data.append(transform_bool(stats_state))
+        data.append(overall_state)
 
         data.append(get_switch_name(switches, treepath['root']['node']))
         if 'matches' in etree['root']:
