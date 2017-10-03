@@ -33,6 +33,7 @@ Usage:
   fmcheck get-etree-summary <filter>... [--topology=FILE]
   fmcheck get-sr-summary-all [--topology=FILE]
   fmcheck get-sr-summary <source> <destination> [--topology=FILE]
+  fmcheck get-node-summary [--topology=FILE]
   fmcheck (-h | --help)
 
 Options:
@@ -171,6 +172,9 @@ class Shell(object):
             result = checker.print_sr_summary_all()
         elif arguments['get-sr-summary']:
             result = checker.print_sr_summary(source=arguments['<source>'], destination=arguments['<destination>'])
+        elif arguments['get-node-summary']:
+            result = checker.print_node_summary()
+
 
         if not result:
             sys.exit(1)
