@@ -40,6 +40,8 @@ def get_args():
                         help='Do no display tabular output of statuses', const=True, default=False)
     parser.add_argument('--topology', dest='filename', default='prod-topo.yml',
                         help='Specify a topology file [default=prod-topo.yml]')
+    parser.add_argument('--down', dest='down', action='store_const',
+                        help='Display only etree that are down', const=True, default=False)
     parser.add_argument('--errors', dest='show_errors', action='store_const',
                         help='Display error table with descriptions', const=True, default=False)
     parser.add_argument('--only-errors', dest='show_only_errors', action='store_const',
@@ -74,7 +76,7 @@ def print_raw(result):
 def print_table(etrees, treepaths, switches, args):
     """Print tabuler data of operational status"""
     ptable = PrettyTable()
-    ptable.field_names = ['E-Tree', 'Tree Up', 'Path Up', 'Flows Up', 'Root Switch', 'Root Port', 'Service-Label', 'Leaf']
+    ptable.field_names = ['E-Tree', 'Tree Up', 'Path Up', 'Flows Up', 'Overall', 'Root Switch', 'Root Port', 'Service-Label', 'Leaf']
     ptable.align['Treepath'] = 'l'
     ptable.align['Leaf'] = 'l'
 
@@ -85,12 +87,24 @@ def print_table(etrees, treepaths, switches, args):
     for etree in etrees:
         treepath = get_treepath(treepaths, etree['treepath-name'])
         stats = get_stats(etree['name'])
+        keep_row = True 
 
         data = []
         data.append(etree['name'])
-        data.append(transform_bool(etree['state']['successful']))
-        data.append(transform_bool(treepath['state']['successful']))
-        data.append(transform_bool(stats['state']['successful']))
+
+        etree_state = etree['state']['successful']
+        treepath_state = treepath['state']['successful']
+        stats_state = stats['state']['successful']
+        overall_state = 'Down'
+        if etree_state and treepath_state and stats_state:
+            overall_state = 'Up'
+            if args.down:
+                keep_row = False
+
+        data.append(transform_bool(etree_state))
+        data.append(transform_bool(treepath_state))
+        data.append(transform_bool(stats_state))
+        data.append(overall_state)
 
         data.append(get_switch_name(switches, treepath['root']['node']))
         if 'matches' in etree['root']:
@@ -124,7 +138,8 @@ def print_table(etrees, treepaths, switches, args):
             count += 1
         data.append(outports)
 
-        ptable.add_row(data)
+        if keep_row:
+            ptable.add_row(data)
 
         # Collect errors
         if not etree['state']['successful']:

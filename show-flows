@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+"""
+Description: Tool to list Operational Status of SEN Network
+Author: Bhavish Khatri
+Company: Telstra
+
+Copyright Telstra 2017
+All Rights Reserved
+"""
+from lib.novi import NoviFlow
+from pprint import pprint
+from prettytable import PrettyTable
+
+import argparse
+import re
+
+
+def main():
+    """Main method"""
+    args = get_args()
+    lines = get_flow_cli(args.switch)
+    flows = parse_flows(lines)
+    print_table(flows)
+
+def get_args():
+    """Sets up and collects command line arguments from user"""
+    parser = argparse.ArgumentParser(description='Show flows install in switch')
+    parser.add_argument('switch')
+    args = parser.parse_args()
+    return args
+
+def get_flow_cli(switch):
+    noviflow = NoviFlow()
+    noviflow.connect(switch)
+    noviflow.run('set config page off')
+    flows = noviflow.run('show status flow tableid 0')
+    noviflow.disconnect()
+
+    lines = flows.splitlines()
+    index = 0
+    for line in lines:
+        if line[0:9] == '[TABLE 0]':
+            break
+        index += 1
+
+    lines = lines[index+1:]
+    return lines
+
+def parse_flows(lines):
+    """Parse flow output"""
+    flow_id = re.compile('\[FLOW_ID(\d+)\]')
+    priority = re.compile('Priority\s+=\s+(\d+)')
+    packet_count = re.compile('Packet_count\s+=\s+(\d+)')
+    byte_count = re.compile('Byte_count\s+=\s+(\d+)')
+    in_port = re.compile('OFPXMT_OFB_IN_PORT\s+=\s+(\d+)')
+    eth_dst = re.compile('OFPXMT_OFB_ETH_DST\s+=\s+(\d+)')
+    eth_src = re.compile('OFPXMT_OFB_ETH_SRC\s+=\s+(\d+)')
+    eth_type = re.compile('OFPXMT_OFB_ETH_TYPE\s+=\s+(0x\d+)')
+    vlan = re.compile('OFPXMT_OFB_VLAN_VID\s+=\s+(\d+)')
+    pcp = re.compile('OFPXMT_OFB_VLAN_PCP\s+=\s+(\d+)')
+    ip_proto = re.compile('OFPXMT_OFB_IP_PROTO\s+=\s+(\d+)')
+    ipv4_src = re.compile('OFPXMT_OFB_IPV4_SRC\s+=\s+(\d+\.\d+\.\d+\.\d+)')
+    ipv4_dst = re.compile('OFPXMT_OFB_IPV4_DST\s+=\s+(\d+\.\d+\.\d+\.\d+)')
+    tcp_src = re.compile('OFPXMT_OFB_TCP_SRC\s+=\s+(\d+)')
+    tcp_dst = re.compile('OFPXMT_OFB_TCP_DST\s+=\s+(\d+)')
+    udp_src = re.compile('OFPXMT_OFB_UDP_SRC\s+=\s+(\d+)')
+    udp_dst = re.compile('OFPXMT_OFB_UDP_DST\s+=\s+(\d+)')
+    instructions = re.compile('\[INSTRUCTIONS\]')
+
+    flows = []
+    flow = {}
+    for line in lines:
+        match_and_set(line, flow, flow_id, 'id')
+        match_and_set(line, flow, priority, 'priority')
+        match_and_set(line, flow, packet_count, 'packets')
+        match_and_set(line, flow, byte_count, 'bytes')
+        match_and_set(line, flow, in_port, 'in_port')
+        match_and_set(line, flow, eth_dst, 'eth_dst')
+        match_and_set(line, flow, eth_src, 'eth_src')
+        match_and_set(line, flow, eth_type, 'eth_type')
+        match_and_set(line, flow, vlan, 'vlan')
+        match_and_set(line, flow, pcp, 'pcp')
+        match_and_set(line, flow, ip_proto, 'ip_proto')
+        match_and_set(line, flow, ipv4_src, 'ipv4_src')
+        match_and_set(line, flow, ipv4_dst, 'ipv4_dst')
+        match_and_set(line, flow, tcp_src, 'tcp_src')
+        match_and_set(line, flow, tcp_dst, 'tcp_dst')
+        match_and_set(line, flow, udp_src, 'udp_src')
+        match_and_set(line, flow, udp_dst, 'udp_dst')
+
+        # End of matches
+        if instructions.search(line):
+            flows.append(flow)
+            flow = {}
+
+    return flows
+
+def match_and_set(string, data, regex, key):
+    """Given a compiled regular expression, test string and add first group into data dict with given key"""
+    match = regex.search(string)
+    if match:
+        data[key] = match.group(1)
+        return True
+    return False
+        
+
+def print_table(flows):
+    
+    ptable = PrettyTable()
+    ptable.field_names = ['id', 'priority', 'packets', 'in_port', 
+                          'vlan', 'ipv4_src', 'ipv4_dst', 
+                          'tcp_src', 'tcp_dst', 'udp_src', 'udp_dst']
+
+    for flow in flows:
+        if int(flow.get('packets')) > 0:
+            ptable.add_row([
+                flow.get('id'),
+                flow.get('priority'),
+                int(flow.get('packets')),
+                flow.get('in_port', '*'),
+                flow.get('vlan', '*'),
+                flow.get('ipv4_src', '*'),
+                flow.get('ipv4_dst', '*'),
+                flow.get('tcp_src', '*'),
+                flow.get('tcp_dst', '*'),
+                flow.get('udp_src', '*'),
+                flow.get('udp_dst', '*')
+            ])
+
+    print ptable.get_string(sortby='packets')
+
+if __name__ == '__main__':
+    main()

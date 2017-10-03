@@ -16,8 +16,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -93,3 +91,5 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+.previous_flows_groups.json
