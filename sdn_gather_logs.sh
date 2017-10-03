@@ -93,6 +93,6 @@ if [ "$RESTART" == "yes" ]
 then
   for ip in $SDN_IPS
   do
-    ssh ${SDN_UNIX_USER}@${ip} 'rm -rf /opt/brocade/bsc/log/controller_logs/*;sudo service brcd-bsc start; sudo service brcd-ui start'
+    ssh ${SDN_UNIX_USER}@${ip} 'sudo service brcd-bsc start; sudo service brcd-ui start'
   done
 fi
