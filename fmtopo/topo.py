@@ -13,6 +13,7 @@ from functools import partial
 
 # Define all URL values
 REST_URL_PREFIX = '/brocade-bsc-'
+REST_CONTAINER_PREFIX = 'brocade-bsc-'
 
 REST_URL_ELINE = REST_URL_PREFIX + 'eline:elines'
 REST_URL_ELINE_STATS = REST_URL_PREFIX + 'eline:get-stats'
@@ -27,7 +28,7 @@ REST_URL_ETREE_SR_NODES = REST_URL_PREFIX + 'etree-sr:etree-nodes'
 
 REST_URL_TREEPATH = REST_URL_PREFIX + 'tree-path:treepaths'
 
-REST_CONTAINER_SR = REST_URL_PREFIX + 'sr:sr'
+REST_CONTAINER_SR = REST_CONTAINER_PREFIX + 'sr:sr'
 
 calculated_flow_exception = ['table/0/flow/fm-sr-link-discovery']
 
