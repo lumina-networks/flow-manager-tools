@@ -12,8 +12,8 @@ from functools import partial
 
 
 # Define all URL values
-REST_URL_PREFIX = '/brocade-bsc-'
 REST_CONTAINER_PREFIX = 'brocade-bsc-'
+REST_URL_PREFIX = '/' + REST_CONTAINER_PREFIX
 
 REST_URL_ELINE = REST_URL_PREFIX + 'eline:elines'
 REST_URL_ELINE_STATS = REST_URL_PREFIX + 'eline:get-stats'
@@ -333,8 +333,18 @@ def _get_controller_roles_switch_noviflow(ip, port, user, password):
         _close_noviflow_connection(child)
         return False
 
-    rolesRegex = re.compile(r'Role\s+-\s+(\S+)', re.IGNORECASE)
-    roles = rolesRegex.findall(child.before)
+    roles = None
+    rolesLinesRegex = re.compile(r'(Group\s+\S+\s+Role\s+-\s+\S+)', re.IGNORECASE)
+    rolesLines = rolesLinesRegex.findall(child.before)
+    if (rolesLines is not None and len(rolesLines) >0):
+        rolesRegex = re.compile(r'Group\s+\S+\s+Role\s+-\s+(\S+)', re.IGNORECASE)
+        roles = []
+        for line in sorted(rolesLines):
+            roleList = rolesRegex.findall(line)
+            if roleList and len(roleList):
+                roles.append(roleList[0])
+
+
 
     child.sendline('exit')
     child.expect([pexpect.TIMEOUT,pexpect.EOF])
@@ -595,6 +605,36 @@ class Topo(object):
                 return False
             time.sleep(seconds)
             return _execute_commands_locally(switch['enable_gw'])
+
+
+    def break_controller_switch(self, sw_name, controller_name, seconds=30):
+        switch = self.switches.get(sw_name)
+        if not switch:
+            print "ERROR: {} switch does not exists".format(name)
+            return False
+        seconds = int(seconds)
+        seconds = 0 if not seconds or seconds <=0 else seconds
+        print "INFO: trying to break controller {} connection in the switch {} switch".format(controller_name, sw_name)
+        all_ctrl_config = switch.get('controller_config')
+        ctrl_config = all_ctrl_config.get(controller_name) if all_ctrl_config else None
+        if not ctrl_config or 'remove_controller' not in ctrl_config or len(ctrl_config['remove_controller']) <= 0:
+            print "ERROR: remove controller commands not found in switch {} for controller {}".format(sw_name, controller_name)
+            return False
+
+        if not ctrl_config or 'add_controller' not in ctrl_config or len(ctrl_config['add_controller']) <= 0:
+            print "ERROR: add controller commands not found in switch {} for controller {}".format(sw_name, controller_name)
+            return False
+
+        if switch['type'] == 'noviflow':
+            if not _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],ctrl_config['remove_controller']):
+                return False
+            time.sleep(seconds)
+            return _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],ctrl_config['add_controller'])
+        else:
+            if not _execute_commands_locally(ctrl_config['remove_controller']):
+                return False
+            time.sleep(seconds)
+            return _execute_commands_locally(ctrl_config['add_controller'])
 
     def delete_groups(self, name):
         switch = self.switches.get(name)

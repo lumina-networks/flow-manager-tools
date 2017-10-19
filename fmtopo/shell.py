@@ -11,6 +11,8 @@ Usage:
   fmcheck reboot-switch <name> [--topology=FILE]
   fmcheck random-break-gw-switch <seconds> [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [--topology=FILE]
+  fmcheck random-break-ctrl-switch <seconds> [--topology=FILE]
+  fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [--topology=FILE]
   fmcheck random-delete-groups [--topology=FILE]
   fmcheck delete-groups <name> [--topology=FILE]
   fmcheck random-delete-flows [--topology=FILE]
@@ -126,6 +128,10 @@ class Shell(object):
             result = checker.break_gw_switch(arguments['<name>'],arguments['<seconds>'])
         elif arguments['random-break-gw-switch']:
             result = checker.break_gw_switch(checker.get_random_switch(), arguments['<seconds>'])
+        elif arguments['break-ctrl-switch']:
+            result = checker.break_controller_switch(arguments['<switch_name>'],arguments['<controller_name>'],arguments['<seconds>'])
+        elif arguments['random-break-ctrl-switch']:
+            result = checker.break_controller_switch(checker.get_random_switch(), checker.get_random_controller(), arguments['<seconds>'])
         elif arguments['reboot-switch']:
             result = checker.reboot_switch(arguments['<name>'])
         elif arguments['random-delete-groups']:
