@@ -131,7 +131,8 @@ class Shell(object):
         elif arguments['break-ctrl-switch']:
             result = checker.break_controller_switch(arguments['<switch_name>'],arguments['<controller_name>'],arguments['<seconds>'])
         elif arguments['random-break-ctrl-switch']:
-            result = checker.break_controller_switch(checker.get_random_switch(), checker.get_random_controller(), arguments['<seconds>'])
+            name = checker.get_random_switch()
+            result = checker.break_controller_switch(name, checker.get_master_controller_name(name), arguments['<seconds>'])
         elif arguments['reboot-switch']:
             result = checker.reboot_switch(arguments['<name>'])
         elif arguments['random-delete-groups']:

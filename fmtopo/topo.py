@@ -678,6 +678,23 @@ class Topo(object):
             t.join()
         return nodes
 
+    def get_master_controller_name(self, name):
+        if name not in self.switches_openflow_names:
+            print "ERROR: switch {} not found".format(name)
+            return None
+        oname = self.switches_openflow_names[name]
+        owner = self._get_node_cluster_owner(oname)
+        if not owner:
+            print "ERROR: owner not found for switch {}".format(name)
+            return None
+        memberIdRegex = re.compile(r'member-(\d+)', re.IGNORECASE)
+        match = memberIdRegex.findall(owner)
+        if match:
+            memberId = int(match[0])
+            if (memberId <= len(self.controllers)):
+                return self.controllers[memberId-1].get('name')
+        print "ERROR: owner not found for switch {}".format(name)
+
     def check_roles(self, topology_name='flow:1'):
 
         threads = []
