@@ -195,7 +195,7 @@ def _reboot_switch_noviflow(ip, port, user, password):
 
 def _execute_commands_in_switch_noviflow(ip, port, user, password, cmds):
     child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
-    if  not child or not PROMPT:
+    if not child or not PROMPT:
         print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
         return False
     for cmd in cmds:
@@ -203,7 +203,7 @@ def _execute_commands_in_switch_noviflow(ip, port, user, password, cmds):
         child.sendline(cmd)
         i = child.expect([pexpect.TIMEOUT, PROMPT], timeout=TIMEOUT)
         if i == 0 or not child.before:
-            print('ERROR: cannot send command {}{ to switch for {}@{} port ({})'.format(cmd, user, ip, port))
+            print('ERROR: cannot send command {} to switch for {}@{} port ({})'.format(cmd, user, ip, port))
             _close_noviflow_connection(child)
             return False
     _close_noviflow_connection(child)
@@ -610,7 +610,7 @@ class Topo(object):
     def break_controller_switch(self, sw_name, controller_name, seconds=30):
         switch = self.switches.get(sw_name)
         if not switch:
-            print "ERROR: {} switch does not exists".format(name)
+            print "ERROR: {} switch does not exists".format(sw_name)
             return False
         seconds = int(seconds)
         seconds = 0 if not seconds or seconds <=0 else seconds
