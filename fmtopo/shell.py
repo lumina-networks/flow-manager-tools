@@ -11,6 +11,8 @@ Usage:
   fmcheck reboot-switch <name> [--topology=FILE]
   fmcheck random-break-gw-switch <seconds> [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [--topology=FILE]
+  fmcheck random-break-ctrl-switch <seconds> [--topology=FILE]
+  fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [--topology=FILE]
   fmcheck random-delete-groups [--topology=FILE]
   fmcheck delete-groups <name> [--topology=FILE]
   fmcheck random-delete-flows [--topology=FILE]
@@ -33,6 +35,7 @@ Usage:
   fmcheck get-etree-summary <filter>... [--topology=FILE]
   fmcheck get-sr-summary-all [--topology=FILE]
   fmcheck get-sr-summary <source> <destination> [--topology=FILE]
+  fmcheck get-node-summary [--topology=FILE]
   fmcheck (-h | --help)
 
 Options:
@@ -63,6 +66,8 @@ class Shell(object):
             file = arguments['--topology']
         elif not (os.path.isfile(file)):
             file = 'mn-topo.yml'
+            if not (os.path.isfile(file)):
+                file = 'prod-topo.yml'
 
         props = None
         if (os.path.isfile(file)):
@@ -125,6 +130,11 @@ class Shell(object):
             result = checker.break_gw_switch(arguments['<name>'],arguments['<seconds>'])
         elif arguments['random-break-gw-switch']:
             result = checker.break_gw_switch(checker.get_random_switch(), arguments['<seconds>'])
+        elif arguments['break-ctrl-switch']:
+            result = checker.break_controller_switch(arguments['<switch_name>'],arguments['<controller_name>'],arguments['<seconds>'])
+        elif arguments['random-break-ctrl-switch']:
+            name = checker.get_random_switch()
+            result = checker.break_controller_switch(name, checker.get_master_controller_name(name), arguments['<seconds>'])
         elif arguments['reboot-switch']:
             result = checker.reboot_switch(arguments['<name>'])
         elif arguments['random-delete-groups']:
@@ -171,6 +181,9 @@ class Shell(object):
             result = checker.print_sr_summary_all()
         elif arguments['get-sr-summary']:
             result = checker.print_sr_summary(source=arguments['<source>'], destination=arguments['<destination>'])
+        elif arguments['get-node-summary']:
+            result = checker.print_node_summary()
+
 
         if not result:
             sys.exit(1)
