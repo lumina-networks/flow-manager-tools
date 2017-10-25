@@ -10,6 +10,26 @@ import random
 import time
 from functools import partial
 
+
+# Define all URL values
+REST_CONTAINER_PREFIX = 'lumina-flowmanager-'
+REST_URL_PREFIX = '/' + REST_CONTAINER_PREFIX
+
+REST_URL_ELINE = REST_URL_PREFIX + 'eline:elines'
+REST_URL_ELINE_STATS = REST_URL_PREFIX + 'eline:get-stats'
+REST_URL_ELINE_MPLS_NODES = REST_URL_PREFIX + 'eline-mpls:eline-nodes'
+
+REST_URL_PATH = REST_URL_PREFIX + 'path:paths'
+REST_URL_PATH_MPLS_NODES = REST_URL_PREFIX + 'path-mpls:mpls-nodes'
+
+REST_URL_ETREE = REST_URL_PREFIX + 'etree:etrees'
+REST_URL_ETREE_STATS = REST_URL_PREFIX + 'etree:get-stats'
+REST_URL_ETREE_SR_NODES = REST_URL_PREFIX + 'etree-sr:etree-nodes'
+
+REST_URL_TREEPATH = REST_URL_PREFIX + 'tree-path:treepaths'
+
+REST_CONTAINER_SR = REST_CONTAINER_PREFIX + 'sr:sr'
+
 calculated_flow_exception = ['table/0/flow/fm-sr-link-discovery']
 
 TIMEOUT = 5
@@ -23,7 +43,7 @@ _DEFAULT_HEADERS = {
 def _get_flow_version(cookie):
     return (int(cookie) & 0x00000000FF000000) >> 24
 
-def _get_flow_fmid(cookie):
+def _get_flow_bscid(cookie):
     return (int(cookie) & 0x00FFFFFF00000000) >> 32
 
 def _check_mandatory_values(obj, names):
@@ -91,10 +111,10 @@ def _get_flows_groups_from_ovs(node, name,prefix=None):
                     'bytes': match.group(3)
                 }
                 node['cookies'][str(number)] = node['flows'][str(number)]
-                fmid = _get_flow_fmid(number)
-                if fmid in node['fmids']:
-                    print "ERROR: duplicated lsc id {} in node {}".format(fmid, name)
-                node['fmids'][int(fmid)] = number
+                bscid = _get_flow_bscid(number)
+                if bscid in node['bscids']:
+                    print "ERROR: duplicated bsc id {} in node {}".format(bscid, name)
+                node['bscids'][int(bscid)] = number
 
 def _get_controller_roles_switch_ovs(node):
     return None
@@ -175,7 +195,7 @@ def _reboot_switch_noviflow(ip, port, user, password):
 
 def _execute_commands_in_switch_noviflow(ip, port, user, password, cmds):
     child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
-    if  not child or not PROMPT:
+    if not child or not PROMPT:
         print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
         return False
     for cmd in cmds:
@@ -183,7 +203,7 @@ def _execute_commands_in_switch_noviflow(ip, port, user, password, cmds):
         child.sendline(cmd)
         i = child.expect([pexpect.TIMEOUT, PROMPT], timeout=TIMEOUT)
         if i == 0 or not child.before:
-            print('ERROR: cannot send command {}{ to switch for {}@{} port ({})'.format(cmd, user, ip, port))
+            print('ERROR: cannot send command {} to switch for {}@{} port ({})'.format(cmd, user, ip, port))
             _close_noviflow_connection(child)
             return False
     _close_noviflow_connection(child)
@@ -293,10 +313,10 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
                 'bytes': byteCounts[cookiesLen]
             }
             node['cookies'][str(number)] = node['flows'][str(number)]
-            fmid = _get_flow_fmid(number)
-            if fmid in node['fmids']:
-                print "ERROR: duplicated lsc id {} in node with ip {} and port {}".format(fmid,ip,port)
-            node['fmids'][int(fmid)] = number
+            bscid = _get_flow_bscid(number)
+            if bscid in node['bscids']:
+                print "ERROR: duplicated bsc id {} in node with ip {} and port {}".format(bscid,ip,port)
+            node['bscids'][int(bscid)] = number
 
     _close_noviflow_connection(child)
     return True
@@ -313,8 +333,18 @@ def _get_controller_roles_switch_noviflow(ip, port, user, password):
         _close_noviflow_connection(child)
         return False
 
-    rolesRegex = re.compile(r'Role\s+-\s+(\S+)', re.IGNORECASE)
-    roles = rolesRegex.findall(child.before)
+    roles = None
+    rolesLinesRegex = re.compile(r'(Group\s+\S+\s+Role\s+-\s+\S+)', re.IGNORECASE)
+    rolesLines = rolesLinesRegex.findall(child.before)
+    if (rolesLines is not None and len(rolesLines) >0):
+        rolesRegex = re.compile(r'Group\s+\S+\s+Role\s+-\s+(\S+)', re.IGNORECASE)
+        roles = []
+        for line in sorted(rolesLines):
+            roleList = rolesRegex.findall(line)
+            if roleList and len(roleList):
+                roles.append(roleList[0])
+
+
 
     child.sendline('exit')
     child.expect([pexpect.TIMEOUT,pexpect.EOF])
@@ -525,7 +555,7 @@ class Topo(object):
         target = "{}@{}".format(sshuser,ctrl['ip']) if sshuser else ctrl['ip']
         port = sshport if sshport else 22
 
-        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {} 'sudo service lumina-lsc stop; sleep 5; sudo service lumina-lsc start'".format(port, target)
+        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {} 'sudo service brcd-bsc stop; sleep 5; sudo service brcd-bsc start'".format(port, target)
         if sshpassword:
             child = pexpect.spawn(cmd)
             i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
@@ -576,6 +606,36 @@ class Topo(object):
             time.sleep(seconds)
             return _execute_commands_locally(switch['enable_gw'])
 
+
+    def break_controller_switch(self, sw_name, controller_name, seconds=30):
+        switch = self.switches.get(sw_name)
+        if not switch:
+            print "ERROR: {} switch does not exists".format(sw_name)
+            return False
+        seconds = int(seconds)
+        seconds = 0 if not seconds or seconds <=0 else seconds
+        print "INFO: trying to break controller {} connection in the switch {} switch".format(controller_name, sw_name)
+        all_ctrl_config = switch.get('controller_config')
+        ctrl_config = all_ctrl_config.get(controller_name) if all_ctrl_config else None
+        if not ctrl_config or 'remove_controller' not in ctrl_config or len(ctrl_config['remove_controller']) <= 0:
+            print "ERROR: remove controller commands not found in switch {} for controller {}".format(sw_name, controller_name)
+            return False
+
+        if not ctrl_config or 'add_controller' not in ctrl_config or len(ctrl_config['add_controller']) <= 0:
+            print "ERROR: add controller commands not found in switch {} for controller {}".format(sw_name, controller_name)
+            return False
+
+        if switch['type'] == 'noviflow':
+            if not _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],ctrl_config['remove_controller']):
+                return False
+            time.sleep(seconds)
+            return _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],ctrl_config['add_controller'])
+        else:
+            if not _execute_commands_locally(ctrl_config['remove_controller']):
+                return False
+            time.sleep(seconds)
+            return _execute_commands_locally(ctrl_config['add_controller'])
+
     def delete_groups(self, name):
         switch = self.switches.get(name)
         if not switch:
@@ -605,7 +665,7 @@ class Topo(object):
         threads = []
         for name, switch in self.switches.iteritems():
             oname = switch['oname']
-            node = {'flows': {}, 'cookies': {}, 'groups': {}, 'fmids': {}}
+            node = {'flows': {}, 'cookies': {}, 'groups': {}, 'bscids': {}}
             nodes[oname] = node
             if switch['type'] == 'noviflow':
                 t = threading.Thread(target=_get_flows_groups_from_noviflow, args=(node,switch['ip'],switch['port'],switch['user'],switch['password'],prefix,))
@@ -617,6 +677,23 @@ class Topo(object):
         for t in threads:
             t.join()
         return nodes
+
+    def get_master_controller_name(self, name):
+        if name not in self.switches_openflow_names:
+            print "ERROR: switch {} not found".format(name)
+            return None
+        oname = self.switches_openflow_names[name]
+        owner = self._get_node_cluster_owner(oname)
+        if not owner:
+            print "ERROR: owner not found for switch {}".format(name)
+            return None
+        memberIdRegex = re.compile(r'member-(\d+)', re.IGNORECASE)
+        match = memberIdRegex.findall(owner)
+        if match:
+            memberId = int(match[0])
+            if (memberId <= len(self.controllers)):
+                return self.controllers[memberId-1].get('name')
+        print "ERROR: owner not found for switch {}".format(name)
 
     def check_roles(self, topology_name='flow:1'):
 
@@ -745,25 +822,25 @@ class Topo(object):
                         print "ERROR: DUPLICATED MATCH CRITERIA node {}({}) flow id {} and {} contains the same match. Check elines/etree service with the same match criteria. {} {}".format(self.getSwName(nodeid), nodeid,flowid, flowid2,flow['match'],flow2['match'])
                         error_found = True
 
-            for fmid, cookie in node['fmids'].iteritems():
+            for bscid, cookie in node['bscids'].iteritems():
                 flowid = node['cookies'][cookie]
                 version = _get_flow_version(cookie)
-                if nodeid not in operational_nodes or fmid not in operational_nodes[nodeid]['fmids']:
-                    print "ERROR: (config) node {}({}) flow {} fmid {} cookie {} not running, not found in operational data store".format(self.getSwName(nodeid),nodeid, flowid, fmid, cookie)
+                if nodeid not in operational_nodes or bscid not in operational_nodes[nodeid]['bscids']:
+                    print "ERROR: (config) node {}({}) flow {} bscid {} cookie {} not running, not found in operational data store".format(self.getSwName(nodeid),nodeid, flowid, bscid, cookie)
                     error_found = True
-                elif version != _get_flow_version(operational_nodes[nodeid]['fmids'][fmid]):
-                    print "WARNING: (config) node {}({}) flow {} fmid {} cookie {} operational version is different. Config version {}, operational version {}".format(self.getSwName(nodeid),nodeid, flowid, fmid,cookie, version,_get_flow_version(operational_nodes[nodeid]['fmids'][fmid]))
+                elif version != _get_flow_version(operational_nodes[nodeid]['bscids'][bscid]):
+                    print "WARNING: (config) node {}({}) flow {} bscid {} cookie {} operational version is different. Config version {}, operational version {}".format(self.getSwName(nodeid),nodeid, flowid, bscid,cookie, version,_get_flow_version(operational_nodes[nodeid]['bscids'][bscid]))
                     error_found = True
 
-                if nodeid not in switch_flows_groups or fmid not in switch_flows_groups[nodeid]['fmids']:
-                    print "ERROR: (config) node {}({}) flow {} fmid {} cookie {} not running, not found in the switch".format(self.getSwName(nodeid),nodeid, flowid, fmid,cookie)
+                if nodeid not in switch_flows_groups or bscid not in switch_flows_groups[nodeid]['bscids']:
+                    print "ERROR: (config) node {}({}) flow {} bscid {} cookie {} not running, not found in the switch".format(self.getSwName(nodeid),nodeid, flowid, bscid,cookie)
                     error_found = True
-                elif version != _get_flow_version(switch_flows_groups[nodeid]['fmids'][fmid]):
-                    print "WARNING: (config) node {}({}) flow {} fmid {} cookie {} switch version is different. Config version {}, switch version {}".format(self.getSwName(nodeid),nodeid, flowid, fmid,cookie,version,_get_flow_version(switch_flows_groups[nodeid]['fmids'][fmid]))
+                elif version != _get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]):
+                    print "WARNING: (config) node {}({}) flow {} bscid {} cookie {} switch version is different. Config version {}, switch version {}".format(self.getSwName(nodeid),nodeid, flowid, bscid,cookie,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
                     error_found = True
 
                 if flowid not in calculated_flow_exception and (nodeid not in calculated_nodes or flowid not in calculated_nodes[nodeid]['flows']):
-                    print "ERROR: (config) node {}({}) flow {} fmid {} cookie {} not present in calculated nodes".format(self.getSwName(nodeid),nodeid, flowid, fmid,cookie)
+                    print "ERROR: (config) node {}({}) flow {} bscid {} cookie {} not present in calculated nodes".format(self.getSwName(nodeid),nodeid, flowid, bscid,cookie)
                     error_found = True
 
             for groupid in node['groups']:
@@ -779,22 +856,22 @@ class Topo(object):
 
         for nodeid in operational_nodes:
             node = operational_nodes[nodeid]
-            for fmid, cookie in node['fmids'].iteritems():
+            for bscid, cookie in node['bscids'].iteritems():
                 version = _get_flow_version(cookie)
                 flowid = node['cookies'][cookie]
 
-                if nodeid not in config_nodes or fmid not in config_nodes[nodeid]['fmids']:
-                    print "ERROR: (operational) node {}({}) flowid {} fmid {} cookie {} running but not configured".format(self.getSwName(nodeid),nodeid, flowid, fmid, cookie)
+                if nodeid not in config_nodes or bscid not in config_nodes[nodeid]['bscids']:
+                    print "ERROR: (operational) node {}({}) flowid {} bscid {} cookie {} running but not configured".format(self.getSwName(nodeid),nodeid, flowid, bscid, cookie)
                     error_found = True
-                elif version != _get_flow_version(config_nodes[nodeid]['fmids'][fmid]):
-                    print "WARNING: (operational) node {}({}) flowid {} fmid {} cookie {} config version is different. Operational version {}, config version {}".format(self.getSwName(nodeid),nodeid, flowid, fmid, cookie,version,_get_flow_version(config_nodes[nodeid]['fmids'][fmid]))
+                elif version != _get_flow_version(config_nodes[nodeid]['bscids'][bscid]):
+                    print "WARNING: (operational) node {}({}) flowid {} bscid {} cookie {} config version is different. Operational version {}, config version {}".format(self.getSwName(nodeid),nodeid, flowid, bscid, cookie,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
                     error_found = True
 
-                if nodeid not in switch_flows_groups or fmid not in switch_flows_groups[nodeid]['fmids']:
-                    print "ERROR: (operational) node {}({}) flowid {} fmid {} cookie {} in operational store but not in switch".format(self.getSwName(nodeid),nodeid, flowid, fmid, cookie)
+                if nodeid not in switch_flows_groups or bscid not in switch_flows_groups[nodeid]['bscids']:
+                    print "ERROR: (operational) node {}({}) flowid {} bscid {} cookie {} in operational store but not in switch".format(self.getSwName(nodeid),nodeid, flowid, bscid, cookie)
                     error_found = True
-                elif version != _get_flow_version(switch_flows_groups[nodeid]['fmids'][fmid]):
-                    print "WARNING: (operational) node {}({}) flowid {} fmid {} cookie {} switch version is different. Operational version {}, switch version {}".format(self.getSwName(nodeid),nodeid, flowid, fmid, cookie,version,_get_flow_version(switch_flows_groups[nodeid]['fmids'][fmid]))
+                elif version != _get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]):
+                    print "WARNING: (operational) node {}({}) flowid {} bscid {} cookie {} switch version is different. Operational version {}, switch version {}".format(self.getSwName(nodeid),nodeid, flowid, bscid, cookie,version,_get_flow_version(switch_flows_groups[nodeid]['bscids'][bscid]))
                     error_found = True
 
             for groupid in node['groups']:
@@ -808,21 +885,21 @@ class Topo(object):
         for nodeid in switch_flows_groups:
             node = switch_flows_groups[nodeid]
 
-            for fmid, cookie in node['fmids'].iteritems():
+            for bscid, cookie in node['bscids'].iteritems():
                 version = _get_flow_version(cookie)
 
-                if nodeid not in config_nodes or fmid not in config_nodes[nodeid]['fmids']:
-                    print "ERROR: (switch) node {}({}) cookie {} fmid {} running in switch but not configured".format(self.getSwName(nodeid),nodeid, cookie, fmid)
+                if nodeid not in config_nodes or bscid not in config_nodes[nodeid]['bscids']:
+                    print "ERROR: (switch) node {}({}) cookie {} bscid {} running in switch but not configured".format(self.getSwName(nodeid),nodeid, cookie, bscid)
                     error_found = True
-                elif version != _get_flow_version(config_nodes[nodeid]['fmids'][fmid]):
-                    print "WARNING: (switch) node {}({}) cookie {} fmid {} switch version is different. Switch version {}, config version {}".format(self.getSwName(nodeid),nodeid, cookie, fmid,version,_get_flow_version(config_nodes[nodeid]['fmids'][fmid]))
+                elif version != _get_flow_version(config_nodes[nodeid]['bscids'][bscid]):
+                    print "WARNING: (switch) node {}({}) cookie {} bscid {} switch version is different. Switch version {}, config version {}".format(self.getSwName(nodeid),nodeid, cookie, bscid,version,_get_flow_version(config_nodes[nodeid]['bscids'][bscid]))
                     error_found = True
 
-                if nodeid not in operational_nodes or fmid not in operational_nodes[nodeid]['fmids']:
-                    print "ERROR: (switch) node {}({}) cookie {} fmid {} running in switch but not in operational".format(self.getSwName(nodeid),nodeid, cookie, fmid)
+                if nodeid not in operational_nodes or bscid not in operational_nodes[nodeid]['bscids']:
+                    print "ERROR: (switch) node {}({}) cookie {} bscid {} running in switch but not in operational".format(self.getSwName(nodeid),nodeid, cookie, bscid)
                     error_found = True
-                elif version != _get_flow_version(operational_nodes[nodeid]['fmids'][fmid]):
-                    print "WARNING: (switch) node {}({}) cookie {} fmid {} switch version is different. Switch version {}, operational version {}".format(self.getSwName(nodeid),nodeid, cookie, fmid,version,_get_flow_version(operational_nodes[nodeid]['fmids'][fmid]))
+                elif version != _get_flow_version(operational_nodes[nodeid]['bscids'][bscid]):
+                    print "WARNING: (switch) node {}({}) cookie {} bscid {} switch version is different. Switch version {}, operational version {}".format(self.getSwName(nodeid),nodeid, cookie, bscid,version,_get_flow_version(operational_nodes[nodeid]['bscids'][bscid]))
                     error_found = True
 
             for groupid in node['groups']:
@@ -864,6 +941,84 @@ class Topo(object):
             return True
 
         return False
+
+    def print_node_summary(self, node_name=None):
+
+        resp = self._http_get(self._get_operational_openflow())
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            print 'ERROR: no data found while trying to get openflow information'
+            return
+
+        data = json.loads(resp.content)
+        if 'nodes' not in data or 'node' not in data['nodes']:
+            print 'ERROR: no nodes found while trying to get openflow information'
+            return
+
+        result = []
+        rspeed = {}
+        total_ports = 0
+        total_ports_up = 0
+
+        for node in data['nodes']['node']:
+            nodeid = node['id']
+            if not self.containsSwitch(nodeid):
+                continue
+
+            if node_name and node['id'] != node_name:
+                continue
+
+            rconnectors =[]
+            num_ports = 0
+            num_ports_up = 0
+
+            connectors = node.get('node-connector')
+            if connectors is not None:
+                for connector in connectors:
+                    # skip local ports
+                    cname = connector.get('flow-node-inventory:name')
+                    cname = cname if cname else connector.get('name')
+                    if not cname or str(cname) == str("local"):
+                        continue
+
+                    num_ports += 1
+                    port_number = connector.get('flow-node-inventory:port-number')
+                    port_number = port_number if port_number else connector.get('port-number')
+                    port_number = port_number if port_number else "unkown"
+
+                    current_speed = connector.get('flow-node-inventory:current-speed')
+                    current_speed = current_speed if current_speed else connector.get('current-speed')
+                    current_speed = current_speed if current_speed else 0
+                    current_speed = "{} gbps".format(current_speed/1000000)
+
+                    if current_speed not in rspeed:
+                        rspeed[current_speed]=0
+                    rspeed[current_speed] += 1
+
+                    state = connector.get('flow-node-inventory:state')
+                    state = state if state else connector.get('state')
+
+                    is_up = state and not state.get('blocked') and not state.get('link-down') and state.get('live')
+                    if is_up:
+                        num_ports_up += 1
+
+                    rconnectors.append({'port':port_number,'up':is_up,'speed': current_speed})
+
+            total_ports += num_ports
+            total_ports_up += num_ports_up
+            result.append({'id':nodeid, 'ports': rconnectors, 'total_ports': num_ports, 'total_ports_up': num_ports_up})
+
+
+        print "Total number of switches: {}".format(len(result))
+        print "Total number of ports: {}".format(total_ports)
+        print "Total number of live ports: {}".format(total_ports_up)
+        for speed in rspeed:
+            print "{} ports with speed: {}".format(rspeed[speed],speed)
+
+        print ""
+        for node in result:
+            print "\tSwitch: {}\tTotal ports: {}\tLive port: {}".format(node.get('id'),node.get('total_ports'),node.get('total_ports_up'))
+            for connector in node.get('ports'):
+                print "\t\tport: {} \tlive: {}\tspeed: {}".format(connector.get('port'),connector.get('up'),connector.get('speed'))
 
 
     def print_flow_stats(self,filters=None, node_name=None):
@@ -953,7 +1108,7 @@ class Topo(object):
 
     def print_eline_stats(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-eline:elines')
+        resp = self._http_get(self._get_config_url() + REST_URL_ELINE)
         if resp is None or resp.status_code != 200 or resp.content is None:
             print 'ERROR: no data found while trying to get openflow information'
             return
@@ -965,12 +1120,12 @@ class Topo(object):
         for eline in data['elines']['eline']:
             if contains_filters(filters,eline['name']):
                 print 'eline: ' + eline['name']
-                resp = self._http_post(self._get_operations_url()+'/lumina-flowmanager-eline:get-stats','{"input":{"name": "'+eline['name']+'"}}')
+                resp = self._http_post(self._get_operations_url()+REST_URL_ELINE_STATS,'{"input":{"name": "'+eline['name']+'"}}')
                 print json.dumps(json.loads(resp.content),indent=2)
 
     def print_eline_summary(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-eline:elines')
+        resp = self._http_get(self._get_config_url() + REST_URL_ELINE)
         if resp is None or resp.status_code != 200 or resp.content is None:
             print 'ERROR: no data found while trying to get eline information'
             return
@@ -981,7 +1136,7 @@ class Topo(object):
 
         for eline in data['elines']['eline']:
             if contains_filters(filters,eline['name']):
-                resp = self._http_post(self._get_operations_url()+'/lumina-flowmanager-eline:get-stats','{"input":{"name": "'+eline['name']+'"}}')
+                resp = self._http_post(self._get_operations_url()+REST_URL_ELINE_STATS,'{"input":{"name": "'+eline['name']+'"}}')
                 if resp is None or resp.status_code != 200 or resp.content is None:
                     print 'ERROR: cannot get stats for eline {}'.format(eline['name'])
                     continue
@@ -995,7 +1150,7 @@ class Topo(object):
                 msg = 'state:OK' if successful else 'state: KO code:{} message:{}'.format(code,error_msg)
                 print "eline: '" + eline['name'] + "' " + msg
 
-                resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-path:paths/path/{}'.format(eline['path-name']))
+                resp = self._http_get(self._get_config_url() + REST_URL_PATH + '/path/{}'.format(eline['path-name']))
                 if resp is None or resp.status_code != 200 or resp.content is None:
                     print 'ERROR: cannot get path for eline {}'.format(eline['name'])
                     continue
@@ -1026,7 +1181,7 @@ class Topo(object):
 
     def print_etree_stats(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-etree:etrees')
+        resp = self._http_get(self._get_config_url() + REST_URL_ETREE)
         if resp is None or resp.status_code != 200 or resp.content is None:
             print 'ERROR: no data found while trying to get openflow information'
             return
@@ -1038,13 +1193,13 @@ class Topo(object):
         for etree in data['etrees']['etree']:
             if contains_filters(filters,etree['name']):
                 print 'etree: ' + etree['name']
-                resp = self._http_post(self._get_operations_url()+'/lumina-flowmanager-etree:get-stats','{"input":{"name": "'+etree['name']+'"}}')
+                resp = self._http_post(self._get_operations_url()+REST_URL_ETREE_STATS,'{"input":{"name": "'+etree['name']+'"}}')
                 print json.dumps(json.loads(resp.content),indent=2)
 
 
     def print_etree_summary(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-etree:etrees')
+        resp = self._http_get(self._get_config_url() + REST_URL_ETREE)
         if resp is None or resp.status_code != 200 or resp.content is None:
             print 'ERROR: no data found while trying to get etree information'
             return
@@ -1056,7 +1211,7 @@ class Topo(object):
         for etree in data['etrees']['etree']:
             if contains_filters(filters,etree['name']):
 
-                resp = self._http_post(self._get_operations_url()+'/lumina-flowmanager-etree:get-stats','{"input":{"name": "'+etree['name']+'"}}')
+                resp = self._http_post(self._get_operations_url()+REST_URL_ETREE_STATS,'{"input":{"name": "'+etree['name']+'"}}')
                 if resp is None or resp.status_code != 200 or resp.content is None:
                     print 'ERROR: cannot get stats for etree {}'.format(etree['name'])
                     continue
@@ -1070,7 +1225,7 @@ class Topo(object):
                 msg = 'state:OK' if successful else 'state: KO code:{} message:{}'.format(code,error_msg)
                 print "etree: '" + etree['name'] + "' " + msg
 
-                resp = self._http_get(self._get_config_url() + '/lumina-flowmanager-tree-path:treepaths/treepath/{}'.format(etree['treepath-name']))
+                resp = self._http_get(self._get_config_url() + REST_URL_TREEPATH + '/treepath/{}'.format(etree['treepath-name']))
                 if resp is None or resp.status_code != 200 or resp.content is None:
                     print 'ERROR: cannot get treepath for etree {}'.format(etree['name'])
                     continue
@@ -1306,12 +1461,12 @@ class Topo(object):
             flows = {}
             groups = {}
             cookies = {}
-            fmids = {}
+            bscids = {}
             nodes[nodeid] = {
                 'flows': flows,
                 'groups': groups,
                 'cookies': cookies,
-                'fmids': fmids
+                'bscids': bscids
             }
 
             thegroups = node.get('flow-node-inventory:group')
@@ -1344,8 +1499,8 @@ class Topo(object):
                                 print "ERROR: unexpected duplicated cookie {}, between {} and {}".format(cookie, flowid, cookies[cookie])
                             else:
                                 cookies[cookie] = flowid
-                                fmid = _get_flow_fmid(cookie)
-                                fmids[fmid] = cookie
+                                bscid = _get_flow_bscid(cookie)
+                                bscids[bscid] = cookie
 
         return nodes
 
@@ -1400,7 +1555,7 @@ class Topo(object):
             nodeid = node['node-id']
             if not self.containsSwitch(nodeid):
                 continue
-            brocadesr = node.get('lumina-flowmanager-sr:sr')
+            brocadesr = node.get(REST_CONTAINER_SR)
             if brocadesr is None:
                 continue
 
@@ -1457,13 +1612,13 @@ class Topo(object):
                         if not self.containsSwitch(nodeid):
                             continue
                         srnodes[nodeid] = {'groups': [], 'flows': []}
-                        brocadesr = node.get('lumina-flowmanager-sr:sr')
+                        brocadesr = node.get(REST_CONTAINER_SR)
                         groups = None
                         if brocadesr is not None:
                             self.append_calculated_groups(srnodes, brocadesr.get('calculated-groups'))
                             self.append_calculated_flows(srnodes, brocadesr.get('calculated-flows'))
 
-        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-path:paths')
+        resp = self._http_get(self._get_operational_url() + REST_URL_PATH)
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             if data.get('paths') is not None:
@@ -1473,7 +1628,7 @@ class Topo(object):
                         self.append_calculated_flows(srnodes, path.get('calculated-flows'))
 
 
-        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-eline:elines')
+        resp = self._http_get(self._get_operational_url() + REST_URL_ELINE)
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             if data.get('elines') is not None:
@@ -1483,7 +1638,7 @@ class Topo(object):
                         self.append_calculated_flows(srnodes, eline.get('calculated-flows'))
 
 
-        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-tree-path:treepaths')
+        resp = self._http_get(self._get_operational_url() + REST_URL_TREEPATH)
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             if data.get('treepaths') is not None:
@@ -1493,7 +1648,7 @@ class Topo(object):
                         self.append_calculated_flows(srnodes, path.get('calculated-flows'))
                         self.append_calculated_groups(srnodes, path.get('calculated-groups'))
 
-        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-etree:etrees')
+        resp = self._http_get(self._get_operational_url() + REST_URL_ETREE)
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             if data.get('etrees') is not None:
@@ -1503,21 +1658,21 @@ class Topo(object):
                         self.append_calculated_flows(srnodes, etree.get('calculated-flows'))
                         self.append_calculated_groups(srnodes, etree.get('calculated-groups'))
 
-        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-path-mpls:mpls-nodes')
+        resp = self._http_get(self._get_operational_url() + REST_URL_PATH_MPLS_NODES)
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             mpls_nodes = data.get('mpls-nodes')
             if mpls_nodes is not None:
                 self.append_calculated_flow_nodes(srnodes, mpls_nodes.get('calculated-flow-nodes'))
 
-        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-eline-mpls:eline-nodes')
+        resp = self._http_get(self._get_operational_url() + REST_URL_ELINE_MPLS_NODES)
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             mpls_nodes = data.get('eline-nodes')
             if mpls_nodes is not None:
                 self.append_calculated_flow_nodes(srnodes, mpls_nodes.get('calculated-flow-nodes'))
 
-        resp = self._http_get(self._get_operational_url() + '/lumina-flowmanager-etree-sr:etree-nodes')
+        resp = self._http_get(self._get_operational_url() + REST_URL_ETREE_SR_NODES)
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             mpls_nodes = data.get('etree-nodes')
