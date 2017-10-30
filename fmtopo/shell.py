@@ -16,7 +16,7 @@ Usage:
   fmcheck random-isolate-ctrl <seconds> [--topology=FILE]
   fmcheck isolate-ctrl <controller_name> <seconds> [--topology=FILE]
   fmcheck random-isolate-ctrl-switch <seconds> [--topology=FILE]
-  fmcheck isolate-ctrl-switch <switch_name> <controller_name> <seconds> [--topology=FILE]
+  fmcheck isolate-ctrl-switch <switch_name> <seconds> [--topology=FILE]
   fmcheck random-delete-groups [--topology=FILE]
   fmcheck delete-groups <name> [--topology=FILE]
   fmcheck random-delete-flows [--topology=FILE]
