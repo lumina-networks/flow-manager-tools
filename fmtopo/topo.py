@@ -542,12 +542,15 @@ class Topo(object):
         return random.choice(self.controllers_name.keys())
 
     def reboot_controller(self, name):
+        return self.execute_command_controller(name,"sudo service brcd-bsc stop; sleep 5; sudo service brcd-bsc start")
+
+    def execute_command_controller(self, name, command):
         ctrl = self.controllers_name.get(name)
         if not ctrl:
             print "ERROR: {} controller does not exists".format(name)
             return False
 
-        print "INFO: rebooting {} controller with ip {}".format(name, ctrl['ip'])
+        print "INFO: executing command {} in controller {} with ip {}".format(command, name, ctrl['ip'])
         sshuser = ctrl.get('sshuser')
         sshpassword = ctrl.get('sshpassword')
         sshport = ctrl.get('sshport')
@@ -555,7 +558,7 @@ class Topo(object):
         target = "{}@{}".format(sshuser,ctrl['ip']) if sshuser else ctrl['ip']
         port = sshport if sshport else 22
 
-        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {} 'sudo service brcd-bsc stop; sleep 5; sudo service brcd-bsc start'".format(port, target)
+        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {} '{}'".format(port, target, command)
         if sshpassword:
             child = pexpect.spawn(cmd)
             i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
@@ -571,6 +574,27 @@ class Topo(object):
             output = subprocess.check_output(cmd, shell=True)
 
         return True
+
+    def isolate_controller(self, name, seconds=30):
+        controller = self.controllers_name.get(name)
+        if not controller:
+            print "ERROR: {} switch does not exists".format(name)
+            return False
+        seconds = int(seconds)
+        seconds = 0 if not seconds or seconds <=0 else seconds
+        print "INFO: trying to isolate controller {} for {} seconds".format(name, seconds)
+        if 'isolate_cmd' not in controller or len(controller['isolate_cmd']) <=0 or 'isolate_undo_cmd' not in controller or len(controller['isolate_undo_cmd']) <=0:
+            print "ERROR: isolate commands not found in controller {}".format(name)
+            return False
+        for command in controller['isolate_cmd']:
+            if not self.execute_command_controller(name, command):
+                return False
+        time.sleep(seconds)
+        for command in controller['isolate_undo_cmd']:
+            if not self.execute_command_controller(name, command):
+                return False
+
+
 
     def reboot_switch(self, name):
         switch = self.switches.get(name)
@@ -592,7 +616,7 @@ class Topo(object):
         seconds = int(seconds)
         seconds = 0 if not seconds or seconds <=0 else seconds
         print "INFO: trying to break connectivity to the switch {} switch".format(name)
-        if not switch['disable_gw'] or len(switch['disable_gw']) <=0 or not switch['enable_gw'] or len(switch['enable_gw']) <=0:
+        if 'disable_gw' not in switch or len(switch['disable_gw']) <=0 or 'enable_gw' not in switch or len(switch['enable_gw']) <=0:
             print "ERROR: enable or disable gw commands not found in switch {} switch".format(name)
             return False
         if switch['type'] == 'noviflow':
