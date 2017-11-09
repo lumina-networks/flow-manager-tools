@@ -1,3 +1,3 @@
 class Noviflow(Switch):
-    def __init__(self, props):
-        Switch.__init__(self, props)
+    def __init__(self, props, expected=False):
+        Switch.__init__(self, props, expected)

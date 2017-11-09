@@ -67,24 +67,6 @@ class Controller(object):
     def get_operations_fm_url(self, name):
         return self.get_operations_url() + '/' + LUMINA_FLOW_MANAGER_PREFIX if self.lumina else BROCADE_FLOW_MANAGER_PREFIX + name
 
-    def get_config_openflow(self):
-        return self.get_config_url() + '/opendaylight-inventory:nodes'
-
-    def get_operational_openflow(self):
-        return self.get_operational_url() + '/opendaylight-inventory:nodes'
-
-    def get_config_flow_url(self, node, table, flow):
-        return self.get_config_openflow() + '/node/{}/table/{}/flow/{}'.format(node, str(table), flow)
-
-    def get_operational_flow_url(self, node, table, flow):
-        return self.get_operational_openflow() + '/node/{}/table/{}/flow/{}'.format(node, str(table), flow)
-
-    def get_config_group_url(self, node, group):
-        return self.get_config_openflow() + '/node/{}/group/{}'.format(node, str(group))
-
-    def get_operational_group_url(self, node, group):
-        return self.get_operational_openflow() + '/node/{}/group/{}'.format(node, str(group))
-
     def http_get(self, url):
         return requests.get(url,
                             auth=HTTPBasicAuth(self.user,
@@ -124,9 +106,10 @@ class Controller(object):
             time.sleep(int(seconds))
         if not self.execute_command_controller('sudo service-' + 'lsc' if self.lumina else 'brcd' + ' start' ):
             return False
+        return True
 
      def reboot_server(self):
-         self.execute_command_controller('sudo reboot'):
+         return self.execute_command_controller('sudo reboot'):
 
      def isolate(self, seconds=0):
         if 'isolate_cmd' not in self.props or len(self.props['isolate_cmd']) <=0 or 'isolate_undo_cmd' not in self.props or len(self.props['isolate_undo_cmd']) <=0:
@@ -140,5 +123,4 @@ class Controller(object):
         for command in controller['isolate_undo_cmd']:
          if not self.execute_command_controller(command):
              return False
-
         return True

@@ -21,9 +21,8 @@ class Topo(object):
         self.hosts_by_openflow_name = {}
         if props.get('host'):
             for properties in props['host']:
-                new_host = Host(properties)
-                self.hosts[new_host.name] = new_host
-                self.hosts_by_openflow_name[new_host.openflow_name] = new_host
+                new_host = Host(properties, True)
+                self.add_host(new_host)
 
         self.switches = {}
         self.switches_by_openflow_name = {}
@@ -32,13 +31,11 @@ class Topo(object):
             for properties in props['switch']:
                 switch_type = switch.get_switch_type(props)
                 if switch_type and switch_type == 'noviflow':
-                    new_switch = Noviflow(properties)
+                    new_switch = Noviflow(properties, True)
                 else:
-                    new_switch = OVS(properties)
+                    new_switch = OVS(properties, True)
 
-                self.switches[new_switch.name] = new_switch
-                self.switches_by_openflow_name[new_switch.openflow_name] = new_switch
-                self.switches_by_dpid[new_switch.dpid] = new_switch
+                self.add_switch(new_switch)
 
         self.controllers = {}
         if props.get('controller'):
@@ -48,6 +45,8 @@ class Topo(object):
         else:
             new_controller = Controller({'name': 'c0'}, props.get('controller_vip'))
             self.controllers[new_controller.name] = new_controller
+
+        self.default_ctrl = self.get_random_controller()
 
         self.links = {}
         if props.get('link'):
@@ -86,14 +85,18 @@ class Topo(object):
 
                 # add the links
                 if src_switch and dst_switch:
-                    src_switch.add_link_to_switch(src_port, dst_switch, dst_port)
-                    dst_switch.add_link_to_switch(dst_port, src_switch, src_port)
+                    src_switch.get_link(src_switch.openflow_name + ':' + src_port, dst_switch.openflow_name + ':' + dst_port)
+                    dst_switch.get_link(dst_switch.openflow_name + ':' + dst_port, src_switch.openflow_name + ':' + src_port)
 
                 elif src_switch and dst_host:
-                    src_switch.add_link_to_host(src_port, dst_host)
+                    src_switch.get_link(src_switch.openflow_name + ':' + src_port, dst_host.openflow_name)
 
                 elif dst_switch and src_host:
-                    dst_switch.add_link_to_host(dst_port, src_host)
+                    dst_switch.get_link(dst_switch.openflow_name + ':' + dst_port, src_host.openflow_name)
+
+        def add_host(self, host):
+            self.hosts[host.name] = host
+            self.hosts_by_openflow_name[host.openflow_name] = host
 
         def get_host(self, name):
             if name and name in self.hosts:
@@ -119,6 +122,18 @@ class Topo(object):
         def get_random_controller_name(self):
             return random.choice(self.controllers.keys())
 
+        def add_switch(self, switch):
+            self.switches[switch.name] = switch
+            self.switches_by_openflow_name[switch.openflow_name] = switch
+            self.switches_by_dpid[switch.dpid] = switch
+
+        def add_switch_by_openflow_name(self, name):
+            new_switch = Switch({
+                'name': name,
+                'dpid': str(hex(name.split(':')[1]))
+            })
+            self.add_switch(new_switch)
+
         def get_switch(self, name):
             if not name:
                 return None
@@ -137,9 +152,56 @@ class Topo(object):
         def get_random_switch_name(self):
             return random.choice(self.switches.keys())
 
-        def get_links(self, filter_hosts=True):
-            links = {}
-            for switch in self.switches.itervalues():
-                for source in switch.links_by_openflow_port:
-                    if not filter_hosts or (not source.startswith('host:') and not switch.links_by_openflow_port[source].startswith('host:')):
-                        links[source] = switch.links_by_openflow_port[source]
+        def reconciliate_nodes(self):
+            ctrl = self.default_ctrl
+            nodes = openflow.get_topology_nodes(ctrl, 'flow:1')
+            if nodes:
+                for node in nodes:
+                    if not self.get_switch(node):
+                        self.add_switch_by_openflow_name(node)
+                    self.get_switch(node).found_openflow_topology = True
+
+            nodes = openflow.get_topology_nodes(ctrl, 'flow:1:sr')
+            if nodes:
+                for node in nodes:
+                    if not self.get_switch(node):
+                        self.add_switch_by_openflow_name(node)
+                    self.get_switch(node).found_sr_topology = True
+
+            nodes = openflow.get_openflow_connected_nodes(ctrl)
+            if nodes:
+                for node in nodes:
+                    if not self.get_switch(node):
+                        self.add_switch_by_openflow_name(node)
+                    self.get_switch(node).found_connected = True
+
+        def reconciliate_links(self):
+            ctrl = self.default_ctrl
+
+            links = openflow.get_topology_links(ctrl, 'flow:1')
+            if links:
+                for name in links:
+                    link = links[name]
+                    src_node = link['source']['source-node']
+                    src_port = link['source']['source-tp']
+                    dst_node = link['destination']['dest-node']
+                    dst_port = link['destination']['dest-tp']
+                    if not self.get_switch(src_node):
+                        self.add_switch_by_openflow_name(src_node)
+                    if not self.get_switch(dst_node):
+                        self.add_switch_by_openflow_name(dst_node)
+                    self.get_switch(dst_node).get_link(src_port).add_of_dst(dst_port)
+
+            links = openflow.get_topology_links(ctrl, 'flow:1:sr')
+            if links:
+                for name in links:
+                    link = links[name]
+                    src_node = link['source']['source-node']
+                    src_port = link['source']['source-tp']
+                    dst_node = link['destination']['dest-node']
+                    dst_port = link['destination']['dest-tp']
+                    if not self.get_switch(src_node):
+                        self.add_switch_by_openflow_name(src_node)
+                    if not self.get_switch(dst_node):
+                        self.add_switch_by_openflow_name(dst_node)
+                    self.get_switch(dst_node).get_link(src_port).add_sr_dst(dst_port)

@@ -9,9 +9,13 @@ def get_switch_type(props):
 
 class Switch(object):
 
-    def __init__(self, props):
+    def __init__(self, props, expected=False):
+        self.found_openflow_topology = False
+        self.found_sr_topology = False
+        self.found_connected = False
         utils.check_mandatory_values(props, ['name', 'dpid'])
         self.props = props
+        self.expected = expected
         self.name = props['name']
         self.dpid = str(int(props['dpid'], 16))
         self.openflow_name = "openflow:" + str(int(props['dpid'], 16))
@@ -20,20 +24,12 @@ class Switch(object):
         self.password = 'vagrant' if not props.get('password') else props['password']
         self.ip = '127.0.0.1' if not props.get('ip') else props['ip']
         self.port = 22 if not props.get('port') else props['port']
-        self.links_by_port = {}
-        self.links_by_openflow_port = {}
-        self.destination_switches = {}
-        self.destination_hosts = {}
+        self.links = {}
 
-    def add_link_to_switch(self, source_port, destination_switch, destination_port):
-        self.links_by_port[str(source_port)] = destination_switch.openflow_name + ':' + destination_port
-        self.links_by_openflow_port[self.openflow_name + ':' + str(source_port)] = destination_switch.openflow_name + ':' + destination_port
-        self.destination_switches[str(source_port)] = destination_switch
-
-    def add_link_to_host(self, source_port, host):
-        self.links_by_port[str(source_port)] = host.openflow_name
-        self.links_by_openflow_port[self.openflow_name + ':' + str(source_port)] = host.openflow_name
-        self.destination_hosts[str(source_port)] = host
+    def get_link(self, source, expected_dst=None):
+        if source not in links:
+            links[source] = Link(source, expected_dst)
+        return links[source]
 
     def reboot(self):
         raise Exception('reboot method is not implemented by this switch {}'.format(self.name))

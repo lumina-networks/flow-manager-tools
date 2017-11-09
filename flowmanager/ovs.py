@@ -1,6 +1,6 @@
 class OVS(Switch):
-    def __init__(self, props):
-        Switch.__init__(self, props)
+    def __init__(self, props, expected=False):
+        Switch.__init__(self, props, expected)
 
         # if IP address and user is not given
         # then we need to assume OVS is running locally
