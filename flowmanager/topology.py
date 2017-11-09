@@ -45,6 +45,9 @@ class Topo(object):
             for properties in props['controller']:
                 new_controller = Controller(properties, props.get('controller_vip'))
                 self.controllers[new_controller.name] = new_controller
+        else:
+            new_controller = Controller({'name': 'c0'}, props.get('controller_vip'))
+            self.controllers[new_controller.name] = new_controller
 
         self.links = {}
         if props.get('link'):
@@ -100,9 +103,21 @@ class Topo(object):
             if 'host:' + name in self.hosts_by_openflow_name:
                 return self.hosts_by_openflow_name['host:' + name]
 
+        def get_random_host(self):
+            return get_host(self.get_random_host_name())
+
+        def get_random_host_name(self):
+            return random.choice(self.hosts.keys())
+
         def get_controller(self, name):
             if name and name in self.controllers:
                 return self.controllers[name]
+
+        def get_random_controller(self):
+            return get_controller(self.get_random_controller_name())
+
+        def get_random_controller_name(self):
+            return random.choice(self.controllers.keys())
 
         def get_switch(self, name):
             if not name:
@@ -116,11 +131,15 @@ class Topo(object):
             if name in self.switches_by_dpid:
                 return self.switches_by_dpid[name]
 
-        def get_random_host_name(self):
-            return random.choice(self.hosts.keys())
+        def get_random_switch(self):
+            return self.get_switch(self.get_random_switch_name())
 
         def get_random_switch_name(self):
             return random.choice(self.switches.keys())
 
-        def get_random_controller_name(self):
-            return random.choice(self.controllers.keys())
+        def get_links(self, filter_hosts=True):
+            links = {}
+            for switch in self.switches.itervalues():
+                for source in switch.links_by_openflow_port:
+                    if not filter_hosts or (not source.startswith('host:') and not switch.links_by_openflow_port[source].startswith('host:')):
+                        links[source] = switch.links_by_openflow_port[source]
