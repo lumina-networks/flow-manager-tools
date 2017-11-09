@@ -28,6 +28,14 @@ class Controller(object):
         self.user = 'admin' if not ctrl.get('user') else ctrl['user']
         self.password = 'admin' if not ctrl.get('password') else ctrl['password']
         self.timeout = 60 if not ctrl.get('timeout') else int(ctrl['timeout'])
+        self.sshuser = 'root' if not ctrl.get('sshuser') else ctrl['sshuser']
+        self.sshpassword = 'lumina' if not ctrl.get('sshpassword') else ctrl['sshpassword']
+        self.sshport = '22' if not ctrl.get('sshport') else ctrl['sshport']
+
+        # if IP address and user is not given
+        # then we need to assume OVS is running locally
+        self.execute_local = not props.get('ip') and not props.get('sshuser')
+        self.execute_local = True if self.ip == '127.0.0.1' else self.execute_local
 
         REQUEST_URL = '/' + LUMINA_FLOW_MANAGER_PREFIX + 'path:paths'
         resp = self._http_get(self.get_config_url() + REQUEST_URL)
