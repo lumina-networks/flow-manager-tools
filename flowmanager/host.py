@@ -5,9 +5,10 @@ This module contains the primitives to access host information.
 """
 class Host(object):
 
-    def __init__(self, props):
+    def __init__(self, props, expected=False):
         utils.check_mandatory_values(props, ['name', 'ip'])
         self.props = props
+        self.expected = expected
         self.ip = props['ip'].split('/')[0] if props['ip'].contains('/') else props['ip']
         self.mask = props['ip'].split('/')[1] if props['ip'].contains('/') else '24'
         self.hosts_ip[host['name']] = host['ip'].split('/')[0]
