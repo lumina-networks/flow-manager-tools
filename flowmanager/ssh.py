@@ -21,8 +21,6 @@ class SSH(object):
 
     """docstring for ClassName"""
     def __init__(self, ip, user, port, password=None, prompt = None, timeout=3):
-        self.controllers = []
-
         self.ip = ip
         self.user = user
         self.port = port
@@ -30,51 +28,57 @@ class SSH(object):
         self.prompt = prompt
         self.timeout = timeout
         self.ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(self.port, self.user, self.ip)
-        logging.getLogger().setLevel(logging.DEBUG)
-        
+
     def create_session(self):
         self.child = pexpect.spawn(self.ssh_command)
         result = self.child.expect([pexpect.TIMEOUT, unicode('(?i)password')], timeout=self.timeout)
         if result == 0:
-            logging.debug('ERROR: could not connect to noviflow via SSH. %s@%s port ({%s)', self.user, self.ip, self.port)
-            self.close()
+            logging.error('ERROR: could not connect to noviflow via SSH. %s@%s port ({%s)', self.user, self.ip, self.port)
             return False
         else:
             self.child.sendline(self.password)
-            #pdb.set_trace()
             if self.child.expect([pexpect.TIMEOUT, unicode(self.prompt)], timeout=self.timeout) == 0:
-                self.close()
                 return False
             else:
                 logging.debug('SSH session created with success')
                 return True
 
-    def execute_command(self, command, prompt = None):
-        self.child.sendline(command)
+    def execute_command(self, command, prompt=None, timeout=None):
         prompt = prompt if prompt else self.prompt
-        if self.child.expect([pexpect.TIMEOUT, unicode(prompt)], timeout=self.timeout) == 0:
-            self.close()
-    
+        timeout = timeout if timeout else self.timeout
+
+        logging.debug('SSH: (%s) executing command %s , prompt %s, timeout %s',self.ip, command, prompt, timeout)
+        self.child.sendline(command)
+        if self.child.expect([pexpect.TIMEOUT, unicode(prompt)], timeout=timeout) != 0:
+            logging.debug('SSH: (%s) command executed. Ouput is: \n %s', self.ip, self.child.before)
+            return self.child.before
+
     def close(self):
+        logging.debug('SSH: (%s) closing connection.', self.ip)
         self.child.sendline('exit')
         self.child.expect([pexpect.TIMEOUT,pexpect.EOF])
         self.child.close()
 
 class NoviflowSSH(SSH):
-    def __init__(self, ip, user, port, password=None, prompt = None, timeout=3):
-        SSH.__init__(self, ip, user, port, password, prompt, timeout)
-        self.create_session()
+    def __init__(self, ip, user, port, password=None, prompt=None, timeout=3):
+        SSH.__init__(self, ip, user, port, password, prompt if prompt else "#", timeout)
 
     def create_session(self):
-        ssh = SSH(self.ip, self.user, self.port, self.password, self.prompt)
-        result = ssh.create_session()
+        result = super(NoviflowSSH, self).create_session()
         if result:
-            # pdb.set_trace()
-            ssh.execute_command('show config switch hostname')
+            result = self.execute_command('show config switch hostname')
+            if result:
+                regex = re.compile(r'Hostname:\s*(\S+)', re.IGNORECASE)
+                match = regex.findall(self.child.before)
+                self.prompt = '{}#'.format(match[0]) if match else self.prompt
+                logging.debug('NOVIFLOW: current prompt %s',self.prompt)
 
-            regex = re.compile(r'Hostname:\s*(\S+)', re.IGNORECASE)
-            match = regex.findall(ssh.child.before)
-            PROMPT = '{}'+self.prompt.format(match[0]) if match else None
-
-if __name__ == "__main__":
-    NoviflowSSH('192.168.50.40', 'vagrant', 22, 'vagrant', '$')
+                result = self.execute_command('show config page')
+                if result:
+                    pageRegex = re.compile(r'(off)', re.IGNORECASE)
+                    pageConfig = pageRegex.findall(self.child.before)
+                    if not pageConfig:
+                        logging.debug("NOVIFLOW: disabling config page ")
+                        return self.execute_command('set config page off')
+                    else:
+                        return result
