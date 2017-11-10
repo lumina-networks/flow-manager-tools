@@ -100,3 +100,49 @@ def get_openflow_connected_nodes(ctrl, use_cache=True):
         nodes[name] = node
 
     return nodes if len(nodes) > 0 else None
+
+
+def get_paths(ctrl, config=False, use_cache=True):
+    url = ctrl.get_config_fm_url('path:paths') if config else  ctrl.get_operational_fm_url('path:paths')
+    paths = get_from_api(ctrl, url, use_cache)
+    if paths and 'paths' in paths and 'path' in paths['paths']:
+        return paths['paths']['path']
+
+def get_elines(ctrl, config=False, use_cache=True):
+    url = ctrl.get_config_fm_url('eline:elines') if config else  ctrl.get_operational_fm_url('eline:elines')
+    elines = get_from_api(ctrl, url, use_cache)
+    if elines and 'elines' in elines and 'eline' in elines['elines']:
+        return elines['elines']['eline']
+
+def get_treepaths(ctrl, config=False, use_cache=True):
+    url = ctrl.get_config_fm_url('tree-path:treepaths') if config else  ctrl.get_operational_fm_url('tree-path:treepaths')
+    paths = get_from_api(ctrl, url, use_cache)
+    if paths and 'treepaths' in paths and 'treepath' in paths['treepaths']:
+        return paths['treepaths']['treepath']
+
+def get_etrees(ctrl, config=False, use_cache=True):
+    url = ctrl.get_config_fm_url('etree:etrees') if config else  ctrl.get_operational_fm_url('etree:etrees')
+    etrees = get_from_api(ctrl, url, use_cache)
+    if etrees and 'etrees' in etrees and 'etree' in etrees['etrees']:
+        return etrees['etrees']['etree']
+
+
+def get_path_mpls_nodes(ctrl, config=False, use_cache=True):
+    url = ctrl.get_config_fm_url('path-mpls:mpls-nodes') if config else  ctrl.get_operational_fm_url('path-mpls:mpls-nodes')
+    nodes = get_from_api(ctrl, url, use_cache)
+    if nodes and 'mpls-nodes' in nodes:
+        return nodes['mpls-nodes']
+
+
+def get_eline_mpls_nodes(ctrl, config=False, use_cache=True):
+    url = ctrl.get_config_fm_url('eline-mpls:eline-nodes') if config else  ctrl.get_operational_fm_url('eline-mpls:eline-nodes')
+    nodes = get_from_api(ctrl, url, use_cache)
+    if nodes and 'eline-nodes' in nodes:
+        return nodes['eline-nodes']
+
+
+def get_etree_sr_nodes(ctrl, config=False, use_cache=True):
+    url = ctrl.get_config_fm_url('etree-sr:etree-nodes') if config else ctrl.get_operational_fm_url('etree-sr:etree-nodes')
+    nodes = get_from_api(ctrl, url, use_cache)
+    if nodes and 'etree-nodes' in nodes:
+        return nodes['etree-nodes']

@@ -45,6 +45,12 @@ class Controller(object):
         self.fm_prefix = None
 
 
+    def is_lumina(self):
+        self.get_fm_prefix() == LUMINA_FLOW_MANAGER_PREFIX
+
+    def is_brocade(self):
+        self.get_fm_prefix() == BROCADE_FLOW_MANAGER_PREFIX
+
     def get_fm_prefix(self):
         if not self.fm_prefix:
             logging.debug("CONTROLLER: checking the the right prefix")
@@ -70,6 +76,9 @@ class Controller(object):
 
     def get_operations_url(self):
         return self.get_base_url() + '/operations'
+
+    def get_container_fm(self, name):
+        return self.get_fm_prefix() + name
 
     def get_config_fm_url(self, name):
         return self.get_config_url() + '/' + self.get_fm_prefix() + name
