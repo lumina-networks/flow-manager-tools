@@ -31,28 +31,23 @@ class Link(object):
 
 
     def check(self, should_be_up=True, validate_sr=True, validate_host=False):
+        logging.debug('LINK: checking link source %s, expected %s, of %s, sr %s', self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
         if not validate_host and self.source['type'] == 'host':
             return True
         if not validate_host and 'type' in self.expected and self.expected['type'] == 'host':
             return True
-        if (
-            not self.expected_dst_name
-            or (not should_be_up and self.of_dst)
-            or (should_be_up and self.of_dst != self.expected_dst_name)
-            or (validate_sr and
-                    (
-                    (not should_be_up and self.sr_dst)
-                    (should_be_up and self.sr_dst != self.expected_dst_name)
-                    )
-                )
-        ):
-            print "ERROR: LINK NOT IN SYNC: source '{}', {}, {}, {} ".format(self.name,
-                "expected destination '{}'".format(self.expected_dst_name) if self.expected_dst_name else "UNEXPECTED link",
-                "openflow destination '{}'".format(self.of_dst) if self.of_dst else "NOT FOUND in openflow topology",
-                "sr destination '{}'".format(self.sr_dst) if self.sr_dst else "NOT FOUND in sr topology"
-                )
-            return False
-        return True
+        if (not self.expected_dst_name):
+            print "ERROR: unexpected link detected. Source '{}', of dst '{}', sr dst '{}'".format(self.name, self.of_dst, self.sr_dst)
+        elif (not should_be_up and self.of_dst):
+            print "ERROR: link should be down. Source '{}', expected '{}', of dst '{}', sr dst '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+        elif (should_be_up and self.of_dst != self.expected_dst_name):
+            print "ERROR: wrong destination. Source '{}', expected '{}', of dst '{}', sr dst '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+        elif (validate_sr and not should_be_up and self.sr_dst):
+            print "ERROR: link should be down. Source '{}', expected '{}', of dst '{}', sr dst '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+        elif (validate_sr and should_be_up and self.sr_dst != self.expected_dst_name):
+            print "ERROR: wrong destination. Source '{}', expected '{}', of dst '{}', sr dst '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+        else:
+            return True
 
 def _get_link_properties(name):
     elements = name.split(':')

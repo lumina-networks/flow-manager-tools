@@ -1,4 +1,5 @@
 import json
+import logging
 
 cache = {}
 
@@ -16,6 +17,7 @@ def get_topology(ctrl, topology_name, use_cache=True):
     if not use_cache or not topology:
         resp = ctrl.http_get(url)
         if resp is None or resp.status_code != 200 or resp.content is None:
+            logggin.debug("OPENFLOW: topology data not found for %s",topology_name)
             return None
         data = json.loads(resp.content)
         topology = data.get('topology')
@@ -32,6 +34,7 @@ def get_openflow(ctrl, use_cache=True):
     if not use_cache or not data:
         resp = ctrl.http_get(url)
         if resp is None or resp.status_code != 200 or resp.content is None:
+            logggin.debug("OPENFLOW: nodes not found for %s")
             return None
         data = json.loads(resp.content)
         add_to_cache_object(ctrl, data)
@@ -83,12 +86,13 @@ def get_topology_links(ctrl, topology_name, filter_hosts=True, use_cache=True):
 def get_openflow_connected_nodes(ctrl, use_cache=True):
     data = get_openflow(ctrl, use_cache)
     if data is None or 'nodes' not in data or 'node' not in data['nodes']:
+        logggin.debug("OPENFLOW: connected nodes not found")
         return None
 
     nodes = {}
     for node in data['nodes']['node']:
         name = node['id']
-        if name.startswith('openflow'):
+        if not name.startswith('openflow:'):
             continue
         nodes[name] = node
 
