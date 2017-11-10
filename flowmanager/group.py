@@ -44,6 +44,7 @@ class Group(object):
         elif not self.of_config and self.calculated:
             print "ERROR: group {} calculated but not configured. {}".format(self.groupid, self._get_info_msg())
         else:
+            logging.debug("GROUP: OK. %s", self._get_info_msg())
             return True
 
     def _get_info_msg(self):
