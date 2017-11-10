@@ -192,7 +192,6 @@ class Topology(object):
 
     def validate_links(self, should_be_up=True, include_sr=True):
         ctrl = self.default_ctrl
-        print self.switches
         links = openflow.get_topology_links(ctrl, 'flow:1')
         if links:
             for name in links:
