@@ -7,7 +7,8 @@ import logging
 from flowmanager.utils import check_mandatory_values
 from flowmanager.link import Link
 from flowmanager.group import Group
-
+from flowmanager.flow import Flow
+from flowmanager.flow import get_id as get_flow_id
 
 def get_switch_type(props):
     return 'ovs' if not props.get('type') else props['type']
@@ -44,22 +45,25 @@ class Switch(object):
     def get_group(self, groupid):
         groupid = unicode(groupid)
         if groupid not in self.groups:
-            self.groups[groupid] = Group(self.openflow_name, groupid)
+            self.groups[groupid] = Group(node=self.name, node_of_name=self.openflow_name, groupid=groupid)
         return self.groups[groupid]
 
-    def get_flow_by_fm_id(self, flow_fm_id):
-        flow_fm_id = unicode(flow_fm_id)
-        if flow_fm_id in self.flows:
-            self.flows[flow_fm_id] = []
-            self.flows[flow_fm_id].append(Flow(flow_fm_id=flow_fm_id))
-        return self.flows[flow_fm_id]
+    def get_flow(self, table=None, name=None, cookie=None):
+        if cookie is None and (table is None or name is None):
+            raise Exception('cookie or table and name is mandatory')
 
-    def get_flow_by_of_id(self, flow_of_id):
-        flow_fm_id = unicode(flow_fm_id)
-        if flow_fm_id in self.flows:
-            self.flows[flow_fm_id] = []
-            self.flows[flow_fm_id].append(Flow(flow_fm_id=flow_fm_id))
-        return self.flows[flow_fm_id]
+        flow_name = unicode("table/{}/name/{}".format(table, name)) if table is not None and name is not None else None
+        flow_fm_id = unicode(get_flow_id(cookie)) if cookie is not None else None
+
+        current_flow = self.flows[flow_fm_id] if flow_fm_id and flow_fm_id in self.flows else None
+        current_flow = self.flows[flow_name] if not current_flow and flow_name and flow_name in self.flows else None
+        if not current_flow:
+            current_flow = Flow(node=self.name, node_of_name=self.openflow_name, cookie=cookie, table=table, name=name)
+            if flow_name:
+                self.flows[flow_name] = current_flow
+            if flow_fm_id:
+                self.flows[flow_fm_id] = current_flow
+        return current_flow
 
     def check(self, should_be_up=True, validate_sr=True):
         logging.debug("SWITCH: checking switch %s(%s) , connected %s, of topology %s, sr topology %s",self.name, self.openflow_name, self.found_connected, self.found_openflow_topology, self.found_sr_topology)
