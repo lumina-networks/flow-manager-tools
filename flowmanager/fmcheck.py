@@ -5,43 +5,43 @@ Usage:
   fmcheck nodes [-srd] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-ad] [--topology=FILE] [--controller=IP]...
   fmcheck roles [-d] [--topology=FILE] [--controller=IP]...
-  fmcheck random-reboot-controller [--topology=FILE]
-  fmcheck reboot-controller <name> [--topology=FILE]
-  fmcheck reboot-controller-by-switch <name> [--topology=FILE]
-  fmcheck reboot-controller-by-random-switch [--topology=FILE]
-  fmcheck random-reboot-switch [--topology=FILE]
-  fmcheck reboot-switch <name> [--topology=FILE]
-  fmcheck random-break-gw-switch <seconds> [--topology=FILE]
-  fmcheck break-gw-switch <name> <seconds> [--topology=FILE]
-  fmcheck random-break-ctrl-switch <seconds> [--topology=FILE]
-  fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [--topology=FILE]
-  fmcheck random-isolate-ctrl <seconds> [--topology=FILE]
-  fmcheck isolate-ctrl <controller_name> <seconds> [--topology=FILE]
-  fmcheck random-isolate-ctrl-switch <seconds> [--topology=FILE]
-  fmcheck isolate-ctrl-switch <switch_name> <seconds> [--topology=FILE]
-  fmcheck random-delete-groups [--topology=FILE]
-  fmcheck delete-groups <name> [--topology=FILE]
-  fmcheck random-delete-flows [--topology=FILE]
-  fmcheck delete-flows <name> [--topology=FILE]
-  fmcheck get-flow-stats-all [--topology=FILE]
-  fmcheck get-flow-stats <filter>... [--topology=FILE]
-  fmcheck get-flow-node-stats-all <node> [--topology=FILE]
-  fmcheck get-flow-node-stats <node> <filter>... [--topology=FILE]
-  fmcheck get-group-stats-all [--topology=FILE]
-  fmcheck get-group-stats <filter>... [--topology=FILE]
-  fmcheck get-group-node-stats-all <node> [--topology=FILE]
-  fmcheck get-group-node-stats <node> <filter>... [--topology=FILE]
-  fmcheck get-eline-stats-all [--topology=FILE]
-  fmcheck get-eline-stats <filter>... [--topology=FILE]
-  fmcheck get-eline-summary-all [--topology=FILE]
-  fmcheck get-eline-summary <filter>... [--topology=FILE]
-  fmcheck get-etree-stats-all [--topology=FILE]
-  fmcheck get-etree-stats <filter>... [--topology=FILE]
-  fmcheck get-etree-summary-all [--topology=FILE]
-  fmcheck get-etree-summary <filter>... [--topology=FILE]
-  fmcheck get-sr-summary-all [--topology=FILE]
-  fmcheck get-sr-summary <source> <destination> [--topology=FILE]
-  fmcheck get-node-summary [--topology=FILE]
+  fmcheck random-reboot-controller [-d] [--topology=FILE]
+  fmcheck reboot-controller <name> [-d] [--topology=FILE]
+  fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
+  fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
+  fmcheck random-reboot-switch [-d] [--topology=FILE]
+  fmcheck reboot-switch <name> [-d] [--topology=FILE]
+  fmcheck random-break-gw-switch <seconds> [-d] [--topology=FILE]
+  fmcheck break-gw-switch <name> <seconds> [-d] [--topology=FILE]
+  fmcheck random-break-ctrl-switch <seconds> [-d] [--topology=FILE]
+  fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [-d] [--topology=FILE]
+  fmcheck random-isolate-ctrl <seconds> [-d] [--topology=FILE]
+  fmcheck isolate-ctrl <controller_name> <seconds> [-d] [--topology=FILE]
+  fmcheck random-isolate-ctrl-switch <seconds> [-d] [--topology=FILE]
+  fmcheck isolate-ctrl-switch <switch_name> <seconds> [-d] [--topology=FILE]
+  fmcheck random-delete-groups [-d] [--topology=FILE]
+  fmcheck delete-groups <name> [-d] [--topology=FILE]
+  fmcheck random-delete-flows [-d] [--topology=FILE]
+  fmcheck delete-flows <name> [-d] [--topology=FILE]
+  fmcheck get-flow-stats-all [-d] [--topology=FILE]
+  fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
+  fmcheck get-flow-node-stats-all <node> [-d] [--topology=FILE]
+  fmcheck get-flow-node-stats <node> <filter>... [-d] [--topology=FILE]
+  fmcheck get-group-stats-all [-d] [--topology=FILE]
+  fmcheck get-group-stats <filter>... [-d] [--topology=FILE]
+  fmcheck get-group-node-stats-all <node> [-d] [--topology=FILE]
+  fmcheck get-group-node-stats <node> <filter>... [-d] [--topology=FILE]
+  fmcheck get-eline-stats-all [-d] [--topology=FILE]
+  fmcheck get-eline-stats <filter>... [-d] [--topology=FILE]
+  fmcheck get-eline-summary-all [-d] [--topology=FILE]
+  fmcheck get-eline-summary <filter>... [-d] [--topology=FILE]
+  fmcheck get-etree-stats-all [-d] [--topology=FILE]
+  fmcheck get-etree-stats <filter>... [-d] [--topology=FILE]
+  fmcheck get-etree-summary-all [-d] [--topology=FILE]
+  fmcheck get-etree-summary <filter>... [-d] [--topology=FILE]
+  fmcheck get-sr-summary-all [-d] [--topology=FILE]
+  fmcheck get-sr-summary <source> <destination> [-d] [--topology=FILE]
+  fmcheck get-node-summary [-d] [--topology=FILE]
   fmcheck (-h | --help)
 
 Options:
@@ -102,6 +102,7 @@ class Shell(object):
                      })
                 i = i + 1
 
+        result = None
         topology = Topology(props)
         if arguments['links']:
             should_be_up = True if not arguments['--stopped'] else False
@@ -113,75 +114,118 @@ class Shell(object):
             include_sr = True if arguments['--segementrouting'] else False
             result = topology.validate_nodes(should_be_up=should_be_up, include_sr=include_sr)
 
-        elif arguments['flows'] and arguments['--check-stats']:
-            result = checker.check_flows(check_stats=True)
-        elif arguments['flows']:
-            result = checker.check_flows()
-        elif arguments['nodes'] and arguments['--stopped']:
-            if arguments['--segementrouting']:
-                result = checker.check_nodes(False,'flow:1:sr')
-            else:
-                result = checker.check_nodes(False)
-        elif arguments['nodes']:
-            if arguments['--segementrouting']:
-                result = checker.check_nodes(True,'flow:1:sr')
-            else:
-                result = checker.check_nodes()
         elif arguments['roles']:
-            result = checker.check_roles()
+            result = topology.validate_nodes_roles()
+
+        elif arguments['flows']:
+            result = topology.validate_flows(check_stats=True if arguments['--check-stats'] else False)
+
         elif arguments['random-reboot-controller']:
-            result = checker.reboot_controller(checker.get_random_controller())
+            ctrl = topology.get_random_controller()
+            if not ctrl:
+                result = False
+                print "ERROR: controller not found"
+            else:
+                result = ctrl.reboot(checker.get_random_controller())
+
         elif arguments['reboot-controller']:
-            result = checker.reboot_controller(arguments['<name>'])
+            ctrl = topology.get_controller(arguments['<name>'])
+            if not ctrl:
+                result = False
+                print "ERROR: controller {} not found".format(arguments['<name>'])
+            else:
+                result = ctrl.reboot(checker.get_random_controller())
+
         elif arguments['reboot-controller-by-switch']:
             result = checker.reboot_controller(checker.get_master_controller_name(arguments['<name>']))
+
         elif arguments['reboot-controller-by-random-switch']:
             result = checker.reboot_controller(checker.get_master_controller_name(checker.get_random_switch()))
+
         elif arguments['random-reboot-switch']:
-            result = checker.reboot_switch(checker.get_random_switch())
+            switch = topology.get_random_switch()
+            if switch:
+                result = switch.reboot()
+            else:
+                print "ERROR: random switch not found"
+
+        elif arguments['reboot-switch']:
+            switch = topology.get_switch(arguments['<name>'])
+            if switch:
+                result = switch.reboot()
+            else:
+                print "ERROR: switch {} not found".format(arguments['<name>'])
+
         elif arguments['break-gw-switch']:
             result = checker.break_gw_switch(arguments['<name>'],arguments['<seconds>'])
+
         elif arguments['random-break-gw-switch']:
             result = checker.break_gw_switch(checker.get_random_switch(), arguments['<seconds>'])
+
         elif arguments['break-ctrl-switch']:
             result = checker.break_controller_switch(arguments['<switch_name>'],arguments['<controller_name>'],arguments['<seconds>'])
+
         elif arguments['random-break-ctrl-switch']:
             name = checker.get_random_switch()
             result = checker.break_controller_switch(name, checker.get_master_controller_name(name), arguments['<seconds>'])
+
         elif arguments['isolate-ctrl']:
             result = checker.isolate_controller(arguments['<controller_name>'],arguments['<seconds>'])
+
         elif arguments['random-isolate-ctrl']:
             name = checker.get_random_controller()
             result = checker.isolate_controller(name, arguments['<seconds>'])
+
         elif arguments['isolate-ctrl-switch']:
             result = checker.isolate_controller(checker.get_master_controller_name(arguments['<switch_name>']),arguments['<seconds>'])
+
         elif arguments['random-isolate-ctrl-switch']:
             name = checker.get_random_switch()
             result = checker.isolate_controller(checker.get_master_controller_name(name), arguments['<seconds>'])
-        elif arguments['reboot-switch']:
-            result = checker.reboot_switch(arguments['<name>'])
+
+
         elif arguments['random-delete-groups']:
-            result = checker.delete_groups(checker.get_random_switch())
+            switch = topology.get_random_switch()
+            if switch:
+                result = switch.delete_groups()
+            else:
+                print "ERROR: random switch not found"
+
         elif arguments['delete-groups']:
-            result = checker.delete_groups(arguments['<name>'])
+            switch = topology.get_switch(arguments['<name>'])
+            if switch:
+                result = switch.delete_groups()
+            else:
+                print "ERROR: switch {} not found".format(arguments['<name>'])
+
+
         elif arguments['random-delete-flows']:
             result = checker.delete_flows(checker.get_random_switch())
+
         elif arguments['delete-flows']:
             result = checker.delete_flows(arguments['<name>'])
+
         elif arguments['get-flow-stats-all']:
             result = checker.print_flow_stats()
+
         elif arguments['get-flow-stats']:
             result = checker.print_flow_stats(filters=arguments['<filter>'])
+
         elif arguments['get-flow-node-stats-all']:
             result = checker.print_flow_stats(node_name=arguments['<node>'])
+
         elif arguments['get-flow-node-stats']:
             result = checker.print_flow_stats(filters=arguments['<filter>'], node_name=arguments['<node>'])
+
         elif arguments['get-group-stats-all']:
             result = checker.print_group_stats()
+
         elif arguments['get-group-stats']:
             result = checker.print_group_stats(filters=arguments['<filter>'])
+
         elif arguments['get-group-node-stats-all']:
             result = checker.print_group_stats(node_name=arguments['<node>'])
+
         elif arguments['get-group-node-stats']:
             result = checker.print_group_stats(filters=arguments['<filter>'], node_name=arguments['<node>'])
         elif arguments['get-eline-stats-all']:
