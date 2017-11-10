@@ -252,18 +252,18 @@ class Topology(object):
                 if not self.get_switch(name):
                     self.add_switch_by_openflow_name(name)
                 switch = self.get_switch(name)
-                groups = node.get('flow-node-inventory:group') if 'flow-node-inventory:group' in node else node.get('group')
+                groups = node.get('group') if 'group' in node else node.get('flow-node-inventory:group')
                 if not groups or len(groups) <= 0:
                     continue
                 for group in groups:
                     switch.get_group(group['group-id']).add_of_config(group)
 
-                tables = node.get('flow-node-inventory:table') if 'flow-node-inventory:table' in node else node.get('table')
+                tables = node.get('table') if 'table' in node else node.get('flow-node-inventory:table')
                 if not tables or len(tables) <= 0:
                     continue
                 for table in tables:
                     table_id = table['id']
-                    flows = table.get('flow-node-inventory:flow') if 'flow-node-inventory:flow' in table else table.get('flow')
+                    flows = table.get('flow') if 'flow' in table else table.get('flow-node-inventory:flow')
                     if not flows:
                         continue
                     for flow in flows:
@@ -279,18 +279,18 @@ class Topology(object):
                 if not self.get_switch(name):
                     self.add_switch_by_openflow_name(name)
                 switch = self.get_switch(name)
-                groups = node.get('flow-node-inventory:group') if 'flow-node-inventory:group' in node else node.get('group')
+                groups = node.get('group') if 'group' in node else node.get('flow-node-inventory:group')
                 if not groups or len(groups) <= 0:
                     continue
                 for group in groups:
                     switch.get_group(group['group-id']).add_of_operational(group)
 
-                tables = node.get('flow-node-inventory:table') if 'flow-node-inventory:table' in node else node.get('table')
+                tables = node.get('table') if 'table' in node else node.get('flow-node-inventory:table')
                 if not tables or len(tables) <= 0:
                     continue
                 for table in tables:
                     table_id = table['id']
-                    flows = table.get('flow-node-inventory:flow') if 'flow-node-inventory:flow' in table else table.get('flow')
+                    flows = table.get('flow') if 'flow' in table else table.get('flow-node-inventory:flow')
                     if not flows:
                         continue
                     for flow in flows:
@@ -305,18 +305,18 @@ class Topology(object):
                 if not self.get_switch(name):
                     self.add_switch_by_openflow_name(name)
                 switch = self.get_switch(name)
-                groups = node.get('flow-node-inventory:group') if 'flow-node-inventory:group' in node else node.get('group')
+                groups = node.get('group') if 'group' in node else node.get('flow-node-inventory:group')
                 if not groups or len(groups) <= 0:
                     continue
                 for group in groups:
                     switch.get_group(group['id']).add_fm(group)
 
-                tables = node.get('flow-node-inventory:table') if 'flow-node-inventory:table' in node else node.get('table')
+                tables = node.get('table') if 'table' in node else node.get('flow-node-inventory:table')
                 if not tables or len(tables) <= 0:
                     continue
                 for table in tables:
                     table_id = table['id']
-                    flows = table.get('flow-node-inventory:flow') if 'flow-node-inventory:flow' in table else table.get('flow')
+                    flows = table.get('flow') if 'flow' in table else table.get('flow-node-inventory:flow')
                     if not flows:
                         continue
                     for flow in flows:
@@ -379,9 +379,22 @@ class Topology(object):
 
 
 
-    def process_calculated(self, element):
-        if element and 'calculated-groups' in element:
-            groups = element.get('calculated-groups')
+    def process_calculated(self, data):
+        self.process_calculated_groups(data)
+
+        if data and 'calculated-flow-nodes' in data:
+            data = data.get('calculated-flow-nodes')
+            if data and 'calculated-flow-node' in data:
+                data = data.get('calculated-flow-node')
+                if data:
+                    for node in data:
+                        self.process_calculated_flows(node)
+        else:
+            self.process_calculated_flows(data)
+
+    def process_calculated_groups(self, data):
+        if data and 'calculated-groups' in data:
+            groups = data.get('calculated-groups')
             if groups and 'calculated-group' in groups:
                 groups = groups.get('calculated-group')
                 if groups:
@@ -392,8 +405,9 @@ class Topology(object):
                         if switch:
                             switch.get_group(group['group-id']).mark_as_calculated()
 
-        if element and 'calculated-flows' in element:
-            flows = element.get('calculated-flows')
+    def process_calculated_flows(self, data):
+        if data and 'calculated-flows' in data:
+            flows = data.get('calculated-flows')
             if flows and 'calculated-flow' in flows:
                 flows = flows.get('calculated-flow')
                 if flows:
