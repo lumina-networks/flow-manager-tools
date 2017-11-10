@@ -36,7 +36,7 @@ class Topology(object):
         self.switches_by_dpid = {}
         if props.get('switch'):
             for properties in props['switch']:
-                switch_type = get_switch_type(props)
+                switch_type = get_switch_type(properties)
                 if switch_type and switch_type == 'noviflow':
                     new_switch = Noviflow(properties, True)
                 else:
@@ -220,5 +220,21 @@ class Topology(object):
         for switch in self.switches.values():
             for link in switch.links.values():
                 result = False if not link.check(should_be_up=should_be_up, validate_sr=include_sr) else result
+
+        return result
+
+
+    def validate_groups(self):
+        ctrl = self.default_ctrl
+        nodes = openflow.get_config_openflow(ctrl)
+        if nodes is not None and 'nodes' in nodes and 'node' in nodes['nodes']:
+            for node in nodes['nodes']['node']:
+                if not self.get_switch(node):
+                    self.add_switch_by_openflow_name(node)
+                self.get_switch(node).found_connected = True
+
+        result = True
+        for switch in self.switches.values():
+            result = False if not switch.check(should_be_up=should_be_up, validate_sr=include_sr) else result
 
         return result

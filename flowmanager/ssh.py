@@ -20,17 +20,18 @@ from functools import partial
 class SSH(object):
 
     """docstring for ClassName"""
-    def __init__(self, ip, user, port, password=None, prompt = None, timeout=3):
+    def __init__(self, ip, user, port, password=None, prompt=None, timeout=30):
         self.ip = ip
         self.user = user
         self.port = port
         self.password = password
         self.prompt = prompt
         self.timeout = timeout
-        self.ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(self.port, self.user, self.ip)
 
     def create_session(self):
-        self.child = pexpect.spawn(self.ssh_command)
+        ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(self.port, self.user, self.ip)
+        logging.debug('SSH: connecting to %s', ssh_command)
+        self.child = pexpect.spawn(ssh_command)
         result = self.child.expect([pexpect.TIMEOUT, unicode('(?i)password')], timeout=self.timeout)
         if result == 0:
             logging.error('ERROR: could not connect to noviflow via SSH. %s@%s port ({%s)', self.user, self.ip, self.port)
@@ -43,13 +44,14 @@ class SSH(object):
                 logging.debug('SSH session created with success')
                 return True
 
-    def execute_command(self, command, prompt=None, timeout=None):
+    def execute_command(self, command, prompt=None, timeout=None, eof=False):
         prompt = prompt if prompt else self.prompt
         timeout = timeout if timeout else self.timeout
 
         logging.debug('SSH: (%s) executing command %s , prompt %s, timeout %s',self.ip, command, prompt, timeout)
         self.child.sendline(command)
-        if self.child.expect([pexpect.TIMEOUT, unicode(prompt)], timeout=timeout) != 0:
+        expect_options = [pexpect.TIMEOUT, unicode(prompt)] if not eof else [pexpect.TIMEOUT, unicode(prompt), pexpect.EOF]
+        if self.child.expect(expect_options, timeout=timeout) != 0:
             logging.debug('SSH: (%s) command executed. Ouput is: \n %s', self.ip, self.child.before)
             return self.child.before
 
