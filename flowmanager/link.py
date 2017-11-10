@@ -37,15 +37,15 @@ class Link(object):
         if not validate_host and 'type' in self.expected and self.expected['type'] == 'host':
             return True
         if (not self.expected_dst_name):
-            print "ERROR: unexpected link detected. Source '{}', of dst '{}', sr dst '{}'".format(self.name, self.of_dst, self.sr_dst)
+            print "ERROR: unexpected link detected. Source: '{}'. Destination: openflow '{}', sr '{}'".format(self.name, self.of_dst, self.sr_dst)
         elif (not should_be_up and self.of_dst):
-            print "ERROR: link should be down. Source '{}', expected '{}', of dst '{}', sr dst '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+            print "ERROR: link should be down. Source '{}'. Destination: expected '{}', openflow '{}', sr '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
         elif (should_be_up and self.of_dst != self.expected_dst_name):
-            print "ERROR: wrong destination. Source '{}', expected '{}', of dst '{}', sr dst '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+            print "ERROR: wrong destination. Source '{}'. Destination: expected '{}', openflow '{}', sr '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
         elif (validate_sr and not should_be_up and self.sr_dst):
-            print "ERROR: link should be down. Source '{}', expected '{}', of dst '{}', sr dst '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+            print "ERROR: link should be down. Source '{}'. Destination: expected '{}', openflow '{}', sr '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
         elif (validate_sr and should_be_up and self.sr_dst != self.expected_dst_name):
-            print "ERROR: wrong destination. Source '{}', expected '{}', of dst '{}', sr dst '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+            print "ERROR: wrong destination. Source '{}'. Destination: expected '{}', openflow '{}', sr '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
         else:
             return True
 
