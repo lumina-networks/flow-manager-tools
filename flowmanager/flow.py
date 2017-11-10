@@ -39,14 +39,21 @@ class Flow(object):
     def add_of_config(self, flow):
         logging.debug("FLOW: %s mard as configured",self.flowid)
         self.of_config.append(flow)
+        self.of_config_id = get_id(flow['cookie'])
+        self.of_config_version = get_version(flow['cookie'])
 
     def add_of_operational(self, flow):
         logging.debug("FLOW: %s mard as operational",self.flowid)
         self.of_operational.append(flow)
+        self.of_operational_id = get_id(flow['cookie'])
+        self.of_operational_version = get_version(flow['cookie'])
+
 
     def add_switch(self, flow):
         logging.debug("FLOW: %s mard as running in switch",self.flowid)
         self.switch.append(flow)
+        self.switch_id = get_id(flow['cookie'])
+        self.switch_version = get_version(flow['cookie'])
 
     def add_fm(self, flow):
         logging.debug("FLOW: %s mard as monitored",self.flowid)
@@ -84,9 +91,14 @@ class Flow(object):
             print "ERROR: flow {} found operational datastore but not in configuration. {}".format(self.flowid, self._get_info_msg())
         elif not config and not operational and not switch and fm:
             print "ERROR: flow {} monitored but not running neither configured. {}".format(self.flowid, self._get_info_msg())
-        elif not config and self.calculated:
-            print "ERROR: flow {} calculated but not configured. {}".format(self.flowid, self._get_info_msg())
-        ##TODO check version
+        elif config and switch and self.of_config_version != self.switch_version:
+            print "ERROR: flow {} config and switch version is different. {}".format(self.flowid, self._get_info_msg())
+        elif config and operational and self.of_config_version != self.of_operational_version:
+            print "ERROR: flow {} config and operational version is different. {}".format(self.flowid, self._get_info_msg())
+        elif config and switch and self.of_config_id != self.switch_id:
+            print "ERROR: flow {} config and switch id is different. {}".format(self.flowid, self._get_info_msg())
+        elif config and operational and self.of_config_id != self.of_operational_id:
+            print "ERROR: flow {} config and operational id is different. {}".format(self.flowid, self._get_info_msg())
         else:
             logging.debug("FLOW: OK: %s %s", self.flowid, self._get_info_msg())
             return True
