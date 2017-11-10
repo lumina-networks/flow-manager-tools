@@ -35,11 +35,21 @@ class Link(object):
             return True
         if not validate_host and 'type' in self.expected and self.expected['type'] == 'host':
             return True
-        if not self.expected_dst_name or not self.of_dst or self.expected_dst_name != self.of_dst or (validate_sr and (not self.sr_dst or self.expected_dst_name != self.sr_dst)):
-            print "ERROR: link not in sync source '{}', {}, {}, {} ".format(self.name,
-                "expected destination '{}'".format(self.expected_dst_name) if self.expected_dst_name else "unexpected link",
-                "openflow destination '{}'".format(self.of_dst) if self.of_dst else "not found in openflow",
-                "sr destination '{}'".format(self.sr_dst) if self.sr_dst else "not found in sr"
+        if (
+            not self.expected_dst_name
+            or (not should_be_up and self.of_dst)
+            or (should_be_up and self.of_dst != self.expected_dst_name)
+            or (validate_sr and
+                    (
+                    (not should_be_up and self.sr_dst)
+                    (should_be_up and self.sr_dst != self.expected_dst_name)
+                    )
+                )
+        ):
+            print "ERROR: LINK NOT IN SYNC: source '{}', {}, {}, {} ".format(self.name,
+                "expected destination '{}'".format(self.expected_dst_name) if self.expected_dst_name else "UNEXPECTED link",
+                "openflow destination '{}'".format(self.of_dst) if self.of_dst else "NOT FOUND in openflow topology",
+                "sr destination '{}'".format(self.sr_dst) if self.sr_dst else "NOT FOUND in sr topology"
                 )
             return False
         return True
