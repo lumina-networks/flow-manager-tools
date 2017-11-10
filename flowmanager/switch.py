@@ -33,6 +33,8 @@ class Switch(object):
         self.port = 22 if not props.get('port') else props['port']
         self.links = {}
         self.flows = {}
+        self.flows_by_name = {}
+        self.flows_by_id = {}
         self.groups = {}
         logging.debug('SWITCH: created switch %s(%s), type %s, ip %s, dpid %s', self.name, self.openflow_name, self.type, self.ip, props['dpid'])
 
@@ -49,20 +51,30 @@ class Switch(object):
         return self.groups[groupid]
 
     def get_flow(self, table=None, name=None, cookie=None):
-        if cookie is None and (table is None or name is None):
+        cookie = str(cookie) if cookie is not None else None
+        name = str(name) if name is not None else None
+        table = str(table) if table is not None else None
+
+        if not cookie and (not table or not name):
             raise Exception('cookie or table and name is mandatory')
 
-        flow_name = unicode("table/{}/name/{}".format(table, name)) if table is not None and name is not None else None
-        flow_fm_id = unicode(get_flow_id(cookie)) if cookie is not None else None
+        flow_name = "table/{}/name/{}".format(table, name) if table is not None and name is not None else None
+        flow_fm_id = str(get_flow_id(cookie)) if cookie is not None else None
 
-        current_flow = self.flows[flow_fm_id] if flow_fm_id and flow_fm_id in self.flows else None
-        current_flow = self.flows[flow_name] if not current_flow and flow_name and flow_name in self.flows else None
+        current_flow = self.flows_by_name[flow_name] if flow_name and flow_name in self.flows_by_name else None
+        current_flow = self.flows_by_id[flow_fm_id] if not current_flow and flow_fm_id and flow_fm_id in self.flows_by_id else current_flow
+
         if not current_flow:
             current_flow = Flow(node=self.name, node_of_name=self.openflow_name, cookie=cookie, table=table, name=name)
             if flow_name:
-                self.flows[flow_name] = current_flow
+                self.flows_by_name[flow_name] = current_flow
             if flow_fm_id:
+                self.flows_by_id[flow_fm_id] = current_flow
+            if flow_name:
+                self.flows[flow_name] = current_flow
+            else:
                 self.flows[flow_fm_id] = current_flow
+
         return current_flow
 
     def check(self, should_be_up=True, validate_sr=True):
