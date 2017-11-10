@@ -2,7 +2,7 @@
 
 import sys
 
-from fmtopo.shell import Shell
+from flowmanager.fmcheck import Shell
 
 
 if __name__ == "__main__":

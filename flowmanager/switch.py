@@ -3,9 +3,13 @@
 This module contains the implementation of supported switches
 
 """
+import logging
+from flowmanager.utils import check_mandatory_values
+from flowmanager.link import Link
 
 def get_switch_type(props):
     return 'ovs' if not props.get('type') else props['type']
+
 
 class Switch(object):
 
@@ -13,10 +17,10 @@ class Switch(object):
         self.found_openflow_topology = False
         self.found_sr_topology = False
         self.found_connected = False
-        utils.check_mandatory_values(props, ['name', 'dpid'])
+        check_mandatory_values(props, ['name', 'dpid'])
         self.props = props
         self.expected = expected
-        self.name = props['name']
+        self.name = unicode(props['name'])
         self.dpid = str(int(props['dpid'], 16))
         self.openflow_name = "openflow:" + str(int(props['dpid'], 16))
         self.type = 'ovs' if not props.get('type') else props['type']
@@ -25,11 +29,15 @@ class Switch(object):
         self.ip = '127.0.0.1' if not props.get('ip') else props['ip']
         self.port = 22 if not props.get('port') else props['port']
         self.links = {}
+        logging.debug('SWITCH: created switch %s(%s), type %s, ip %s, dpid %s', self.name, self.openflow_name, self.type, self.ip, props['dpid'])
 
     def get_link(self, source, expected_dst=None):
-        if source not in links:
-            links[source] = Link(source, expected_dst)
-        return links[source]
+        source = unicode(source)
+        logging.debug('SWITCH: finding link %s in switch %s(%s)', source, self.name, self.openflow_name)
+        if source not in self.links:
+            self.links[source] = Link(source, expected_dst)
+            logging.debug('SWITCH: added new link %s in switch %s(%s)', source, self.name, self.openflow_name)
+        return self.links[source]
 
     def reboot(self):
         raise Exception('reboot method is not implemented by this switch {}'.format(self.name))

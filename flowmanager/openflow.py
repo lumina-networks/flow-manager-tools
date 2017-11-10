@@ -1,3 +1,5 @@
+import json
+
 cache = {}
 
 def get_from_cache_object(ctrl, url):
@@ -57,7 +59,7 @@ def get_topology_nodes(ctrl, topology_name, filter_hosts=True, filter_anycast=Tr
     return result if len(result) > 0 else None
 
 
-def get_topology_links(ctrl, topology_name, filter_hosts=True):
+def get_topology_links(ctrl, topology_name, filter_hosts=True, use_cache=True):
 
     topology = get_topology(ctrl, topology_name, use_cache)
     if topology is None:
@@ -67,7 +69,7 @@ def get_topology_links(ctrl, topology_name, filter_hosts=True):
     if links is None or len(links) <= 0:
         return None
 
-    result = []
+    result = {}
     for link in links:
         if filter_hosts and link['source']['source-node'].startswith('host:'):
             continue
