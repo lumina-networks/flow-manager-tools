@@ -3,10 +3,12 @@
 This module contains the primitives to access host information.
 
 """
+from flowmanager.utils import check_mandatory_values
+
 class Host(object):
 
     def __init__(self, props, expected=False):
-        utils.check_mandatory_values(props, ['name', 'ip'])
+        check_mandatory_values(props, ['name', 'ip'])
         self.props = props
         self.expected = expected
         self.ip = props['ip'].split('/')[0] if props['ip'].contains('/') else props['ip']
