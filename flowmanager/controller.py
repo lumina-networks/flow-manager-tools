@@ -3,6 +3,7 @@
 This module contains the primitives to access controller information.
 
 """
+import logging
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -10,7 +11,7 @@ from flowmanager.utils import check_mandatory_values
 
 # support both version of REST API
 LUMINA_FLOW_MANAGER_PREFIX = 'lumina-flowmanager-'
-BROCADE_FLOW_MANAGER_PREFIX = 'brocade-bsc'
+BROCADE_FLOW_MANAGER_PREFIX = 'brocade-bsc-'
 
 DEFAULT_HEADERS = {
     'content-type': 'application/json',
@@ -41,14 +42,22 @@ class Controller(object):
         self.execute_local = not props.get('ip') and not props.get('sshuser')
         self.execute_local = True if self.ip == '127.0.0.1' else self.execute_local
 
-        REQUEST_URL = '/' + LUMINA_FLOW_MANAGER_PREFIX + 'path:paths'
-        resp = self.http_get(self.get_config_url() + REQUEST_URL)
-        if resp is not None and resp.status_code == 400:
-            self.brocade = True
-            self.lumina = False
-        else:
-            self.brocade = False
-            self.lumina = True
+        self.fm_prefix = None
+
+
+    def get_fm_prefix(self):
+        if not self.fm_prefix:
+            logging.debug("CONTROLLER: checking the the right prefix")
+            self.fm_prefix = BROCADE_FLOW_MANAGER_PREFIX
+            REQUEST_URL = '/' + LUMINA_FLOW_MANAGER_PREFIX + 'path:paths'
+            resp = self.http_get(self.get_config_url() + REQUEST_URL)
+            if resp is not None and resp.status_code == 400:
+                self.fm_prefix = BROCADE_FLOW_MANAGER_PREFIX
+            else:
+                self.fm_prefix = LUMINA_FLOW_MANAGER_PREFIX
+
+            logging.debug("CONTROLLER: setting prefix to %s", self.fm_prefix)
+        return self.fm_prefix
 
     def get_base_url(self, use_vip=False):
         return self.protocol + '://' + (self.vip if use_vip and self.vip else self.ip) + ':' + str(self.port) + '/restconf'
@@ -63,13 +72,13 @@ class Controller(object):
         return self.get_base_url() + '/operations'
 
     def get_config_fm_url(self, name):
-        return self.get_config_url() + '/' + (LUMINA_FLOW_MANAGER_PREFIX if self.lumina else BROCADE_FLOW_MANAGER_PREFIX) + name
+        return self.get_config_url() + '/' + self.get_fm_prefix() + name
 
     def get_operational_fm_url(self, name):
-        return self.get_operational_url() + '/' + (LUMINA_FLOW_MANAGER_PREFIX if self.lumina else BROCADE_FLOW_MANAGER_PREFIX) + name
+        return self.get_operational_url() + '/' + self.get_fm_prefix() + name
 
     def get_operations_fm_url(self, name):
-        return self.get_operations_url() + '/' + (LUMINA_FLOW_MANAGER_PREFIX if self.lumina else BROCADE_FLOW_MANAGER_PREFIX) + name
+        return self.get_operations_url() + '/' + self.get_fm_prefix() + name
 
     def http_get(self, url):
         return requests.get(url,

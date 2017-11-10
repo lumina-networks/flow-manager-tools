@@ -5,6 +5,8 @@ and links. It provides the basic primitives to access to topology information.
 
 """
 
+import threading
+import logging
 import random
 from flowmanager.controller import Controller
 from flowmanager.switch import get_switch_type
@@ -162,6 +164,13 @@ class Topology(object):
         return random.choice(self.switches.keys())
 
     def validate_nodes(self, should_be_up=True, include_sr=True):
+        self.load_nodes()
+        result = True
+        for switch in self.switches.values():
+            result = False if not switch.check(should_be_up=should_be_up, validate_sr=include_sr) else result
+        return result
+
+    def load_nodes(self):
         ctrl = self.default_ctrl
         nodes = openflow.get_topology_nodes(ctrl, 'flow:1')
         if nodes:
@@ -184,13 +193,16 @@ class Topology(object):
                     self.add_switch_by_openflow_name(node)
                 self.get_switch(node).found_connected = True
 
+    def validate_links(self, should_be_up=True, include_sr=True):
+        self.load_links()
         result = True
         for switch in self.switches.values():
-            result = False if not switch.check(should_be_up=should_be_up, validate_sr=include_sr) else result
+            for link in switch.links.values():
+                result = False if not link.check(should_be_up=should_be_up, validate_sr=include_sr) else result
 
         return result
 
-    def validate_links(self, should_be_up=True, include_sr=True):
+    def load_links(self):
         ctrl = self.default_ctrl
         links = openflow.get_topology_links(ctrl, 'flow:1')
         if links:
@@ -216,25 +228,82 @@ class Topology(object):
                     self.add_switch_by_openflow_name(src_node)
                 self.get_switch(src_node).get_link(src_port).add_sr_dst(dst_port)
 
+    def validate_openflow_elements(self, check_stats=False):
+        self.load_openflow_elements()
         result = True
         for switch in self.switches.values():
-            for link in switch.links.values():
-                result = False if not link.check(should_be_up=should_be_up, validate_sr=include_sr) else result
-
+            for group in switch.groups.values():
+                result = False if not group.check() else result
         return result
 
-
-    def validate_groups(self):
+    def load_openflow_elements(self):
         ctrl = self.default_ctrl
+
+        #load groups
         nodes = openflow.get_config_openflow(ctrl)
         if nodes is not None and 'nodes' in nodes and 'node' in nodes['nodes']:
             for node in nodes['nodes']['node']:
-                if not self.get_switch(node):
-                    self.add_switch_by_openflow_name(node)
-                self.get_switch(node).found_connected = True
+                name = node['id']
+                if not name.startswith('openflow:'):
+                    continue
+                if not self.get_switch(name):
+                    self.add_switch_by_openflow_name(name)
+                switch = self.get_switch(name)
+                groups = node.get('flow-node-inventory:group') if 'flow-node-inventory:group' in node else node.get('group')
+                if not groups or len(groups) <= 0:
+                    continue
+                for group in groups:
+                    switch.get_group(group['group-id']).add_of_config(group)
 
-        result = True
+        nodes = openflow.get_operational_openflow(ctrl)
+        if nodes is not None and 'nodes' in nodes and 'node' in nodes['nodes']:
+            for node in nodes['nodes']['node']:
+                name = node['id']
+                if not name.startswith('openflow:'):
+                    continue
+                if not self.get_switch(name):
+                    self.add_switch_by_openflow_name(name)
+                switch = self.get_switch(name)
+                groups = node.get('flow-node-inventory:group') if 'flow-node-inventory:group' in node else node.get('group')
+                if not groups or len(groups) <= 0:
+                    continue
+                for group in groups:
+                    switch.get_group(group['group-id']).add_of_operational(group)
+
+
+        nodes = openflow.get_fm_openflow(ctrl)
+        if nodes is not None and 'nodes' in nodes and 'node' in nodes['nodes']:
+            for node in nodes['nodes']['node']:
+                name = node['id']
+                if not name.startswith('openflow:'):
+                    continue
+                if not self.get_switch(name):
+                    self.add_switch_by_openflow_name(name)
+                switch = self.get_switch(name)
+                groups = node.get('flow-node-inventory:group') if 'flow-node-inventory:group' in node else node.get('group')
+                if not groups or len(groups) <= 0:
+                    continue
+                for group in groups:
+                    switch.get_group(group['id']).add_fm(group)
+
+
+        threads = []
         for switch in self.switches.values():
-            result = False if not switch.check(should_be_up=should_be_up, validate_sr=include_sr) else result
+            t = threading.Thread(target=_load_groups_from_switch, args=(switch,))
+            threads.append(t)
+            t.start()
+        for t in threads:
+            t.join()
 
-        return result
+
+
+def _load_groups_from_switch(switch):
+    groups = None
+    try:
+        groups = switch.get_groups()
+    except:
+        logging.debug("TOPOLOGY: error getting groups from %s(%s)",switch.name, switch.openflow_name)
+        pass
+    if groups:
+        for group in groups:
+            switch.get_group(group).add_switch(groups[group])

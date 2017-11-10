@@ -118,7 +118,7 @@ class Shell(object):
             result = topology.validate_nodes_roles()
 
         elif arguments['flows']:
-            result = topology.validate_flows(check_stats=True if arguments['--check-stats'] else False)
+            result = topology.validate_openflow_elements(check_stats=True if arguments['--check-stats'] else False)
 
         elif arguments['random-reboot-controller']:
             ctrl = topology.get_random_controller()

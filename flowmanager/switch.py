@@ -6,6 +6,8 @@ This module contains the implementation of supported switches
 import logging
 from flowmanager.utils import check_mandatory_values
 from flowmanager.link import Link
+from flowmanager.group import Group
+
 
 def get_switch_type(props):
     return 'ovs' if not props.get('type') else props['type']
@@ -29,15 +31,35 @@ class Switch(object):
         self.ip = '127.0.0.1' if not props.get('ip') else props['ip']
         self.port = 22 if not props.get('port') else props['port']
         self.links = {}
+        self.flows = {}
+        self.groups = {}
         logging.debug('SWITCH: created switch %s(%s), type %s, ip %s, dpid %s', self.name, self.openflow_name, self.type, self.ip, props['dpid'])
 
     def get_link(self, source, expected_dst=None):
         source = unicode(source)
-        logging.debug('SWITCH: finding link %s in switch %s(%s)', source, self.name, self.openflow_name)
         if source not in self.links:
             self.links[source] = Link(source, expected_dst)
-            logging.debug('SWITCH: added new link %s in switch %s(%s)', source, self.name, self.openflow_name)
         return self.links[source]
+
+    def get_group(self, groupid):
+        groupid = unicode(groupid)
+        if groupid not in self.groups:
+            self.groups[groupid] = Group(self.openflow_name, groupid)
+        return self.groups[groupid]
+
+    def get_flow_by_fm_id(self, flow_fm_id):
+        flow_fm_id = unicode(flow_fm_id)
+        if flow_fm_id in self.flows:
+            self.flows[flow_fm_id] = []
+            self.flows[flow_fm_id].append(Flow(flow_fm_id=flow_fm_id))
+        return self.flows[flow_fm_id]
+
+    def get_flow_by_of_id(self, flow_of_id):
+        flow_fm_id = unicode(flow_fm_id)
+        if flow_fm_id in self.flows:
+            self.flows[flow_fm_id] = []
+            self.flows[flow_fm_id].append(Flow(flow_fm_id=flow_fm_id))
+        return self.flows[flow_fm_id]
 
     def check(self, should_be_up=True, validate_sr=True):
         logging.debug("SWITCH: checking switch %s(%s) , connected %s, of topology %s, sr topology %s",self.name, self.openflow_name, self.found_connected, self.found_openflow_topology, self.found_sr_topology)
@@ -74,7 +96,7 @@ class Switch(object):
         raise Exception('get flows method is not implemented by this switch {}'.format(self.name))
 
     def get_groups(self):
-        raise Exception('get flows method is not implemented by this switch {}'.format(self.name))
+        raise Exception('get groups method is not implemented by this switch {}'.format(self.name))
 
     def get_controllers_role(self):
         raise Exception('get controllers method is not implemented by this switch {}'.format(self.name))
