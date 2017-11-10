@@ -234,6 +234,9 @@ class Topology(object):
         for switch in self.switches.values():
             for group in switch.groups.values():
                 result = False if not group.check() else result
+            for flow in switch.flows.values():
+                result = False if not flow.check() else result
+
         return result
 
     def load_openflow_elements(self):
@@ -255,6 +258,18 @@ class Topology(object):
                 for group in groups:
                     switch.get_group(group['group-id']).add_of_config(group)
 
+                tables = node.get('flow-node-inventory:table') if 'flow-node-inventory:table' in node else node.get('table')
+                if not tables or len(tables) <= 0:
+                    continue
+                for table in tables:
+                    table_id = table['id']
+                    flows = table.get('flow-node-inventory:flow') if 'flow-node-inventory:flow' in table else table.get('flow')
+                    if not flows:
+                        continue
+                    for flow in flows:
+                        switch.get_flow(table=table_id,name=flow['id'],cookie=flow.get('cookie')).add_of_config(flow)
+
+
         nodes = openflow.get_operational_openflow(ctrl)
         if nodes is not None and 'nodes' in nodes and 'node' in nodes['nodes']:
             for node in nodes['nodes']['node']:
@@ -270,6 +285,16 @@ class Topology(object):
                 for group in groups:
                     switch.get_group(group['group-id']).add_of_operational(group)
 
+                tables = node.get('flow-node-inventory:table') if 'flow-node-inventory:table' in node else node.get('table')
+                if not tables or len(tables) <= 0:
+                    continue
+                for table in tables:
+                    table_id = table['id']
+                    flows = table.get('flow-node-inventory:flow') if 'flow-node-inventory:flow' in table else table.get('flow')
+                    if not flows:
+                        continue
+                    for flow in flows:
+                        switch.get_flow(table=table_id,name=flow['id'],cookie=flow.get('cookie')).add_of_operational(flow)
 
         nodes = openflow.get_fm_openflow(ctrl)
         if nodes is not None and 'nodes' in nodes and 'node' in nodes['nodes']:
@@ -286,10 +311,21 @@ class Topology(object):
                 for group in groups:
                     switch.get_group(group['id']).add_fm(group)
 
+                tables = node.get('flow-node-inventory:table') if 'flow-node-inventory:table' in node else node.get('table')
+                if not tables or len(tables) <= 0:
+                    continue
+                for table in tables:
+                    table_id = table['id']
+                    flows = table.get('flow-node-inventory:flow') if 'flow-node-inventory:flow' in table else table.get('flow')
+                    if not flows:
+                        continue
+                    for flow in flows:
+                        switch.get_flow(table=table_id,name=flow['id'],cookie=flow.get('cookie')).add_fm(flow)
+
 
         threads = []
         for switch in self.switches.values():
-            t = threading.Thread(target=_load_groups_from_switch, args=(switch,))
+            t = threading.Thread(target=_load_openflow_from_switch, args=(switch,))
             threads.append(t)
             t.start()
         for t in threads:
@@ -365,12 +401,11 @@ class Topology(object):
                         if 'node-id' not in flow or 'flow-name' not in flow or 'table-id' not in flow:
                             continue
                         switch = self.get_switch(flow['node-id'])
-                        #if switch:
-                            #get flow id by node, table, flowname
-                            #switch.get_flow(flowid).mark_as_calculated()
+                        if switch:
+                            switch.get_flow(table=flow['table-id'], name=flow['flow-name']).mark_as_calculated()
 
 
-def _load_groups_from_switch(switch):
+def _load_openflow_from_switch(switch):
     groups = None
     try:
         groups = switch.get_groups()
@@ -379,4 +414,14 @@ def _load_groups_from_switch(switch):
         pass
     if groups:
         for group in groups:
-            switch.get_group(group).add_switch(groups[group])
+            switch.get_group(group['id']).add_switch(group)
+
+    flows = None
+    try:
+        flows = switch.get_flows()
+    except:
+        logging.debug("TOPOLOGY: error getting flows from %s(%s)",switch.name, switch.openflow_name)
+        pass
+    if flows:
+        for flow in flows:
+            switch.get_flow(cookie=flow['cookie']).add_switch(flow)
