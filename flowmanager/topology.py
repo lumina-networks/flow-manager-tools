@@ -305,77 +305,69 @@ class Topology(object):
                 nodeid = node['node-id']
                 brocadesr = node.get(ctrl.get_container_fm('sr:sr'))
                 if brocadesr is not None:
-                    self.process_calculated_groups(brocadesr)
-                    self.process_calculated_flows(brocadesr.get('calculated-flows'))
+                    self.process_calculated(brocadesr)
 
         paths = openflow.get_paths(ctrl)
         if paths:
             for path in paths:
-                self.process_calculated_flows(path.get('calculated-flows'))
+                self.process_calculated(path)
 
 
         elines = openflow.get_elines(ctrl)
         if elines:
             for eline in elines:
-                self.process_calculated_flows(eline.get('calculated-flows'))
+                self.process_calculated(eline)
 
 
         treepaths = openflow.get_treepaths(ctrl)
         if treepaths:
             for treepath in treepaths:
-                self.process_calculated_flows(treepath.get('calculated-flows'))
-                self.process_calculated_groups(treepath)
+                self.process_calculated(treepath)
 
         etrees = openflow.get_etrees(ctrl)
         if etrees:
             for etree in etrees:
-                self.process_calculated_flows(etree.get('calculated-flows'))
-                self.process_calculated_groups(etree)
+                self.process_calculated(etree)
 
         nodes = openflow.get_path_mpls_nodes(ctrl)
         if nodes:
-            self.process_calculated_flows(nodes.get('calculated-flows'))
-            self.process_calculated_groups(nodes)
+            self.process_calculated(nodes)
 
         nodes = openflow.get_etree_sr_nodes(ctrl)
         if nodes:
-            self.process_calculated_flows(nodes.get('calculated-flows'))
-            self.process_calculated_groups(nodes)
+            self.process_calculated(nodes)
 
         nodes = openflow.get_eline_mpls_nodes(ctrl)
         if nodes:
-            self.process_calculated_flows(nodes.get('calculated-flows'))
-            self.process_calculated_groups(nodes)
+            self.process_calculated(nodes)
 
 
-    def process_calculated_groups(self, groups):
-        if not groups or 'calculated-groups' not in groups:
-            return
-        groups = groups.get('calculated-groups')
-        if not groups or 'calculated-group' not in groups:
-            return
-        groups = groups.get('calculated-group')
-        if not groups:
-            return
 
-        for group in groups:
-            if 'node-id' not in group or 'group-id' not in group:
-                continue
-            switch = self.get_switch(group['node-id'])
-            if switch:
-                switch.get_group(group['group-id']).mark_as_calculated()
+    def process_calculated(self, element):
+        if element and 'calculated-groups' in element:
+            groups = element.get('calculated-groups')
+            if groups and 'calculated-group' in groups:
+                groups = groups.get('calculated-group')
+                if groups:
+                    for group in groups:
+                        if 'node-id' not in group or 'group-id' not in group:
+                            continue
+                        switch = self.get_switch(group['node-id'])
+                        if switch:
+                            switch.get_group(group['group-id']).mark_as_calculated()
 
-    def process_calculated_flows(self, flows):
-        if flows and 'calculated-flows' in flows:
-            flows = flows.get('calculated-flows')
-        if flows and 'calculated-flow' in flows:
-            flows = flows.get('calculated-flow')
-        if not flows:
-            return
-        #for flow in flows:
-            #switch = self.get_switch(flow['node-id'])
-            #if switch:
-            #    switch.get_flow(flow['flow-id']).mark_as_calculated()
+        if element and 'calculated-flows' in element:
+            flows = element.get('calculated-flows')
+            if flows and 'calculated-flow' in flows:
+                flows = flows.get('calculated-flow')
+                if flows:
+                    for flow in flows:
+                        if 'node-id' not in flow or 'flow-name' not in flow or 'table-id' not in flow:
+                            continue
+                        switch = self.get_switch(flow['node-id'])
+                        #if switch:
+                            #get flow id by node, table, flowname
+                            #switch.get_flow(flowid).mark_as_calculated()
 
 
 def _load_groups_from_switch(switch):
