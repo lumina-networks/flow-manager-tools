@@ -39,6 +39,25 @@ class Switch(object):
             logging.debug('SWITCH: added new link %s in switch %s(%s)', source, self.name, self.openflow_name)
         return self.links[source]
 
+    def check(self, should_be_up=True, validate_sr=True):
+        logging.debug("SWITCH: checking switch %s(%s) , connected %s, of topology %s, sr topology %s",self.name, self.openflow_name, self.found_connected, self.found_openflow_topology, self.found_sr_topology)
+        if (not self.expected):
+            print "ERROR: unexpected switch {}({}).".format(self.name, self.openflow_name)
+        elif (should_be_up and not self.found_connected):
+            print "ERROR: switch {}({}) not connected.".format(self.name, self.openflow_name)
+        elif (not should_be_up and self.found_connected):
+            print "ERROR: switch {}({}) should NOT be connected.".format(self.name, self.openflow_name)
+        elif (should_be_up and not self.found_openflow_topology):
+            print "ERROR: switch {}({}) not found in topology.".format(self.name, self.openflow_name)
+        elif (not should_be_up and self.found_openflow_topology):
+            print "ERROR: switch {}({}) should NOT be in topology.".format(self.name, self.openflow_name)
+        elif (validate_sr and should_be_up and not self.found_sr_topology):
+            print "ERROR: switch {}({}) not found in sr topology.".format(self.name, self.openflow_name)
+        elif (validate_sr and not should_be_up and self.found_sr_topology):
+            print "ERROR: switch {}({}) should NOT be in sr topology.".format(self.name, self.openflow_name)
+        else:
+            return True
+
     def reboot(self):
         raise Exception('reboot method is not implemented by this switch {}'.format(self.name))
 

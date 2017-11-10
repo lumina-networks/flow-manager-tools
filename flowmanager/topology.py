@@ -138,7 +138,7 @@ class Topology(object):
         name = unicode(name)
         new_switch = Switch({
             'name': name,
-            'dpid': str(hex(name.split(':')[1]))
+            'dpid': str(hex(int(name.split(':')[1])))
         })
         self.add_switch(new_switch)
 
@@ -161,7 +161,7 @@ class Topology(object):
     def get_random_switch_name(self):
         return random.choice(self.switches.keys())
 
-    def reconciliate_nodes(self, should_be_up=True, include_sr=True):
+    def validate_nodes(self, should_be_up=True, include_sr=True):
         ctrl = self.default_ctrl
         nodes = openflow.get_topology_nodes(ctrl, 'flow:1')
         if nodes:
@@ -183,6 +183,12 @@ class Topology(object):
                 if not self.get_switch(node):
                     self.add_switch_by_openflow_name(node)
                 self.get_switch(node).found_connected = True
+
+        result = True
+        for switch in self.switches.values():
+            result = False if not switch.check(should_be_up=should_be_up, validate_sr=include_sr) else result
+
+        return result
 
     def validate_links(self, should_be_up=True, include_sr=True):
         ctrl = self.default_ctrl
@@ -211,9 +217,9 @@ class Topology(object):
                     self.add_switch_by_openflow_name(src_node)
                 self.get_switch(src_node).get_link(src_port).add_sr_dst(dst_port)
 
-        result = False
+        result = True
         for switch in self.switches.values():
             for link in switch.links.values():
-                result = True if link.check(should_be_up=should_be_up, validate_sr=include_sr) else result
+                result = False if not link.check(should_be_up=should_be_up, validate_sr=include_sr) else result
 
         return result

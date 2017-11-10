@@ -108,11 +108,11 @@ class Shell(object):
             include_sr = True if arguments['--segementrouting'] else False
             result = topology.validate_links(should_be_up=should_be_up, include_sr=include_sr)
 
-        elif arguments['links']:
-            if arguments['--segementrouting']:
-                result = checker.check_links(True,'flow:1:sr')
-            else:
-                result = checker.check_links()
+        elif arguments['nodes']:
+            should_be_up = True if not arguments['--stopped'] else False
+            include_sr = True if arguments['--segementrouting'] else False
+            result = topology.validate_nodes(should_be_up=should_be_up, include_sr=include_sr)
+
         elif arguments['flows'] and arguments['--check-stats']:
             result = checker.check_flows(check_stats=True)
         elif arguments['flows']:
