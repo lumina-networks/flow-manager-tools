@@ -29,29 +29,24 @@ class SSH(object):
         self.password = password
         self.prompt = prompt
         self.timeout = timeout
+        self.ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(self.port, self.user, self.ip)
         logging.getLogger().setLevel(logging.DEBUG)
         
     def create_session(self):
-        ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(self.port, self.user, self.ip)
-        logging.debug(ssh_command)
-        self.child = pexpect.spawn(ssh_command)
+        self.child = pexpect.spawn(self.ssh_command)
         result = self.child.expect([pexpect.TIMEOUT, unicode('(?i)password')], timeout=self.timeout)
-        # logging.debug(self.child.before)
         if result == 0:
             logging.debug('ERROR: could not connect to noviflow via SSH. %s@%s port ({%s)', self.user, self.ip, self.port)
             self.close()
             return False
         else:
             self.child.sendline(self.password)
-            logging.debug('Output: %s', self.child.before)
             #pdb.set_trace()
             if self.child.expect([pexpect.TIMEOUT, unicode(self.prompt)], timeout=self.timeout) == 0:
-                logging.debug(self.child.before)
-                logging.debug(self.prompt)
-                logging.debug("Error")
                 self.close()
                 return False
             else:
+                logging.debug('SSH session created with success')
                 return True
 
     def execute_command(self, command, prompt = None):
@@ -67,17 +62,19 @@ class SSH(object):
 
 class NoviflowSSH(SSH):
     def __init__(self, ip, user, port, password=None, prompt = None, timeout=3):
-        SSH.__init__(self, ip, user, port, password, prompt if prompt else '#', timeout)
+        SSH.__init__(self, ip, user, port, password, prompt, timeout)
         self.create_session()
 
     def create_session(self):
-        result = SSH(self.ip, self.user, self.port, self.password).create_session()
+        ssh = SSH(self.ip, self.user, self.port, self.password, self.prompt)
+        result = ssh.create_session()
         if result:
-            self.execute_command('ifconfig')
+            # pdb.set_trace()
+            ssh.execute_command('show config switch hostname')
 
             regex = re.compile(r'Hostname:\s*(\S+)', re.IGNORECASE)
-            match = regex.findall(child.before)
-            PROMPT = '{}#'.format(match[0]) if match else None
+            match = regex.findall(ssh.child.before)
+            PROMPT = '{}'+self.prompt.format(match[0]) if match else None
 
 if __name__ == "__main__":
-    NoviflowSSH('192.168.50.40', 'vagrant', 22, 'vagrant', '#')
+    NoviflowSSH('192.168.50.40', 'vagrant', 22, 'vagrant', '$')
