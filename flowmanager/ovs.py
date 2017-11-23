@@ -1,3 +1,4 @@
+import re
 import subprocess
 from flowmanager.switch import Switch
 from flowmanager.ssh import SSH
