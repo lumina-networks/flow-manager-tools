@@ -1,3 +1,4 @@
+import time
 import re
 import subprocess
 from flowmanager.switch import Switch
