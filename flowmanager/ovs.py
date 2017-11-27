@@ -156,6 +156,19 @@ class OVS(Switch):
         else:
             pass
 
+    def list_ports(self):
+        if self.execute_local:
+            list = subprocess.check_output("sudo ovs-vsctl list-ports {}".format(self.name), shell=True)
+            print list
+        else:
+            pass
+
+    def port_status(self, port):
+        if self.execute_local:
+            status = subprocess.check_output("sudo ovs-ofctl -O OpenFlow13 dump-ports-desc {} {}".format(self.name, port), shell=True)
+            print status
+        else:
+            pass
 
     def _get_ssh(self):
         raise Exception('_get_ssh method is not implemented by this switch {}'.format(self.name))
