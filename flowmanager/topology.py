@@ -7,6 +7,8 @@ and links. It provides the basic primitives to access to topology information.
 
 import threading
 import logging
+import json
+import re
 import random
 from flowmanager.controller import Controller
 from flowmanager.switch import get_switch_type
@@ -47,13 +49,18 @@ class Topology(object):
                 self.add_switch(new_switch)
 
         self.controllers = {}
+	self.ctrl_name = None
         if props.get('controller'):
             for properties in props['controller']:
                 new_controller = Controller(properties, props.get('controller_vip'))
                 self.controllers[new_controller.name] = new_controller
+		if not self.ctrl_name:
+                    self.ctrl_name = new_controller.name
         else:
             new_controller = Controller({'name': 'c0'}, props.get('controller_vip'))
             self.controllers[new_controller.name] = new_controller
+	    if not self.ctrl_name:
+                    self.ctrl_name = new_controller.name
 
         self.default_ctrl = self.get_random_controller()
 
@@ -368,6 +375,54 @@ class Topology(object):
         if nodes:
             self.process_calculated(nodes)
 
+
+    def get_node_cluster_owner(self, openflow_name):
+        controller=self.controllers[self.ctrl_name]
+        resp = controller.http_get(controller.get_operational_url() + '/entity-owners:entity-owners/entity-type/org.opendaylight.mdsal.ServiceEntityType/entity/%2Fodl-general-entity%3Aentity%5Bodl-general-entity%3Aname%3D%27{}%27%5D'.format(openflow_name))
+        if resp is not None and resp.status_code == 200 and resp.content is not None:
+            data = json.loads(resp.content)
+            entity = data.get('entity')
+            if entity and len(entity) > 0:
+                if entity[0]:
+                    return entity[0].get('owner')
+
+    def validate_nodes_roles(self):
+        found_error = False
+        # for name in self.switches_openflow_names:
+        for switch in self.switches.values():
+            oname = switch.openflow_name
+	    roles=[i.lower() for i in switch.get_controllers_role()]
+            owner = self.get_node_cluster_owner(oname)
+            if owner and roles and 'master' not in roles:
+                print "ERROR: {}({}) node does not contain master in the switch. Current roles in switch{}".format(switch.name, oname, roles)
+                found_error = True
+            if not owner:
+                print "ERROR: {}({}) node does not contain any master in the controller. Current roles in switch {}".format(switch.name, oname, roles)
+                found_error = True
+            elif not roles:
+                print "ERROR: {}({}) node does not have any role. Current roles in switch {}".format(switch.name, oname, roles)
+                found_error = True
+            else:
+                memberIdRegex = re.compile(r'member-(\d+)', re.IGNORECASE)
+                match = memberIdRegex.findall(owner)
+                memberId=None
+                if match:
+                    memberId = int(match[0])
+                if not memberId:
+                    print "ERROR: {}({}) node cannot find the member id {}. Current roles in switch {}".format(switch.name, oname, owner, roles)
+                    found_error = True
+                elif memberId > len(roles) or memberId < 0:
+                    print "ERROR: {}({}) node master member id {}({}) is out of range. Current roles in switch {}".format(switch.name, oname, memberId, owner, roles)
+                    found_error = True
+                elif roles[memberId - 1] !=  'master':
+		    print roles[memberId - 1]
+                    print "ERROR: {}({}) node, member {}({}) is not master on the switch as expected by the controller. Current roles in switch {}".format(switch.name, oname, memberId, owner, roles)
+                    found_error = True
+
+        if not found_error:
+            print "OK: {} nodes roles have been detected properly.".format(len(self.switches))
+            return True
+        return False
 
 
     def process_calculated(self, data):
