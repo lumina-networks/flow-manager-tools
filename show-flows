@@ -12,44 +12,47 @@ from pprint import pprint
 from prettytable import PrettyTable
 
 import argparse
+import operator
 import re
 
+ARGS = None
 
 def main():
     """Main method"""
     args = get_args()
-    lines = get_flow_cli(args.switch, args.table)
-    print_flows(lines, args.keepzeroes)
+    lines = get_flow_cli()
+    print_flows(lines)
     # flows = parse_flows(lines)
     # print_table(flows)
 
 def get_args():
     """Sets up and collects command line arguments from user"""
+    global ARGS
     parser = argparse.ArgumentParser(description='Show flows install in switch')
     parser.add_argument('switch')
     parser.add_argument('--table', dest='table', default='0')
-    parser.add_argument('--keep-zeroes', dest='keepzeroes', action='store_const', const=True, default=False)
-    args = parser.parse_args()
-    return args
+    parser.add_argument('--zeroes', dest='keep_zeroes', action='store_const', const=True, default=False, help='Keep zeroes')
+    parser.add_argument('--filter', dest='filter', type=str)
+    ARGS = parser.parse_args()
 
-def get_flow_cli(switch, table):
+def get_flow_cli():
     noviflow = NoviFlow()
-    noviflow.connect(switch)
+    noviflow.connect(ARGS.switch)
     noviflow.run('set config page off')
-    flows = noviflow.run('show status flow tableid ' + table)
+    flows = noviflow.run('show status flow tableid ' + ARGS.table)
     noviflow.disconnect()
 
     lines = flows.splitlines()
     index = 0
     for line in lines:
-        if line[0:9] == '[TABLE ' + table + ']':
+        if line[0:9] == '[TABLE ' + ARGS.table + ']':
             break
         index += 1
 
     lines = lines[index+1:]
     return lines
 
-def print_flows(lines, keep_zeroes):
+def print_flows(lines):
     """Parse flow output and print it in a tabular format sorted by packet count descending"""
 
     flow_id = re.compile('\[FLOW_ID\d+\]')
@@ -64,7 +67,7 @@ def print_flows(lines, keep_zeroes):
         {'name': 'in_port', 'regex': 'OFPXMT_OFB_IN_PORT\s+=\s+(\d+)', 'type': 'int'},
         # {'name': 'eth_dst', 'regex': 'OFPXMT_OFB_ETH_DST\s+=\s+(\d+)'},
         # {'name': 'eth_src', 'regex': 'OFPXMT_OFB_ETH_SRC\s+=\s+(\d+)'},
-        {'name': 'eth_type', 'regex': 'OFPXMT_OFB_ETH_TYPE\s+=\s+(0x\d+)'},
+        {'name': 'eth_type', 'regex': 'OFPXMT_OFB_ETH_TYPE\s+=\s+(0x\w+)'},
         {'name': 'vlan', 'regex': 'OFPXMT_OFB_VLAN_VID\s+=\s+(\d+)', 'type': 'int'},
         # {'name': 'pcp', 'regex': 'OFPXMT_OFB_VLAN_PCP\s+=\s+(\d+)', 'type': 'int'},
         {'name': 'ip_proto', 'regex': 'OFPXMT_OFB_IP_PROTO\s+=\s+(\d+)'},
@@ -85,21 +88,24 @@ def print_flows(lines, keep_zeroes):
     ptable.field_names = field_names
 
     flow_block=''
+    rows = []
     for line in lines:
         if flow_id.search(line):
             if len(flow_block) > 0:
                 record = []
                 for field in fields:
                     record.append(get_value(flow_block, field))
-                if keep_zeroes or int(packets.search(flow_block).group(1)) > 0:
-                    ptable.add_row(record)
+                if ARGS.keep_zeroes or int(packets.search(flow_block).group(1)) > 0:
+                    #ptable.add_row(record)
+                    rows.append(record)
 
                 record = []
                 flow_block = line
         else:
             flow_block += line + '\n'
 
-    print ptable.get_string(sortby='packets', reversesort=True)
+#    print ptable.get_string(sortby='packets', reversesort=True)
+    filter_and_print(ptable, rows, operator.itemgetter(2))
 
 def get_value(string, field, default='*'):
     """
@@ -113,6 +119,28 @@ def get_value(string, field, default='*'):
         else:
             return match.group(1)
     return default
+
+def filter_and_print(ptable, rows, sort_key):
+    # Filter entries
+    if ARGS.filter:
+        test = re.compile(str(ARGS.filter), re.IGNORECASE)
+        new_rows = []
+        for row in rows:
+            match = False
+            for item in row:
+                if test.search(str(item)):
+                    match = True
+                    break
+            if match:
+                new_rows.append(row)
+        rows = new_rows
+
+    # Sort and print table
+    rows = sorted(rows, key=sort_key)
+    for row in rows:
+        ptable.add_row(row)
+    print ptable.get_string()
+
 
 if __name__ == '__main__':
     main()

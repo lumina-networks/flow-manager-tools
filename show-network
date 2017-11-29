@@ -286,7 +286,7 @@ def filter_and_print(ptable, rows, sort_key):
         for row in rows:
             match = False
             for item in row:
-                if test.match(str(item)):
+                if test.search(str(item)):
                     match = True
                     break
             if match:
