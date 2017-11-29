@@ -121,6 +121,7 @@ class OVS(Switch):
     def get_controllers_role(self):
         if self.execute_local:
             controllers = subprocess.check_output("sudo ovs-vsctl  get Bridge {} controller".format(self.name), shell=True)
+	    logging.debug("\n\nDEBUG: Controllers UUID received for switch %s are : %s", self.name,controllers)
             if not controllers:
                 return None
             regex = re.compile(r'([0-9a-fA-F-]+)', re.IGNORECASE)
@@ -130,6 +131,7 @@ class OVS(Switch):
                     if match:
                         controller = match.group(1)
                         role = subprocess.check_output("sudo ovs-vsctl  get controller {} role".format(controller), shell=True)
+	                logging.debug("DEBUG: Controller with uuid %s on switch %s has role : %s", controller,self.name,role)
                         if role:
                             roles.append(role.strip('\n'))
             return roles
