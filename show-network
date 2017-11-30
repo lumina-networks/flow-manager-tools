@@ -58,6 +58,7 @@ def get_args():
     parser.add_argument('--uni', dest='unidirectional', action='store_const', const=True, default=False)
     parser.add_argument('--versions', dest='versions', action='store_const', const=True, default=False)
     parser.add_argument('--customers', dest='customers', action='store_const', const=True, default=False)
+    parser.add_argument('--html', dest='html', action='store_const', const=True, default=False)
     args = parser.parse_args()
     return args
 
@@ -146,12 +147,12 @@ def print_versions():
     """Tabular view of the version of the noviflow switch versions"""
     ptable = PrettyTable()
     ptable.field_names = ['Device', 'Version']
-
+    rows = []
     for switch, version in VERSIONS.items():
-        ptable.add_row([switch, version])
+        rows.append([switch, version])
 
-    print 'Noviflow Operational Software Versions\n'
-    print ptable.get_string(sortby='Device')
+    print_title('Noviflow Operational Software Versions')
+    filter_and_print(ptable, rows, operator.itemgetter(0))
     
 def print_customers():
     """Print tabular data of Customer Connection Operational State"""
@@ -173,7 +174,7 @@ def print_customers():
 
         rows.append([device, port, connects_to, customer_name, port_status])
 
-    print 'Customer Connection Operational Status\n'
+    print_title('Customer Connection Operational Status')
     filter_and_print(ptable, rows, operator.itemgetter(3, 0, 1))
 
 def print_topology():
@@ -189,13 +190,15 @@ def print_topology():
         ['Build', 'Comparing against planned topology: Good or Required / Wrong Cabling if not good']
     ]
 
-    print 'Network Topology Operational Status'
-    print '-----------------------------------'
-    print '\nKey:'
+    print_title('Network Topology Operational Status')
+
+    info = 'Key:\n'
     pfields = []
     for field in fields:
         pfields.append(field[0])
-        print ' :-', field[0], '-', field[1]
+        info += ' :- ' + field[0] + ' - ' + field[1] + '\n'
+
+    print_info(info)
 
     ptable = PrettyTable()
     ptable.field_names = pfields
@@ -278,6 +281,18 @@ def print_topology():
 
     filter_and_print(ptable, rows, operator.itemgetter(0, 1))
 
+def print_title(text):
+    if ARGS.html:
+        print '<h1>' + text + '</h1>'
+    else:
+        print text + '\n'
+
+def print_info(text):
+    if ARGS.html:
+        print '<pre>' + text + '</pre>'
+    else:
+        print text + '\n'
+
 def filter_and_print(ptable, rows, sort_key):
     # Filter entries
     if ARGS.filter:
@@ -297,7 +312,13 @@ def filter_and_print(ptable, rows, sort_key):
     rows = sorted(rows, key=sort_key)
     for row in rows:
         ptable.add_row(row)
-    print ptable.get_string()    
+
+    if ARGS.html:
+        print '<div class="table-responsive">'
+        print ptable.get_html_string(border=True, attributes={'class': 'table table-striped table-condensed'})
+        print '</div>'
+    else:
+        print ptable.get_string()
 
 if __name__ == '__main__':
     main()

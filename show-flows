@@ -22,8 +22,6 @@ def main():
     args = get_args()
     lines = get_flow_cli()
     print_flows(lines)
-    # flows = parse_flows(lines)
-    # print_table(flows)
 
 def get_args():
     """Sets up and collects command line arguments from user"""
@@ -33,6 +31,7 @@ def get_args():
     parser.add_argument('--table', dest='table', default='0')
     parser.add_argument('--zeroes', dest='keep_zeroes', action='store_const', const=True, default=False, help='Keep zeroes')
     parser.add_argument('--filter', dest='filter', type=str)
+    parser.add_argument('--html', dest='html', action='store_const', const=True, default=False)
     ARGS = parser.parse_args()
 
 def get_flow_cli():
@@ -104,7 +103,6 @@ def print_flows(lines):
         else:
             flow_block += line + '\n'
 
-#    print ptable.get_string(sortby='packets', reversesort=True)
     filter_and_print(ptable, rows, operator.itemgetter(2))
 
 def get_value(string, field, default='*'):
@@ -139,8 +137,11 @@ def filter_and_print(ptable, rows, sort_key):
     rows = sorted(rows, key=sort_key)
     for row in rows:
         ptable.add_row(row)
-    print ptable.get_string()
 
+    if ARGS.html:
+        print ptable.get_html_string()
+    else:
+        print ptable.get_string()
 
 if __name__ == '__main__':
     main()
