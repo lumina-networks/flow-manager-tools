@@ -1,5 +1,6 @@
 #!/bin/sh
 set -x
+LOG_DIR="/var/log/sdn_logs"
 DIR=`date "+%Y%m%d-%H%M%S"`
 RESTART=${1:-no}
 SDN_IPS=${2:-10.61.80.240 10.61.80.241 10.61.80.242}
@@ -9,9 +10,14 @@ SDN_PROTOCOL=${5:-https}
 SDN_PORT=${6:-8443}
 FMCHECK=${7:-./fmcheck}
 
+if [ ! -d $LOG_DIR ]; then
+  echo "Cannot proceed. $LOG_DIR not available"
+  exit 1
+fi
+
 echo "gathering all services logs"
 
-mkdir -p sdn_logs/$DIR
+mkdir -p $LOG_DIR/$DIR
 
 services=("eline" "path" "etree" "treepath" "cluster" "topology" "srtopology" "openflow")
 services_url=("brocade-bsc-eline:elines" "brocade-bsc-path:paths" "brocade-bsc-etree:etrees" "brocade-bsc-tree-path:treepaths" "entity-owners:entity-owners" "network-topology:network-topology/topology/flow:1" "network-topology:network-topology/topology/flow:1:sr" "opendaylight-inventory:nodes")
@@ -22,7 +28,7 @@ do
   END=${#services[@]}
   for ((i=0;i<END;i++))
   do
-    final_file=sdn_logs/$DIR/${services[$i]}.config.json.${ip}
+    final_file=$LOG_DIR/$DIR/${services[$i]}.config.json.${ip}
     curl -s --insecure --request GET -w "${http_code}" \
     --url ${SDN_PROTOCOL}://$ip:${SDN_PORT}/restconf/config/${services_url[$i]} \
     --header 'accept: application/json' \
@@ -32,7 +38,7 @@ do
 
   for ((i=0;i<END;i++))
   do
-    final_file=sdn_logs/$DIR/${services[$i]}.operational.json.${ip}
+    final_file=$LOG_DIR/$DIR/${services[$i]}.operational.json.${ip}
     curl -s --insecure --request GET -w "${http_code}" \
     --url ${SDN_PROTOCOL}://$ip:${SDN_PORT}/restconf/operational/${services_url[$i]} \
     --header 'accept: application/json' \
@@ -43,19 +49,19 @@ do
 done
 
 
-$FMCHECK nodes -t $TOPOLOGY_FILE >> sdn_logs/$DIR/fmcheck_nodes.txt
-$FMCHECK links -t $TOPOLOGY_FILE >> sdn_logs/$DIR/fmcheck_links.txt
-$FMCHECK nodes -r -t $TOPOLOGY_FILE >> sdn_logs/$DIR/fmcheck_nodes_sr.txt
-$FMCHECK links -r -t $TOPOLOGY_FILE >> sdn_logs/$DIR/fmcheck_links_sr.txt
-$FMCHECK roles -t $TOPOLOGY_FILE >> sdn_logs/$DIR/fmcheck_roles.txt
-$FMCHECK flows -t $TOPOLOGY_FILE >> sdn_logs/$DIR/fmcheck_flows.txt
-$FMCHECK get-eline-stats-all -t $TOPOLOGY_FILE  >> sdn_logs/$DIR/fmcheck_elines_stats.txt
-$FMCHECK get-eline-summary-all -t $TOPOLOGY_FILE  >> sdn_logs/$DIR/fmcheck_elines_summary.txt
-$FMCHECK get-etree-stats-all -t $TOPOLOGY_FILE  >> sdn_logs/$DIR/fmcheck_etrees_stats.txt
-$FMCHECK get-etree-summary-all -t $TOPOLOGY_FILE  >> sdn_logs/$DIR/fmcheck_etrees_summary.txt
-$FMCHECK get-sr-summary-all -t $TOPOLOGY_FILE  >> sdn_logs/$DIR/fmcheck_sr_summary.txt
-$FMCHECK get-flow-stats-all -t $TOPOLOGY_FILE  >> sdn_logs/$DIR/fmcheck_flow_stats.txt
-$FMCHECK get-group-stats-all -t $TOPOLOGY_FILE  >> sdn_logs/$DIR/fmcheck_groups_stats.txt
+$FMCHECK nodes -t $TOPOLOGY_FILE >> $LOG_DIR/$DIR/fmcheck_nodes.txt
+$FMCHECK links -t $TOPOLOGY_FILE >> $LOG_DIR/$DIR/fmcheck_links.txt
+$FMCHECK nodes -r -t $TOPOLOGY_FILE >> $LOG_DIR/$DIR/fmcheck_nodes_sr.txt
+$FMCHECK links -r -t $TOPOLOGY_FILE >> $LOG_DIR/$DIR/fmcheck_links_sr.txt
+$FMCHECK roles -t $TOPOLOGY_FILE >> $LOG_DIR/$DIR/fmcheck_roles.txt
+$FMCHECK flows -t $TOPOLOGY_FILE >> $LOG_DIR/$DIR/fmcheck_flows.txt
+$FMCHECK get-eline-stats-all -t $TOPOLOGY_FILE  >> $LOG_DIR/$DIR/fmcheck_elines_stats.txt
+$FMCHECK get-eline-summary-all -t $TOPOLOGY_FILE  >> $LOG_DIR/$DIR/fmcheck_elines_summary.txt
+$FMCHECK get-etree-stats-all -t $TOPOLOGY_FILE  >> $LOG_DIR/$DIR/fmcheck_etrees_stats.txt
+$FMCHECK get-etree-summary-all -t $TOPOLOGY_FILE  >> $LOG_DIR/$DIR/fmcheck_etrees_summary.txt
+$FMCHECK get-sr-summary-all -t $TOPOLOGY_FILE  >> $LOG_DIR/$DIR/fmcheck_sr_summary.txt
+$FMCHECK get-flow-stats-all -t $TOPOLOGY_FILE  >> $LOG_DIR/$DIR/fmcheck_flow_stats.txt
+$FMCHECK get-group-stats-all -t $TOPOLOGY_FILE  >> $LOG_DIR/$DIR/fmcheck_groups_stats.txt
 
 
 if [ "$RESTART" == "yes" ]
@@ -72,13 +78,13 @@ do
   echo "gathering all sdn logs from $ip"
 
   ssh ${SDN_UNIX_USER}@${ip} "rm -rf /opt/brocade/bsc/ctrlr*zip; sudo /opt/brocade/bsc/bin/support_diagnostics"
-  scp ${SDN_UNIX_USER}@${ip}:/opt/brocade/bsc/ctrlr*zip sdn_logs/$DIR
+  scp ${SDN_UNIX_USER}@${ip}:/opt/brocade/bsc/ctrlr*zip $LOG_DIR/$DIR
   ssh ${SDN_UNIX_USER}@${ip} "mkdir $DIR; cp -r /opt/brocade/bsc/log/controller_logs/* $DIR; tar cvfz ${ip}-${DIR}.tar.gz $DIR; rm -rf $DIR;killall tcpdump"
-  mkdir -p sdn_logs/$DIR
-  scp ${SDN_UNIX_USER}@${ip}:~/${ip}-${DIR}.tar.gz sdn_logs/$DIR
+  mkdir -p $LOG_DIR/$DIR
+  scp ${SDN_UNIX_USER}@${ip}:~/${ip}-${DIR}.tar.gz $LOG_DIR/$DIR
 
   ssh ${SDN_UNIX_USER}@${ip} 'killall tcpdump; gzip -9 ser*pcap'
-  scp ${SDN_UNIX_USER}@${ip}:~/ser*pcap.gz sdn_logs/$DIR
+  scp ${SDN_UNIX_USER}@${ip}:~/ser*pcap.gz $LOG_DIR/$DIR
   ssh ${SDN_UNIX_USER}@${ip} << EOF
   killall tcpdump
   rm -f server*pcap*
