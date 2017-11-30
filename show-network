@@ -45,6 +45,8 @@ def main():
         get_port_status_all()
         if ARGS.customers:
             print_customers()
+        elif ARGS.topo_js:
+            print_topo_js()
         else:
             print_topology()
 
@@ -59,6 +61,7 @@ def get_args():
     parser.add_argument('--versions', dest='versions', action='store_const', const=True, default=False)
     parser.add_argument('--customers', dest='customers', action='store_const', const=True, default=False)
     parser.add_argument('--html', dest='html', action='store_const', const=True, default=False)
+    parser.add_argument('--topo-js', dest='topo_js', action='store_const', const=True, default=False)
     args = parser.parse_args()
     return args
 
@@ -176,6 +179,58 @@ def print_customers():
 
     print_title('Customer Connection Operational Status')
     filter_and_print(ptable, rows, operator.itemgetter(3, 0, 1))
+
+def print_topo_js():
+    """Print topology data javascript"""
+#    pprint(SWITCHES)
+#    pprint(LINKS)
+#    pprint(PORTS)
+
+    switches = {}
+
+    nodes = []
+    edges = []
+
+    index = 0
+    for switch in SWITCHES:
+        name = switch['name']
+        id = int(switch['dpid'], 16)
+        switches[name] = {}
+        switches[name]['id'] = id
+        switches[name]['index'] = index
+        nodes.append({'id': id, 'label': name})
+        index += 1
+
+    for link in LINKS:
+        src = link['source']
+        src_port = link['source_port']
+        dst = link['destination']
+        dst_port = link['destination_port']
+
+        if PORTS[src][src_port]['oper'] != 'up' or PORTS[dst][dst_port]['oper'] != 'up':
+            color = 'red'
+        else:
+            color = 'blue'
+
+        edges.append({'from': switches[src]['id'] , 'to': switches[dst]['id'], 'color': color})
+
+    for customer in CUSTOMERS:
+        name = customer['customer'] + ':' + customer['connects_to']
+        id = index
+        src = customer['hostname']
+        src_port = customer['port']
+
+        color = 'green'
+        if PORTS[src][src_port]['oper'] != 'up':
+            color = 'red'
+
+        nodes.append({'id': id, 'label': name, 'color': 'green', 'size': 18, 'font': {'size':12}})
+        edges.append({'from': switches[src]['id'], 'to': id, 'color': color})
+        index += 1
+ 
+
+    print 'var nodes = new vis.DataSet(' + str(nodes) + ');'
+    print 'var edges = new vis.DataSet(' + str(edges) + ');'
 
 def print_topology():
     """Print tabuler data of operational status"""
