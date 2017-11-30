@@ -113,7 +113,7 @@ def _get_flows_groups_from_ovs(node, name,prefix=None):
                 node['cookies'][str(number)] = node['flows'][str(number)]
                 bscid = _get_flow_bscid(number)
                 if bscid in node['bscids']:
-                    print "ERROR: duplicated bsc id {} in node {}".format(bscid, name)
+                    print "ERROR: duplicated bsc id {} in node {} and cookie {}".format(bscid, name, number)
                 node['bscids'][int(bscid)] = number
 
 def _get_controller_roles_switch_ovs(node):
@@ -315,7 +315,7 @@ def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None)
             node['cookies'][str(number)] = node['flows'][str(number)]
             bscid = _get_flow_bscid(number)
             if bscid in node['bscids']:
-                print "ERROR: duplicated bsc id {} in node with ip {} and port {}".format(bscid,ip,port)
+                print "ERROR: duplicated bsc id {} in node with ip {}, port {} and cookie {}({})".format(bscid,ip,port,number,cookies[cookiesLen])
             node['bscids'][int(bscid)] = number
 
     _close_noviflow_connection(child)
