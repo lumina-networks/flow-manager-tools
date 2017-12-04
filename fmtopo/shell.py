@@ -13,6 +13,7 @@ Usage:
   fmcheck reboot-switch <name> [--topology=FILE]
   fmcheck random-break-gw-switch <seconds> [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [--topology=FILE]
+  fmcheck reconnect-ctrl-switch <switch_name> [--topology=FILE]
   fmcheck random-break-ctrl-switch <seconds> [--topology=FILE]
   fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [--topology=FILE]
   fmcheck random-isolate-ctrl <seconds> [--topology=FILE]
@@ -58,7 +59,7 @@ Options:
 import os
 import sys
 import yaml
-from docopt import docopt
+from docopt.docopt import docopt
 import fmtopo.topo
 
 
@@ -138,6 +139,9 @@ class Shell(object):
             result = checker.break_gw_switch(arguments['<name>'],arguments['<seconds>'])
         elif arguments['random-break-gw-switch']:
             result = checker.break_gw_switch(checker.get_random_switch(), arguments['<seconds>'])
+        elif arguments['reconnect-ctrl-switch']:
+            for controller in checker.controllers_name:
+                result = checker.break_controller_switch(arguments['<switch_name>'], controller, 0)
         elif arguments['break-ctrl-switch']:
             result = checker.break_controller_switch(arguments['<switch_name>'],arguments['<controller_name>'],arguments['<seconds>'])
         elif arguments['random-break-ctrl-switch']:
