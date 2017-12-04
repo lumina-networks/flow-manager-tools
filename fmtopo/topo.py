@@ -1399,6 +1399,38 @@ class Topo(object):
         print ""
 
 
+    # def get_controller_sync_state():
+    #     odl_url = "/jolokia/read/org.opendaylight.controller:type=DistributedOperationalDatastore,Category=ShardManager,name=shard-manager-operational"
+    #     resp = self._http_get(odl_url)
+    #     data = json.loads(resp.content)
+
+    #     if :
+    #         pass
+
+    def validate_cluster(self):
+        """ method to check the cluster status
+        Args:
+            ipaddress(str): ip address of the ODL controller
+        """
+
+        all_ok = True
+        for controller in self.controllers:
+            url = self._get_base_url(ctrl_ip=controller['ip'],ctrl_protocol=(controller['protocol'] if 'protocol' in controller else None), ctrl_port=(controller['port'] if 'port' in controller else None)) + "/jolokia/read/org.opendaylight.controller:"\
+            "Category=ShardManager,name=shard-manager-operational,"\
+            "type=DistributedOperationalDatastore"
+            resp = self._http_get(url)
+            if resp is None or resp.status_code != 200 or resp.content is None:
+                print 'ERROR: cannot obtain cluster status from controller {}'.format(controller['name'])
+                all_ok = False
+                continue
+
+            data = json.loads(resp.content)
+            if not data or 'value' not in data or 'SyncStatus' not in data['value'] or not data['value']['SyncStatus']:
+                print 'ERROR: cluster status is not in sync for controller {}'.format(controller['name'])
+                all_ok = False
+                continue
+
+        return all_ok
 
 
 
@@ -1406,17 +1438,20 @@ class Topo(object):
 
 
 
-    def _get_base_url(self):
-        return self.ctrl_protocol + '://' + self.ctrl_ip + ':' + str(self.ctrl_port) + '/restconf'
+    def _get_base_url(self, ctrl_protocol=None, ctrl_ip=None, ctrl_port=None):
+        return (ctrl_protocol if ctrl_protocol else self.ctrl_protocol) + '://' + (ctrl_ip if ctrl_ip else self.ctrl_ip) + ':' + str(ctrl_port if ctrl_port else self.ctrl_port)
+
+    def _get_base_url_restconf(self):
+        return self._get_base_url() + '/restconf'
 
     def _get_config_url(self):
-        return self._get_base_url() + '/config'
+        return self._get_base_url_restconf() + '/config'
 
     def _get_operational_url(self):
-        return self._get_base_url() + '/operational'
+        return self._get_base_url_restconf() + '/operational'
 
     def _get_operations_url(self):
-        return self._get_base_url() + '/operations'
+        return self._get_base_url_restconf() + '/operations'
 
     def _get_config_openflow(self):
         return self._get_config_url() + '/opendaylight-inventory:nodes'

@@ -5,6 +5,7 @@ Usage:
   fmcheck nodes [-s] [-r] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-a] [--topology=FILE] [--controller=IP]...
   fmcheck roles [--topology=FILE] [--controller=IP]...
+  fmcheck sync-status [--topology=FILE] [--controller=IP]...
   fmcheck random-reboot-controller [--topology=FILE]
   fmcheck reboot-controller <name> [--topology=FILE]
   fmcheck reboot-controller-by-switch <name> [--topology=FILE]
@@ -205,6 +206,8 @@ class Shell(object):
             result = checker.print_sr_summary(source=arguments['<source>'], destination=arguments['<destination>'])
         elif arguments['get-node-summary']:
             result = checker.print_node_summary()
+        elif arguments['sync-status']:
+            result = checker.validate_cluster()
 
 
         if not result:
