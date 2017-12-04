@@ -58,7 +58,7 @@ Options:
 import os
 import sys
 import yaml
-from docopt.docopt import docopt
+from docopt import docopt
 import fmtopo.topo
 
 

@@ -34,6 +34,7 @@ calculated_flow_exception = ['table/0/flow/fm-sr-link-discovery']
 
 TIMEOUT = 5
 SWITCH_ROLES = {}
+SWITCH_PORTS = {}
 
 _DEFAULT_HEADERS = {
     'content-type': 'application/json',
@@ -239,6 +240,27 @@ def _delete_groups_noviflow(ip, port, user, password):
     _close_noviflow_connection(child)
     return True
 
+def _get_ports_from_noviflow(ip, port, user, password):
+    child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
+    if not child or not PROMPT:
+        print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
+        return False
+
+    child.sendline('show status port portno all')
+    i = child.expect([pexpect.TIMEOUT, PROMPT], timeout=TIMEOUT)
+    if i == 0 or not child.before:
+        print('ERROR: cannot get groups for {}@{} port ({})'.format(user, ip, port))
+        _close_noviflow_connection(child)
+        return False
+
+    ports = {}
+    portStatus = re.compile(r'(\d+)\s+(up|down)\s+(up|down)', re.IGNORECASE)
+    for line in child.before.splitlines():
+        match = portStatus.findall(line)
+        if match:
+            ports[str(match[0][0])] = {'admin':match[0][1] == 'up', 'status': match[0][2] == 'up'}
+    return ports
+
 def _get_flows_groups_from_noviflow(node, ip, port, user, password, prefix=None):
     child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
     if not child or not PROMPT:
@@ -356,6 +378,12 @@ def _get_controller_role(name, switch_type, ip, port, user, password):
         SWITCH_ROLES[name] = _get_controller_roles_switch_noviflow(ip, port, user, password)
     else:
         SWITCH_ROLES[name] = _get_controller_roles_switch_ovs(name)
+
+def _get_ports_from_switch(name, switch_type, ip, port, user, password):
+    if switch_type == 'noviflow':
+        SWITCH_PORTS[name] = _get_ports_from_noviflow(ip, port, user, password)
+    else:
+        raise Exception('not supported for OVS')
 
 def _get_switch_port_status_noviflow(ip, port, user, password):
     child, PROMPT = _get_noviflow_connection_prompt(ip, port, user, password)
@@ -719,7 +747,7 @@ class Topo(object):
                 return self.controllers[memberId-1].get('name')
         print "ERROR: owner not found for switch {}".format(name)
 
-    def check_roles(self, topology_name='flow:1'):
+    def check_roles(self, topology_name='flow:1', reconfigure_controllers=False):
 
         threads = []
         # Create threads
@@ -739,6 +767,7 @@ class Topo(object):
             oname = self.switches_openflow_names[name]
             roles = SWITCH_ROLES[name]
             owner = self._get_node_cluster_owner(oname)
+            #if owner and roles and 'Master' not in roles and 'Slave' in roles:
             if owner and roles and 'Master' not in roles:
                 print "ERROR: {}({}) node does not contain master in the switch. Current roles in switch{}".format(name, oname, roles)
                 found_error = True
@@ -760,6 +789,7 @@ class Topo(object):
                 elif memberId > len(roles) or memberId < 0:
                     print "ERROR: {}({}) node master member id {}({}) is out of range. Current roles in switch {}".format(name, oname, memberId, owner, roles)
                     found_error = True
+                #elif roles[memberId-1] == 'Slave':
                 elif roles[memberId-1] != 'Master':
                     print "ERROR: {}({}) node, member {}({}) is not master on the switch as expected by the controller. Current roles in switch {}".format(name, oname, memberId, owner, roles)
                     found_error = True
@@ -787,6 +817,19 @@ class Topo(object):
         return False
 
     def check_links(self, running=True, topology_name='flow:1'):
+        threads = []
+        # Create threads
+        for name in self.switches_openflow_names:
+            switch = self.switches.get(name)
+            thread = threading.Thread(target=_get_ports_from_switch,
+                        args=(name, switch['type'], switch['ip'], switch['port'],switch['user'],switch['password']))
+            threads.append(thread)
+            thread.start()
+
+        # Join
+        for thread in threads:
+            thread.join()
+
         nodes, links = self._get_nodes_and_links(topology_name)
         found_error = False
         all_ports=[]
@@ -794,14 +837,24 @@ class Topo(object):
             dstSwitch = self.portdestinationswitch[openflowport]
             dstPort = self.portdestinationport[openflowport]
 
+            src_split = openflowport.split(':')
+            src_sw_name = self.switches_names_by_id[src_split[0] + ":" + src_split[1]]
+            src_sw_port = src_split[2]
+            src_sw_status = True if src_sw_name in SWITCH_PORTS and src_sw_port in SWITCH_PORTS[src_sw_name] and SWITCH_PORTS[src_sw_name][src_sw_port].get('status') is True else False
+
+            dst_split = dstPort.split(':')
+            dst_sw_name = self.switches_names_by_id[dst_split[0] + ":" + dst_split[1]]
+            dst_sw_port = dst_split[2]
+            dst_sw_status = True if dst_sw_name in SWITCH_PORTS and dst_sw_port in SWITCH_PORTS[dst_sw_name] and SWITCH_PORTS[dst_sw_name][dst_sw_port].get('status') is True else False
+
             all_ports.append(openflowport)
-            if running and openflowport not in links:
-                print "ERROR: topology({}) {} port link not found to {}".format(topology_name, openflowport,dstPort)
+            if running and openflowport not in links and src_sw_status and dst_sw_status:
+                print "ERROR: topology({}) {} port link not found to {}, source switch port status {}, destination switch port status {}".format(topology_name, openflowport,dstPort, src_sw_status, dst_sw_status)
                 found_error = True
-            elif running and links[openflowport].get('destination').get('dest-node') != dstSwitch:
+            elif running and openflowport in links and links[openflowport].get('destination').get('dest-node') != dstSwitch:
                 print "ERROR: topology({}) unexpected destination switch for {} port and link {}. Expected {}".format(topology_name, openflowport,links[openflowport], dstSwitch)
                 found_error = True
-            elif running and links[openflowport].get('destination').get('dest-tp') != dstPort:
+            elif running and openflowport in links and links[openflowport].get('destination').get('dest-tp') != dstPort:
                 print "ERROR: topology({}) unexpected destination port for {} port and link {}. Expected {}".format(topology_name, openflowport,links[openflowport], dstPort)
                 found_error = True
             elif not running and openflowport in links:
