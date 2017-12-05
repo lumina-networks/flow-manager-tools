@@ -15,6 +15,7 @@ Usage:
   fmcheck random-break-gw-switch <seconds> [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [--topology=FILE]
   fmcheck reconnect-ctrl-switch <switch_name> [--topology=FILE]
+  fmcheck reconnect-ctrl-all-switch [--topology=FILE]
   fmcheck random-break-ctrl-switch <seconds> [--topology=FILE]
   fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [--topology=FILE]
   fmcheck random-isolate-ctrl <seconds> [--topology=FILE]
@@ -143,6 +144,10 @@ class Shell(object):
         elif arguments['reconnect-ctrl-switch']:
             for controller in checker.controllers_name:
                 result = checker.break_controller_switch(arguments['<switch_name>'], controller, 0)
+        elif arguments['reconnect-ctrl-all-switch']:
+            for sw in checker.switches:
+                for controller in checker.controllers_name:
+                    result = checker.break_controller_switch(sw, controller, 0)
         elif arguments['break-ctrl-switch']:
             result = checker.break_controller_switch(arguments['<switch_name>'],arguments['<controller_name>'],arguments['<seconds>'])
         elif arguments['random-break-ctrl-switch']:

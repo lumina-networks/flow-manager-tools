@@ -183,13 +183,22 @@ def _reboot_switch_noviflow(ip, port, user, password):
     if  not child or not PROMPT:
         print('ERROR: could not connect to noviflow via SSH. {}@{} port ({})'.format(user, ip, port))
         return False
+
     child.sendline('set status switch reboot')
     i = child.expect([pexpect.TIMEOUT, 'none'], timeout=TIMEOUT)
     if i == 0 or not child.before:
         print('ERROR: cannot reboot switch for {}@{} port ({})'.format(user, ip, port))
         _close_noviflow_connection(child)
         return False
-    child.sendline('none')
+
+    child.sendline('noentries')
+    i = child.expect([pexpect.TIMEOUT, 'y/n'], timeout=TIMEOUT)
+    if i == 0 or not child.before:
+        print('ERROR: cannot reboot switch for {}@{} port ({})'.format(user, ip, port))
+        _close_noviflow_connection(child)
+        return False
+
+    child.sendline('y')
     child.expect([pexpect.TIMEOUT,pexpect.EOF], timeout=TIMEOUT)
     child.close()
     return True
@@ -666,7 +675,7 @@ class Topo(object):
             return False
         seconds = int(seconds)
         seconds = 0 if not seconds or seconds <=0 else seconds
-        print "INFO: trying to break controller {} connection in the switch {} switch".format(controller_name, sw_name)
+        print "INFO: trying to reconnect controller {} connection in the switch {} switch".format(controller_name, sw_name)
         all_ctrl_config = switch.get('controller_config')
         ctrl_config = all_ctrl_config.get(controller_name) if all_ctrl_config else None
         if not ctrl_config or 'remove_controller' not in ctrl_config or len(ctrl_config['remove_controller']) <= 0:
