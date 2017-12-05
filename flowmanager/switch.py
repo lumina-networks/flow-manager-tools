@@ -27,9 +27,9 @@ class Switch(object):
         self.dpid = str(int(props['dpid'], 16))
         self.openflow_name = "openflow:" + str(int(props['dpid'], 16))
         self.type = 'unknown' if not props.get('type') else props['type']
-        self.user = 'vagrant' if not props.get('user') else props['user']
-        self.password = 'vagrant' if not props.get('password') else props['password']
-        self.ip = '127.0.0.1' if not props.get('ip') else props['ip']
+        self.user = None if not props.get('user') else props['user']
+        self.password = None if not props.get('password') else props['password']
+        self.ip = None if not props.get('ip') else props['ip']
         self.port = 22 if not props.get('port') else props['port']
         self.links = {}
         self.flows = {}
