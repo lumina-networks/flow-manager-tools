@@ -79,9 +79,9 @@ do
 
   ssh ${SDN_UNIX_USER}@${ip} "rm -rf /opt/brocade/bsc/ctrlr*zip; sudo /opt/brocade/bsc/bin/support_diagnostics"
   scp ${SDN_UNIX_USER}@${ip}:/opt/brocade/bsc/ctrlr*zip $LOG_DIR/$DIR
-  ssh ${SDN_UNIX_USER}@${ip} "mkdir $DIR; cp -r /opt/brocade/bsc/log/controller_logs/* $DIR; tar cvfz ${ip}-${DIR}.tar.gz $DIR; rm -rf $DIR;killall tcpdump"
-  mkdir -p $LOG_DIR/$DIR
-  scp ${SDN_UNIX_USER}@${ip}:~/${ip}-${DIR}.tar.gz $LOG_DIR/$DIR
+  #ssh ${SDN_UNIX_USER}@${ip} "mkdir $DIR; cp -r /opt/brocade/bsc/log/controller_logs/* $DIR; tar cvfz ${ip}-${DIR}.tar.gz $DIR; rm -rf $DIR;killall tcpdump"
+  #mkdir -p $LOG_DIR/$DIR
+  #scp ${SDN_UNIX_USER}@${ip}:~/${ip}-${DIR}.tar.gz $LOG_DIR/$DIR
 
   ssh ${SDN_UNIX_USER}@${ip} 'killall tcpdump; gzip -9 ser*pcap'
   scp ${SDN_UNIX_USER}@${ip}:~/ser*pcap.gz $LOG_DIR/$DIR
