@@ -20,13 +20,31 @@ from functools import partial
 class SSH(object):
 
     """docstring for ClassName"""
-    def __init__(self, ip, user, port, password=None, prompt=None, timeout=30):
+    def __init__(self, ip, user, port=22, password=None, prompt=None, timeout=30):
         self.ip = ip
         self.user = user
         self.port = port
         self.password = password
         self.prompt = prompt
         self.timeout = timeout
+        self.session_open = False
+
+    def is_session_open():
+        return self.session_open
+
+    def execute_single_command(self, command):
+        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{} '{}'".format(port, self.user, self.ip, command)
+        if self.password:
+            child = pexpect.spawn(cmd)
+            i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
+            if i == 0:
+                print('ERROR: could not connect to controller via SSH. {} port ({})'.format(target, port))
+                return False
+
+            child.sendline(self.password)
+            child.expect([pexpect.TIMEOUT,pexpect.EOF])
+            child.close()
+        return child.before
 
     def create_session(self):
         ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(self.port, self.user, self.ip)
@@ -42,9 +60,13 @@ class SSH(object):
                 return False
             else:
                 logging.debug('SSH session created with success')
+                self.session_open = True
                 return True
 
     def execute_command(self, command, prompt=None, timeout=None, eof=False):
+        if (not self.session_open):
+            self.create_session()
+
         prompt = prompt if prompt else self.prompt
         timeout = timeout if timeout else self.timeout
 
@@ -57,6 +79,7 @@ class SSH(object):
 
     def close(self):
         logging.debug('SSH: (%s) closing connection.', self.ip)
+        self.session_open = False
         self.child.sendline('exit')
         self.child.expect([pexpect.TIMEOUT,pexpect.EOF])
         self.child.close()
