@@ -7,14 +7,12 @@ class Noviflow(Switch):
     def __init__(self, props, expected=False):
         Switch.__init__(self, props, expected)
         self.type = 'noviflow'
+        self.ssh = NoviflowSSH(ip=self.ip, user=self.user, port=self.port, password=self.password)
 
     def reboot(self):
-        ssh = self._get_ssh()
-        if not ssh.create_session():
-            return None
-        if ssh.execute_command('set status switch reboot',prompt="[all/noentries/nopipeline/none]"):
-            if ssh.execute_command('noentries',prompt="(y/n)"):
-                ssh.execute_command('y', prompt=None, eof=True)
+        if self.ssh.execute_command('set status switch reboot',prompt="[all/noentries/nopipeline/none]"):
+            if self.ssh.execute_command('noentries',prompt="(y/n)"):
+                self.ssh.execute_command('y', prompt=None, eof=True)
                 return True
 
 
@@ -22,10 +20,7 @@ class Noviflow(Switch):
         raise Exception('break method is not implemented by this switch {}'.format(self.name))
 
     def delete_groups(self):
-        ssh = self._get_ssh()
-        if not ssh.create_session():
-            return None
-        if ssh.execute_command('del config group groupid all'):
+        if self.ssh.execute_command('del config group groupid all'):
             ssh.close()
             return True
 
@@ -35,10 +30,7 @@ class Noviflow(Switch):
     def get_flows(self):
         logging.debug("NOVIFLOW: %s(%s) getting flows", self.name, self.openflow_name)
 
-        ssh = self._get_ssh()
-        if not ssh.create_session():
-            return None
-        text_flows = ssh.execute_command('show status flow tableid all')
+        text_flows = self.ssh.execute_command('show status flow tableid all')
         if not text_flows:
             return None
 
@@ -90,10 +82,7 @@ class Noviflow(Switch):
 
 
     def get_groups(self):
-        ssh = self._get_ssh()
-        if not ssh.create_session():
-            return None
-        text_groups = ssh.execute_command('show stats group groupid all')
+        text_groups = self.ssh.execute_command('show stats group groupid all')
         if not text_groups:
             return None
 
@@ -134,7 +123,7 @@ class Noviflow(Switch):
         ssh = self._get_ssh()
         if not ssh.create_session():
             return None
-        text_groups = ssh.execute_command('show status ofchannel')
+        text_groups = self.ssh.execute_command('show status ofchannel')
         if not text_groups:
             return None
 
@@ -160,7 +149,3 @@ class Noviflow(Switch):
 
     def restart_port(self, port, seconds=0):
         raise Exception('restart port method is not implemented by this switch {}'.format(self.name))
-
-
-    def _get_ssh(self):
-        return NoviflowSSH(ip=self.ip, user=self.user, port=self.port, password=self.password)
