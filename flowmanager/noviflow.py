@@ -6,7 +6,7 @@ from flowmanager.ssh import NoviflowSSH
 class Noviflow(Switch):
     def __init__(self, props, expected=False):
         Switch.__init__(self, props, expected)
-
+        self.type = 'noviflow'
 
     def reboot(self):
         ssh = self._get_ssh()
