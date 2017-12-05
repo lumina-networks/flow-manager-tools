@@ -44,6 +44,20 @@ class Controller(object):
 
         self.fm_prefix = None
 
+    def is_running(self):
+        raise Exception("to implement. check if process is up")
+
+    def is_sync(self):
+        url = self.get_base_url() + "/jolokia/read/org.opendaylight.controller:Category=ShardManager,name=shard-manager-operational,type=DistributedOperationalDatastore"
+        resp = self.http_get(url)
+        if resp is not None or resp.status_code != 200 or not resp.content:
+            return False
+
+        data = json.loads(resp.content)
+        if not data or 'value' not in data or 'SyncStatus' not in data['value'] or not data['value']['SyncStatus']:
+            return False
+
+        return True
 
     def is_lumina(self):
         self.get_fm_prefix() == LUMINA_FLOW_MANAGER_PREFIX
@@ -66,16 +80,19 @@ class Controller(object):
         return self.fm_prefix
 
     def get_base_url(self, use_vip=False):
-        return self.protocol + '://' + (self.vip if use_vip and self.vip else self.ip) + ':' + str(self.port) + '/restconf'
+        return self.protocol + '://' + (self.vip if use_vip and self.vip else self.ip) + ':' + str(self.port)
+
+    def get_base_url_restconf(self, use_vip=False):
+        return self.get_base_url() + '/restconf'
 
     def get_config_url(self):
-        return self.get_base_url() + '/config'
+        return self.get_base_url_restconf() + '/config'
 
     def get_operational_url(self):
-        return self.get_base_url() + '/operational'
+        return self.get_base_url_restconf() + '/operational'
 
     def get_operations_url(self):
-        return self.get_base_url() + '/operations'
+        return self.get_base_url_restconf() + '/operations'
 
     def get_container_fm(self, name):
         return self.get_fm_prefix() + name
