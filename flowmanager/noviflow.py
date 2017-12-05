@@ -131,7 +131,26 @@ class Noviflow(Switch):
 
 
     def get_controllers_role(self):
-        raise Exception('get controllers method is not implemented by this switch {}'.format(self.name))
+        ssh = self._get_ssh()
+        if not ssh.create_session():
+            return None
+        text_groups = ssh.execute_command('show status ofchannel')
+        if not text_groups:
+            return None
+
+        roles = None
+        rolesLinesRegex = re.compile(r'(Group\s+\S+\s+Role\s+-\s+\S+)', re.IGNORECASE)
+        rolesLines = rolesLinesRegex.findall(text_groups)
+
+        if (rolesLines is not None and len(rolesLines) > 0):
+            rolesRegex = re.compile(r'Group\s+\S+\s+Role\s+-\s+(\S+)', re.IGNORECASE)
+            roles = []
+            for line in sorted(rolesLines):
+                roleList = rolesRegex.findall(line)
+                if roleList and len(roleList):
+                    roles.append(roleList[0])
+        return roles
+
 
     def shutdown_port(self, port):
         raise Exception('shutdown port method is not implemented by this switch {}'.format(self.name))
