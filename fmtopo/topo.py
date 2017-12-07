@@ -1443,9 +1443,9 @@ class Topo(object):
 
 
 
-
-
-
+    def already_running(self):
+        process_qnt = subprocess.check_output("pgrep fmcheck | wc -l", shell=True)
+        return (int(process_qnt) >= 2)
 
     def _get_base_url(self, ctrl_protocol=None, ctrl_ip=None, ctrl_port=None):
         return (ctrl_protocol if ctrl_protocol else self.ctrl_protocol) + '://' + (ctrl_ip if ctrl_ip else self.ctrl_ip) + ':' + str(ctrl_port if ctrl_port else self.ctrl_port)

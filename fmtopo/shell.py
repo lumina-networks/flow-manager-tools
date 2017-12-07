@@ -58,6 +58,7 @@ Options:
 
 """
 
+import time
 import os
 import sys
 import yaml
@@ -101,6 +102,16 @@ class Shell(object):
                 i = i + 1
 
         checker = fmtopo.topo.Topo(props)
+
+        retries = 10
+        while checker.already_running():
+            if retries > 0:
+                retries -= 1
+                time.sleep(1)
+            else:
+                print "ERROR: another fmcheck is running"
+                sys.exit(1)
+
         if arguments['links'] and arguments['--stopped']:
             if arguments['--segementrouting']:
                 result = checker.check_links(False,'flow:1:sr')
