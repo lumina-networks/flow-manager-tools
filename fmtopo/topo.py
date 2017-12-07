@@ -758,8 +758,7 @@ class Topo(object):
                 return self.controllers[memberId-1].get('name')
         print "ERROR: owner not found for switch {}".format(name)
 
-    def check_roles(self, topology_name='flow:1', reconfigure_controllers=False):
-
+    def load_switches_roles(self):
         threads = []
         # Create threads
         for name in self.switches_openflow_names:
@@ -773,42 +772,50 @@ class Topo(object):
         for thread in threads:
             thread.join()
 
+    def check_roles(self, topology_name='flow:1'):
+        self.load_switches_roles()
         found_error = False
         for name in self.switches_openflow_names:
-            oname = self.switches_openflow_names[name]
-            roles = SWITCH_ROLES[name]
-            owner = self._get_node_cluster_owner(oname)
-            #if owner and roles and 'Master' not in roles and 'Slave' in roles:
-            if owner and roles and 'Master' not in roles:
-                print "ERROR: {}({}) node does not contain master in the switch. Current roles in switch{}".format(name, oname, roles)
+            if not self.is_switch_role_in_sync(name):
                 found_error = True
-            if not owner:
-                print "ERROR: {}({}) node does not contain any master in the controller. Current roles in switch {}".format(name, oname, roles)
-                found_error = True
-            elif not roles:
-                print "ERROR: {}({}) node does not have any role. Current roles in switch {}".format(name, oname, roles)
-                found_error = True
-            else:
-                memberIdRegex = re.compile(r'member-(\d+)', re.IGNORECASE)
-                match = memberIdRegex.findall(owner)
-                memberId=None
-                if match:
-                    memberId = int(match[0])
-                if not memberId:
-                    print "ERROR: {}({}) node cannot find the member id {}. Current roles in switch {}".format(name, oname, owner, roles)
-                    found_error = True
-                elif memberId > len(roles) or memberId < 0:
-                    print "ERROR: {}({}) node master member id {}({}) is out of range. Current roles in switch {}".format(name, oname, memberId, owner, roles)
-                    found_error = True
-                #elif roles[memberId-1] == 'Slave':
-                elif roles[memberId-1] != 'Master':
-                    print "ERROR: {}({}) node, member {}({}) is not master on the switch as expected by the controller. Current roles in switch {}".format(name, oname, memberId, owner, roles)
-                    found_error = True
-
         if not found_error:
             print "OK: {} nodes roles has been detected properly.".format(len(self.switches_openflow_names))
             return True
         return False
+
+    def is_switch_role_in_sync(self, name):
+        in_sync = True
+        oname = self.switches_openflow_names[name]
+        roles = SWITCH_ROLES[name]
+        owner = self._get_node_cluster_owner(oname)
+        #if owner and roles and 'Master' not in roles and 'Slave' in roles:
+        if owner and roles and 'Master' not in roles:
+            print "ERROR: {}({}) node does not contain master in the switch. Current roles in switch{}".format(name, oname, roles)
+            in_sync = False
+        if not owner:
+            print "ERROR: {}({}) node does not contain any master in the controller. Current roles in switch {}".format(name, oname, roles)
+            in_sync = False
+        elif not roles:
+            print "ERROR: {}({}) node does not have any role. Current roles in switch {}".format(name, oname, roles)
+            in_sync = False
+        else:
+            memberIdRegex = re.compile(r'member-(\d+)', re.IGNORECASE)
+            match = memberIdRegex.findall(owner)
+            memberId=None
+            if match:
+                memberId = int(match[0])
+            if not memberId:
+                print "ERROR: {}({}) node cannot find the member id {}. Current roles in switch {}".format(name, oname, owner, roles)
+                in_sync = False
+            elif memberId > len(roles) or memberId < 0:
+                print "ERROR: {}({}) node master member id {}({}) is out of range. Current roles in switch {}".format(name, oname, memberId, owner, roles)
+                in_sync = False
+            #elif roles[memberId-1] == 'Slave':
+            elif roles[memberId-1] != 'Master':
+                print "ERROR: {}({}) node, member {}({}) is not master on the switch as expected by the controller. Current roles in switch {}".format(name, oname, memberId, owner, roles)
+                in_sync = False
+
+        return in_sync
 
     def check_nodes(self, running=True, topology_name='flow:1'):
         nodes, links = self._get_nodes_and_links(topology_name)
