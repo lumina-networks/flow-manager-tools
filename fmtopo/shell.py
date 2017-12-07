@@ -6,6 +6,8 @@ Usage:
   fmcheck flows [-a] [--topology=FILE] [--controller=IP]...
   fmcheck roles [--topology=FILE] [--controller=IP]...
   fmcheck sync-status [--topology=FILE] [--controller=IP]...
+  fmcheck fix-roles [--topology=FILE] [--controller=IP]...
+  fmcheck fix-cluster [--topology=FILE] [--controller=IP]...
   fmcheck random-reboot-controller [--topology=FILE]
   fmcheck reboot-all-controllers [--first=CONTROLLER] [--topology=FILE]
   fmcheck reboot-controller <name> [--topology=FILE]
@@ -139,6 +141,8 @@ class Shell(object):
                 result = checker.check_nodes()
         elif arguments['roles']:
             result = checker.check_roles()
+        elif arguments['fix-roles']:
+            result = checker.fix_roles()
         elif arguments['random-reboot-controller']:
             result = checker.reboot_controller(checker.get_random_controller())
         elif arguments['reboot-controller']:
@@ -227,6 +231,8 @@ class Shell(object):
             result = checker.print_node_summary()
         elif arguments['sync-status']:
             result = checker.validate_cluster()
+        elif arguments['fix-cluster']:
+            result = checker.fix_cluster()
 
 
         if not result:

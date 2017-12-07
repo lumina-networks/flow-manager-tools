@@ -10,6 +10,8 @@ import random
 import time
 from functools import partial
 
+WAIT_TIME_FOR_SWITCH_ROLES=120
+WAIT_TIME_FOR_CTRL_SYNC=300
 
 # Define all URL values
 REST_CONTAINER_PREFIX = 'brocade-bsc-'
@@ -579,9 +581,10 @@ class Topo(object):
         return random.choice(self.controllers_name.keys())
 
     def reboot_controller(self, name):
-        self._wait_until_controller_in_sync(300)
-        return self.execute_command_controller(name,"sudo service brcd-bsc stop; sleep 5; sudo service brcd-bsc start")
-        self._wait_until_controller_in_sync(300)
+        self._wait_until_controller_in_sync()
+        result = self.execute_command_controller(name,"sudo service brcd-bsc stop; sleep 5; sudo service brcd-bsc start")
+        self._wait_until_controller_in_sync()
+        return result
 
     def execute_command_controller(self, name, command):
         ctrl = self.controllers_name.get(name)
@@ -771,6 +774,62 @@ class Topo(object):
         # Join
         for thread in threads:
             thread.join()
+
+    def _wait_for_roles_in_sync(self,seconds=WAIT_TIME_FOR_SWITCH_ROLES,topology_name='flow:1'):
+        current = long(time.time())
+        max_time = current + seconds if seconds > 0 else 1
+        while max_time > long(time.time()):
+            if self.check_roles(topology_name=topology_name):
+                return True
+            time.sleep(1)
+
+        return False
+
+    def fix_roles(self, topology_name='flow:1'):
+        if self._wait_for_roles_in_sync(topology_name=topology_name):
+            return True
+
+        self.load_switches_roles()
+        found_error = False
+        for name in self.switches_openflow_names:
+            if not self.is_switch_role_in_sync(name):
+                for controller in self.controllers_name:
+                    self.break_controller_switch(name, controller, 0)
+
+        if self._wait_for_roles_in_sync(topology_name=topology_name):
+            return True
+
+        rebooted_controller = None
+        self.load_switches_roles()
+        found_error = False
+        for name in self.switches_openflow_names:
+            if not self.is_switch_role_in_sync(name):
+                rebooted_controller = self.get_master_controller_name(name)
+                if rebooted_controller:
+                    self.reboot_controller(rebooted_controller)
+                    break
+
+        if self._wait_for_roles_in_sync(topology_name=topology_name):
+            return True
+
+        self.load_switches_roles()
+        for name in self.switches_openflow_names:
+            if not self.is_switch_role_in_sync(name):
+                for controller in self.controllers_name:
+                    self.break_controller_switch(name, controller, 0)
+
+        if self._wait_for_roles_in_sync(topology_name=topology_name):
+            return True
+
+
+        for controller in self.controllers_name:
+            if rebooted_controller and controller == rebooted_controller:
+                continue
+            self.reboot_controller(controller)
+            if self._wait_for_roles_in_sync(topology_name=topology_name):
+                return True
+
+
 
     def check_roles(self, topology_name='flow:1'):
         self.load_switches_roles()
@@ -1417,6 +1476,27 @@ class Topo(object):
         print ""
 
 
+    def fix_cluster(self):
+        if self._wait_until_controller_in_sync():
+            return True
+
+        rebooted_controller = None
+        for controller in self.controllers:
+            if not self.is_controller_in_sync(controller):
+                rebooted_controller = controller['name']
+                self.reboot_controller(rebooted_controller)
+
+        if self._wait_until_controller_in_sync():
+            return True
+
+        for controller in self.controllers:
+            if rebooted_controller and rebooted_controller == controller['name']:
+                continue
+            if not self.is_controller_in_sync(controller):
+                self.reboot_controller(controller['name'])
+                if self._wait_until_controller_in_sync():
+                    return True
+
     def validate_cluster(self):
         """ method to check the cluster status
         Args:
@@ -1437,11 +1517,7 @@ class Topo(object):
         url = self._get_base_url(ctrl_ip=controller['ip'],ctrl_protocol=(controller['protocol'] if 'protocol' in controller else None), ctrl_port=(controller['port'] if 'port' in controller else None)) + "/jolokia/read/org.opendaylight.controller:"\
         "Category=ShardManager,name=shard-manager-operational,"\
         "type=DistributedOperationalDatastore"
-        try:
-            resp = None
-            resp = self._http_get(url)
-        except:
-            pass
+        resp = self._http_get(url)
 
         if resp is None or resp.status_code != 200 or resp.content is None:
             print 'ERROR: cannot obtain cluster status from controller {}'.format(controller['name'])
@@ -1453,10 +1529,10 @@ class Topo(object):
             in_sync = False
         return in_sync
 
-    def _wait_until_controller_in_sync(self, seconds=None):
+    def _wait_until_controller_in_sync(self, seconds=WAIT_TIME_FOR_CTRL_SYNC):
         sync_times = 0
         current = long(time.time())
-        max_time = current + (seconds if seconds else 1)
+        max_time = current + (seconds if seconds > 0 else 1)
         while max_time >= long(time.time()):
             if not self.validate_cluster():
                 sync_times = 0
@@ -1518,12 +1594,15 @@ class Topo(object):
         return self._get_operational_openflow() + '/node/{}/group/{}'.format(node, str(group))
 
     def _http_get(self, url):
-        return requests.get(url,
+        try:
+            return requests.get(url,
                             auth=HTTPBasicAuth(self.ctrl_user,
                                                self.ctrl_password),
                             headers=_DEFAULT_HEADERS,
                             timeout=self.ctrl_timeout,
                             verify=False)
+        except:
+            return None
 
     def _http_post(self, url, data):
         return requests.post(url,
