@@ -7,6 +7,7 @@ Usage:
   fmcheck roles [--topology=FILE] [--controller=IP]...
   fmcheck sync-status [--topology=FILE] [--controller=IP]...
   fmcheck random-reboot-controller [--topology=FILE]
+  fmcheck reboot-all-controllers [--first=CONTROLLER] [--topology=FILE]
   fmcheck reboot-controller <name> [--topology=FILE]
   fmcheck reboot-controller-by-switch <name> [--topology=FILE]
   fmcheck random-reboot-switch [--topology=FILE]
@@ -142,6 +143,8 @@ class Shell(object):
             result = checker.reboot_controller(checker.get_random_controller())
         elif arguments['reboot-controller']:
             result = checker.reboot_controller(arguments['<name>'])
+        elif arguments['reboot-all-controllers']:
+            result = checker.reboot_all_controllers(arguments['--first'])
         elif arguments['random-reboot-switch']:
             result = checker.reboot_switch(checker.get_random_switch())
         elif arguments['reboot-controller-by-switch']:

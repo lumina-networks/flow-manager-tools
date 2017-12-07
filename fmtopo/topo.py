@@ -579,7 +579,9 @@ class Topo(object):
         return random.choice(self.controllers_name.keys())
 
     def reboot_controller(self, name):
+        self._wait_until_controller_in_sync(300)
         return self.execute_command_controller(name,"sudo service brcd-bsc stop; sleep 5; sudo service brcd-bsc start")
+        self._wait_until_controller_in_sync(300)
 
     def execute_command_controller(self, name, command):
         ctrl = self.controllers_name.get(name)
@@ -1408,14 +1410,6 @@ class Topo(object):
         print ""
 
 
-    # def get_controller_sync_state():
-    #     odl_url = "/jolokia/read/org.opendaylight.controller:type=DistributedOperationalDatastore,Category=ShardManager,name=shard-manager-operational"
-    #     resp = self._http_get(odl_url)
-    #     data = json.loads(resp.content)
-
-    #     if :
-    #         pass
-
     def validate_cluster(self):
         """ method to check the cluster status
         Args:
@@ -1424,23 +1418,59 @@ class Topo(object):
 
         all_ok = True
         for controller in self.controllers:
-            url = self._get_base_url(ctrl_ip=controller['ip'],ctrl_protocol=(controller['protocol'] if 'protocol' in controller else None), ctrl_port=(controller['port'] if 'port' in controller else None)) + "/jolokia/read/org.opendaylight.controller:"\
-            "Category=ShardManager,name=shard-manager-operational,"\
-            "type=DistributedOperationalDatastore"
-            resp = self._http_get(url)
-            if resp is None or resp.status_code != 200 or resp.content is None:
-                print 'ERROR: cannot obtain cluster status from controller {}'.format(controller['name'])
-                all_ok = False
+            if self.is_controller_in_sync(controller):
+                print 'Controller {} is in sync.'.format(controller['name'])
                 continue
-
-            data = json.loads(resp.content)
-            if not data or 'value' not in data or 'SyncStatus' not in data['value'] or not data['value']['SyncStatus']:
-                print 'ERROR: cluster status is not in sync for controller {}'.format(controller['name'])
+            else:
                 all_ok = False
-                continue
-
         return all_ok
 
+    def is_controller_in_sync(self, controller):
+        in_sync = True
+        url = self._get_base_url(ctrl_ip=controller['ip'],ctrl_protocol=(controller['protocol'] if 'protocol' in controller else None), ctrl_port=(controller['port'] if 'port' in controller else None)) + "/jolokia/read/org.opendaylight.controller:"\
+        "Category=ShardManager,name=shard-manager-operational,"\
+        "type=DistributedOperationalDatastore"
+        try:
+            resp = None
+            resp = self._http_get(url)
+        except:
+            pass
+
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            print 'ERROR: cannot obtain cluster status from controller {}'.format(controller['name'])
+            return False
+
+        data = json.loads(resp.content)
+        if not data or 'value' not in data or 'SyncStatus' not in data['value'] or not data['value']['SyncStatus']:
+            print 'ERROR: cluster status is not in sync for controller {}'.format(controller['name'])
+            in_sync = False
+        return in_sync
+
+    def _wait_until_controller_in_sync(self, seconds=None):
+        sync_times = 0
+        current = long(time.time())
+        max_time = current + (seconds if seconds else 1)
+        while max_time >= long(time.time()):
+            if not self.validate_cluster():
+                sync_times = 0
+            else:
+                sync_times += 1
+                if sync_times > 14:
+                    return True
+            time.sleep(1)
+
+        if self.validate_cluster():
+            return True
+        return False
+
+    def reboot_all_controllers(self, first_controller=None):
+        if first_controller is not None:
+            self.reboot_controller(first_controller)
+
+        for controller in self.controllers_name:
+            if first_controller and controller == first_controller:
+                continue
+            self.reboot_controller(controller)
 
 
     def already_running(self):
