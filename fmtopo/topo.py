@@ -1557,7 +1557,9 @@ class Topo(object):
 
 
     def already_running(self):
-        process_qnt = subprocess.check_output("pgrep fmcheck | wc -l", shell=True)
+        auto_remediation_verbs = ('fix', 'reboot', 'break', 'reconnect', 'isolate', 'delete')
+        check_command = 'ps aux | grep -E "fmcheck.*({})" | grep -v grep | wc -l'.format("|".join(auto_remediation_verbs))
+        process_qnt = subprocess.check_output(check_command, shell=True)
         return (int(process_qnt) >= 2)
 
     def _get_base_url(self, ctrl_protocol=None, ctrl_ip=None, ctrl_port=None):
