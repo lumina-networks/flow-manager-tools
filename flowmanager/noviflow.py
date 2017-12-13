@@ -3,21 +3,30 @@ import logging
 from flowmanager.switch import Switch
 from flowmanager.ssh import NoviflowSSH
 
+
 class Noviflow(Switch):
+
+    """
+
+    Inherits from Switch and Implements Noviflow specific methods 
+
+    """
+
     def __init__(self, props, expected=False):
         Switch.__init__(self, props, expected)
         self.type = 'noviflow'
-        self.ssh = NoviflowSSH(ip=self.ip, user=self.user, port=self.port, password=self.password)
+        self.ssh = NoviflowSSH(ip=self.ip, user=self.user,
+                               port=self.port, password=self.password)
 
     def reboot(self):
-        if self.ssh.execute_command('set status switch reboot',prompt="[all/noentries/nopipeline/none]"):
-            if self.ssh.execute_command('noentries',prompt="(y/n)"):
+        if self.ssh.execute_command('set status switch reboot', prompt="[all/noentries/nopipeline/none]"):
+            if self.ssh.execute_command('noentries', prompt="(y/n)"):
                 self.ssh.execute_command('y', prompt=None, eof=True)
                 return True
 
-
     def break_gateway(self, seconds=0):
-        raise Exception('break method is not implemented by this switch {}'.format(self.name))
+        raise Exception(
+            'break method is not implemented by this switch {}'.format(self.name))
 
     def delete_groups(self):
         if self.ssh.execute_command('del config group groupid all'):
@@ -25,10 +34,12 @@ class Noviflow(Switch):
             return True
 
     def delete_flows(self):
-        raise Exception('delete flows is not implemented by this switch {}'.format(self.name))
+        raise Exception(
+            'delete flows is not implemented by this switch {}'.format(self.name))
 
     def get_flows(self):
-        logging.debug("NOVIFLOW: %s(%s) getting flows", self.name, self.openflow_name)
+        logging.debug("NOVIFLOW: %s(%s) getting flows",
+                      self.name, self.openflow_name)
 
         text_flows = self.ssh.execute_command('show status flow tableid all')
         if not text_flows:
@@ -44,17 +55,20 @@ class Noviflow(Switch):
         current_flow = None
         current_table = None
         for line in text_flows.splitlines():
-            logging.debug("NOVIFLOW: %s(%s) processing line %s", self.name, self.openflow_name, line)
+            logging.debug("NOVIFLOW: %s(%s) processing line %s",
+                          self.name, self.openflow_name, line)
             match = tableid.findall(line)
             if match:
-                logging.debug("NOVIFLOW: %s(%s) updating table %s", self.name, self.openflow_name, match[0])
+                logging.debug("NOVIFLOW: %s(%s) updating table %s",
+                              self.name, self.openflow_name, match[0])
                 current_table = match[0]
                 current_flow = None
                 continue
 
             match = flowid.findall(line)
             if match:
-                logging.debug("NOVIFLOW: %s(%s) creating flow %s", self.name, self.openflow_name, match[0])
+                logging.debug("NOVIFLOW: %s(%s) creating flow %s",
+                              self.name, self.openflow_name, match[0])
                 current_flow = {'id': match[0], 'table': current_table}
                 flows.append(current_flow)
                 continue
@@ -80,14 +94,14 @@ class Noviflow(Switch):
         ssh.close()
         return flows
 
-
     def get_groups(self):
         text_groups = self.ssh.execute_command('show stats group groupid all')
         if not text_groups:
             return None
 
         groupIdRegex = re.compile(r'Group id:\s*(\d+)', re.IGNORECASE)
-        packetCountRegex = re.compile(r'Reference count:\s*\d+\s*\S\s+Packet count:\s*(\d+)', re.IGNORECASE)
+        packetCountRegex = re.compile(
+            r'Reference count:\s*\d+\s*\S\s+Packet count:\s*(\d+)', re.IGNORECASE)
         byteCountRegex = re.compile(r'Byte count:\s*(\d+)', re.IGNORECASE)
 
         groups = []
@@ -95,7 +109,7 @@ class Noviflow(Switch):
         for line in text_groups.splitlines():
             match = groupIdRegex.findall(line)
             if match:
-                current_group = {'id':match[0]}
+                current_group = {'id': match[0]}
                 groups.append(current_group)
                 continue
             elif current_group is None:
@@ -118,7 +132,6 @@ class Noviflow(Switch):
         ssh.close()
         return groups
 
-
     def get_controllers_role(self):
         ssh = self._get_ssh()
         if not ssh.create_session():
@@ -128,11 +141,13 @@ class Noviflow(Switch):
             return None
 
         roles = None
-        rolesLinesRegex = re.compile(r'(Group\s+\S+\s+Role\s+-\s+\S+)', re.IGNORECASE)
+        rolesLinesRegex = re.compile(
+            r'(Group\s+\S+\s+Role\s+-\s+\S+)', re.IGNORECASE)
         rolesLines = rolesLinesRegex.findall(text_groups)
 
         if (rolesLines is not None and len(rolesLines) > 0):
-            rolesRegex = re.compile(r'Group\s+\S+\s+Role\s+-\s+(\S+)', re.IGNORECASE)
+            rolesRegex = re.compile(
+                r'Group\s+\S+\s+Role\s+-\s+(\S+)', re.IGNORECASE)
             roles = []
             for line in sorted(rolesLines):
                 roleList = rolesRegex.findall(line)
@@ -140,12 +155,14 @@ class Noviflow(Switch):
                     roles.append(roleList[0])
         return roles
 
-
     def shutdown_port(self, port):
-        raise Exception('shutdown port method is not implemented by this switch {}'.format(self.name))
+        raise Exception(
+            'shutdown port method is not implemented by this switch {}'.format(self.name))
 
     def start_port(self, port):
-        raise Exception('start port method is not implemented by this switch {}'.format(self.name))
+        raise Exception(
+            'start port method is not implemented by this switch {}'.format(self.name))
 
     def restart_port(self, port, seconds=0):
-        raise Exception('restart port method is not implemented by this switch {}'.format(self.name))
+        raise Exception(
+            'restart port method is not implemented by this switch {}'.format(self.name))
