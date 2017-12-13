@@ -847,8 +847,8 @@ class Topo(object):
         oname = self.switches_openflow_names[name]
         roles = SWITCH_ROLES[name]
         owner = self._get_node_cluster_owner(oname)
-        #if owner and roles and 'Master' not in roles and 'Slave' in roles:
-        if owner and roles and 'Master' not in roles:
+        if owner and roles and 'Master' not in roles and 'Slave' in roles:
+        #if owner and roles and 'Master' not in roles:
             print "ERROR: {}({}) node does not contain master in the switch. Current roles in switch{}".format(name, oname, roles)
             in_sync = False
         if not owner:
@@ -869,8 +869,8 @@ class Topo(object):
             elif memberId > len(roles) or memberId < 0:
                 print "ERROR: {}({}) node master member id {}({}) is out of range. Current roles in switch {}".format(name, oname, memberId, owner, roles)
                 in_sync = False
-            #elif roles[memberId-1] == 'Slave':
-            elif roles[memberId-1] != 'Master':
+            elif roles[memberId-1] == 'Slave':
+            #elif roles[memberId-1] != 'Master':
                 print "ERROR: {}({}) node, member {}({}) is not master on the switch as expected by the controller. Current roles in switch {}".format(name, oname, memberId, owner, roles)
                 in_sync = False
 
