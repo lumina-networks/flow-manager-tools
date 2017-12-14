@@ -781,7 +781,7 @@ class Topo(object):
         print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'Checking if roles are in sync...'
         while max_time > long(time.time()):
             if self.check_roles(topology_name=topology_name):
-                print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'SUCCESS roles are in sync'
+                print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'SUCCESS Roles are in sync'
                 return True
             time.sleep(1)
 
