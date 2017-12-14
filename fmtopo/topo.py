@@ -831,6 +831,8 @@ class Topo(object):
             if self._wait_for_roles_in_sync(topology_name=topology_name):
                 return True
 
+        print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'FAILURE to fix roles'
+        return False
 
 
     def check_roles(self, topology_name='flow:1'):
@@ -1498,6 +1500,8 @@ class Topo(object):
                 self.reboot_controller(controller['name'])
                 if self._wait_until_controller_in_sync():
                     return True
+        print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'FAILURE to fix sync'
+        return False
 
     def validate_cluster(self):
         """ method to check the cluster status
