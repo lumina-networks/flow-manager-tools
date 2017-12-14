@@ -778,8 +778,10 @@ class Topo(object):
     def _wait_for_roles_in_sync(self,seconds=WAIT_TIME_FOR_SWITCH_ROLES,topology_name='flow:1'):
         current = long(time.time())
         max_time = current + seconds if seconds > 0 else 1
+        print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'Checking if roles are in sync...'
         while max_time > long(time.time()):
             if self.check_roles(topology_name=topology_name):
+                print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'SUCCESS Roles are in sync'
                 return True
             time.sleep(1)
 
@@ -829,6 +831,8 @@ class Topo(object):
             if self._wait_for_roles_in_sync(topology_name=topology_name):
                 return True
 
+        print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'FAILURE to fix roles'
+        return False
 
 
     def check_roles(self, topology_name='flow:1'):
@@ -1496,6 +1500,8 @@ class Topo(object):
                 self.reboot_controller(controller['name'])
                 if self._wait_until_controller_in_sync():
                     return True
+        print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'FAILURE to fix sync'
+        return False
 
     def validate_cluster(self):
         """ method to check the cluster status
@@ -1533,12 +1539,14 @@ class Topo(object):
         sync_times = 0
         current = long(time.time())
         max_time = current + (seconds if seconds > 0 else 1)
+        print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'Checking if controllers are in sync...'
         while max_time >= long(time.time()):
             if not self.validate_cluster():
                 sync_times = 0
             else:
                 sync_times += 1
                 if sync_times > 14:
+                    print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'SUCCESS Controllers are consistently in sync'
                     return True
             time.sleep(1)
 
