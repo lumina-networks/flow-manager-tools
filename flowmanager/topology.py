@@ -172,6 +172,7 @@ class Topology(object):
 
     def validate_nodes(self, should_be_up=True, include_sr=True):
         """Validates nodes against the topology"""
+        logging.info('Validating nodes...')
         self.load_nodes()  # Populates switches dict
         result = True
         for switch in self.switches.values():
@@ -180,6 +181,7 @@ class Topology(object):
 
     def load_nodes(self):
         """Populates switches dict by nodes"""
+        logging.info('Loading nodes...')
         ctrl = self.default_ctrl
         nodes = openflow.get_topology_nodes(ctrl, 'flow:1')
         if nodes:
@@ -204,6 +206,7 @@ class Topology(object):
 
     def validate_links(self, should_be_up=True, include_sr=True):
         """Validates links against the topology"""
+        logging.info('Validating links...')
         self.load_links()  # Populates switches dict
         result = True 
         for switch in self.switches.values():
@@ -214,6 +217,7 @@ class Topology(object):
 
     def load_links(self):
         """Populates switches dict by links"""
+        logging.info('Loading links...')
         ctrl = self.default_ctrl
         links = openflow.get_topology_links(ctrl, 'flow:1')
         if links:
