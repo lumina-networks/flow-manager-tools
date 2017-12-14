@@ -89,7 +89,7 @@ class Shell(object):
                 props = yaml.load(f)
 
         if props is None:
-            print "ERROR: yml topology file {} not loaded".format(file)
+            logging.error("yml topology file %s not loaded",file)
             sys.exit(1)
 
         if arguments['--controller']:
@@ -124,7 +124,7 @@ class Shell(object):
             ctrl = topology.get_random_controller()
             if not ctrl:
                 result = False
-                print "ERROR: controller not found"
+                logging.error("controller not found")
             else:
                 result = ctrl.reboot(checker.get_random_controller())
 
@@ -132,7 +132,7 @@ class Shell(object):
             ctrl = topology.get_controller(arguments['<name>'])
             if not ctrl:
                 result = False
-                print "ERROR: controller {} not found".format(arguments['<name>'])
+                logging.error("controller %s not found",arguments['<name>'])
             else:
                 result = ctrl.reboot(checker.get_random_controller())
 
@@ -147,14 +147,14 @@ class Shell(object):
             if switch:
                 result = switch.reboot()
             else:
-                print "ERROR: random switch not found"
+                logging.error("random switch not found")
 
         elif arguments['reboot-switch']:
             switch = topology.get_switch(arguments['<name>'])
             if switch:
                 result = switch.reboot()
             else:
-                print "ERROR: switch {} not found".format(arguments['<name>'])
+                logging.error("switch %s not found",arguments['<name>'])
 
         elif arguments['break-gw-switch']:
             result = checker.break_gw_switch(arguments['<name>'],arguments['<seconds>'])
@@ -189,14 +189,14 @@ class Shell(object):
             if switch:
                 result = switch.delete_groups()
             else:
-                print "ERROR: random switch not found"
+                logging.error("random switch not found")
 
         elif arguments['delete-groups']:
             switch = topology.get_switch(arguments['<name>'])
             if switch:
                 result = switch.delete_groups()
             else:
-                print "ERROR: switch {} not found".format(arguments['<name>'])
+                logging.error("switch %s not found",arguments['<name>'])
 
 
         elif arguments['random-delete-flows']:
