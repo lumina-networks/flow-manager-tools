@@ -1535,12 +1535,14 @@ class Topo(object):
         sync_times = 0
         current = long(time.time())
         max_time = current + (seconds if seconds > 0 else 1)
+        print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'Checking if controllers are in sync...'
         while max_time >= long(time.time()):
             if not self.validate_cluster():
                 sync_times = 0
             else:
                 sync_times += 1
                 if sync_times > 14:
+                    print time.strftime("[%H:%M:%S]: ", time.localtime(time.time())) + 'SUCCESS Controllers are consistently in sync'
                     return True
             time.sleep(1)
 
