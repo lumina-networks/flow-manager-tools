@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
     zip_safe=True,
     name='flow-manager-tools',
-    version='1.0',
+    version='1.1',
     author='jcastro',
     author_email='jcastro@brocade.com',
     packages=[
@@ -18,7 +18,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'fmcheck = fmtopo.shell:main'
+            'fmcheck2 = fmtopo.shell:main'
         ]
     }
 
