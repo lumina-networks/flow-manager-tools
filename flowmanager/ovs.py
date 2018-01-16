@@ -43,7 +43,7 @@ class OVS(Switch):
             r'(tcp:\d+\.\d+\.\d+\.\d+\:\d+)', re.IGNORECASE)
         match = controllersRegex.findall(output)
         if not match:
-            logger.error("cannot get controllers for {}".format(self.name)
+            logger.error("cannot get controllers for {}".format(self.name))
             return False
             controllers=' '.join(match)
             self._execute_command(
@@ -123,8 +123,7 @@ class OVS(Switch):
     def get_controllers_role(self):
         controllers=self._execute_command(
             "sudo ovs-vsctl  get Bridge {} controller".format(self.name))
-	    logging.debug(
-	        "DEBUG: Controllers UUID received for switch %s are : %s", self.name, controllers)
+        logging.debug("DEBUG: Controllers UUID received for switch %s are : %s", self.name, controllers)
         if not controllers:
             return None
         regex=re.compile(r'([0-9a-fA-F-]+)', re.IGNORECASE)
