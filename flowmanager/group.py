@@ -1,5 +1,6 @@
 import logging
 
+
 class Group(object):
 
     def __init__(self, node, node_of_name, groupid):
@@ -45,7 +46,8 @@ class Group(object):
         elif not self.of_config and self.calculated:
             print "ERROR: {}({}) group {} calculated but not configured. {}".format(self.node, self.node_of_name, self.groupid, self._get_info_msg())
         else:
-            logging.debug("GROUP: OK: %s %s", self.groupid, self._get_info_msg())
+            logging.debug("GROUP: OK: %s %s", self.groupid,
+                          self._get_info_msg())
             return True
 
     def _get_info_msg(self):

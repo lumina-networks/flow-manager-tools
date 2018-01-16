@@ -18,6 +18,7 @@ from flowmanager.noviflow import Noviflow
 from flowmanager.utils import check_mandatory_values
 import flowmanager.openflow as openflow
 
+
 class Topology(object):
 
     def __init__(self, props):
@@ -49,18 +50,20 @@ class Topology(object):
                 self.add_switch(new_switch)
 
         self.controllers = {}
-	self.ctrl_name = None
+        self.ctrl_name = None
         if props.get('controller'):
             for properties in props['controller']:
-                new_controller = Controller(properties, props.get('controller_vip'))
+                new_controller = Controller(
+                    properties, props.get('controller_vip'))
                 self.controllers[new_controller.name] = new_controller
-		if not self.ctrl_name:
+                if not self.ctrl_name:
                     self.ctrl_name = new_controller.name
         else:
-            new_controller = Controller({'name': 'c0'}, props.get('controller_vip'))
+            new_controller = Controller(
+                {'name': 'c0'}, props.get('controller_vip'))
             self.controllers[new_controller.name] = new_controller
-	    if not self.ctrl_name:
-                    self.ctrl_name = new_controller.name
+            if not self.ctrl_name:
+                self.ctrl_name = new_controller.name
 
         self.default_ctrl = self.get_random_controller()
 
@@ -76,8 +79,10 @@ class Topology(object):
                 dst_switch = self.get_switch(link['destination'])
                 dst_name = dst_switch.openflow_name if dst_switch else None
 
-                src_host = self.get_host(link['source']) if not src_switch else None
-                dst_host = self.get_host(link['destination']) if not dst_switch else None
+                src_host = self.get_host(
+                    link['source']) if not src_switch else None
+                dst_host = self.get_host(
+                    link['destination']) if not dst_switch else None
 
                 source = None
                 if src_switch:
@@ -101,14 +106,18 @@ class Topology(object):
 
                 # add the links
                 if src_switch and dst_switch:
-                    src_switch.get_link(src_switch.openflow_name + ':' + str(src_port), dst_switch.openflow_name + ':' + str(dst_port))
-                    dst_switch.get_link(dst_switch.openflow_name + ':' + str(dst_port), src_switch.openflow_name + ':' + str(src_port))
+                    src_switch.get_link(src_switch.openflow_name + ':' + str(
+                        src_port), dst_switch.openflow_name + ':' + str(dst_port))
+                    dst_switch.get_link(dst_switch.openflow_name + ':' + str(
+                        dst_port), src_switch.openflow_name + ':' + str(src_port))
 
                 elif src_switch and dst_host:
-                    src_switch.get_link(src_switch.openflow_name + ':' + str(src_port), dst_host.openflow_name)
+                    src_switch.get_link(
+                        src_switch.openflow_name + ':' + str(src_port), dst_host.openflow_name)
 
                 elif dst_switch and src_host:
-                    dst_switch.get_link(dst_switch.openflow_name + ':' + str(dst_port), src_host.openflow_name)
+                    dst_switch.get_link(
+                        dst_switch.openflow_name + ':' + str(dst_port), src_host.openflow_name)
 
     def add_host(self, host):
         self.hosts[host.name] = host
@@ -176,7 +185,8 @@ class Topology(object):
         self.load_nodes()  # Populates switches dict
         result = True
         for switch in self.switches.values():
-            result = False if not switch.check(should_be_up=should_be_up, validate_sr=include_sr) else result
+            result = False if not switch.check(
+                should_be_up=should_be_up, validate_sr=include_sr) else result
         return result
 
     def load_nodes(self):
@@ -208,10 +218,11 @@ class Topology(object):
         """Validates links against the topology"""
         logging.info('Validating links...')
         self.load_links()  # Populates switches dict
-        result = True 
+        result = True
         for switch in self.switches.values():
             for link in switch.links.values():
-                result = False if not link.check(should_be_up=should_be_up, validate_sr=include_sr) else result
+                result = False if not link.check(
+                    should_be_up=should_be_up, validate_sr=include_sr) else result
 
         return result
 
@@ -229,7 +240,8 @@ class Topology(object):
                 dst_port = link['destination']['dest-tp']
                 if not self.get_switch(src_node):
                     self.add_switch_by_openflow_name(src_node)
-                self.get_switch(src_node).get_link(src_port).add_of_dst(dst_port)
+                self.get_switch(src_node).get_link(
+                    src_port).add_of_dst(dst_port)
 
         links = openflow.get_topology_links(ctrl, 'flow:1:sr')
         if links:
@@ -241,7 +253,8 @@ class Topology(object):
                 dst_port = link['destination']['dest-tp']
                 if not self.get_switch(src_node):
                     self.add_switch_by_openflow_name(src_node)
-                self.get_switch(src_node).get_link(src_port).add_sr_dst(dst_port)
+                self.get_switch(src_node).get_link(
+                    src_port).add_sr_dst(dst_port)
 
     def validate_openflow_elements(self, check_stats=False):
         self.load_openflow_elements()
@@ -257,7 +270,7 @@ class Topology(object):
     def load_openflow_elements(self):
         ctrl = self.default_ctrl
 
-        #load groups
+        # load groups
         nodes = openflow.get_config_openflow(ctrl)
         if nodes is not None and 'nodes' in nodes and 'node' in nodes['nodes']:
             for node in nodes['nodes']['node']:
@@ -267,20 +280,24 @@ class Topology(object):
                 if not self.get_switch(name):
                     self.add_switch_by_openflow_name(name)
                 switch = self.get_switch(name)
-                groups = node.get('group') if 'group' in node else node.get('flow-node-inventory:group')
+                groups = node.get('group') if 'group' in node else node.get(
+                    'flow-node-inventory:group')
                 if groups:
                     for group in groups:
-                        switch.get_group(group['group-id']).add_of_config(group)
+                        switch.get_group(
+                            group['group-id']).add_of_config(group)
 
-                tables = node.get('table') if 'table' in node else node.get('flow-node-inventory:table')
+                tables = node.get('table') if 'table' in node else node.get(
+                    'flow-node-inventory:table')
                 if tables:
                     for table in tables:
                         table_id = table['id']
-                        flows = table.get('flow') if 'flow' in table else table.get('flow-node-inventory:flow')
+                        flows = table.get('flow') if 'flow' in table else table.get(
+                            'flow-node-inventory:flow')
                         if flows:
                             for flow in flows:
-                                switch.get_flow(table=table_id,name=flow['id'],cookie=flow.get('cookie')).add_of_config(flow)
-
+                                switch.get_flow(table=table_id, name=flow['id'], cookie=flow.get(
+                                    'cookie')).add_of_config(flow)
 
         nodes = openflow.get_operational_openflow(ctrl)
         if nodes is not None and 'nodes' in nodes and 'node' in nodes['nodes']:
@@ -291,19 +308,24 @@ class Topology(object):
                 if not self.get_switch(name):
                     self.add_switch_by_openflow_name(name)
                 switch = self.get_switch(name)
-                groups = node.get('group') if 'group' in node else node.get('flow-node-inventory:group')
+                groups = node.get('group') if 'group' in node else node.get(
+                    'flow-node-inventory:group')
                 if groups:
                     for group in groups:
-                        switch.get_group(group['group-id']).add_of_operational(group)
+                        switch.get_group(
+                            group['group-id']).add_of_operational(group)
 
-                tables = node.get('table') if 'table' in node else node.get('flow-node-inventory:table')
+                tables = node.get('table') if 'table' in node else node.get(
+                    'flow-node-inventory:table')
                 if tables:
                     for table in tables:
                         table_id = table['id']
-                        flows = table.get('flow') if 'flow' in table else table.get('flow-node-inventory:flow')
+                        flows = table.get('flow') if 'flow' in table else table.get(
+                            'flow-node-inventory:flow')
                         if flows:
                             for flow in flows:
-                                switch.get_flow(table=table_id,name=flow['id'],cookie=flow.get('cookie')).add_of_operational(flow)
+                                switch.get_flow(table=table_id, name=flow['id'], cookie=flow.get(
+                                    'cookie')).add_of_operational(flow)
 
         nodes = openflow.get_fm_openflow(ctrl)
         if nodes is not None and 'nodes' in nodes and 'node' in nodes['nodes']:
@@ -314,30 +336,32 @@ class Topology(object):
                 if not self.get_switch(name):
                     self.add_switch_by_openflow_name(name)
                 switch = self.get_switch(name)
-                groups = node.get('group') if 'group' in node else node.get('flow-node-inventory:group')
+                groups = node.get('group') if 'group' in node else node.get(
+                    'flow-node-inventory:group')
                 if groups:
                     for group in groups:
                         switch.get_group(group['id']).add_fm(group)
 
-                tables = node.get('table') if 'table' in node else node.get('flow-node-inventory:table')
+                tables = node.get('table') if 'table' in node else node.get(
+                    'flow-node-inventory:table')
                 if tables:
                     for table in tables:
                         table_id = table['id']
-                        flows = table.get('flow') if 'flow' in table else table.get('flow-node-inventory:flow')
+                        flows = table.get('flow') if 'flow' in table else table.get(
+                            'flow-node-inventory:flow')
                         if flows:
                             for flow in flows:
-                                switch.get_flow(table=table_id,name=flow['id'],cookie=flow.get('cookie')).add_fm(flow)
-
+                                switch.get_flow(table=table_id, name=flow['id'], cookie=flow.get(
+                                    'cookie')).add_fm(flow)
 
         threads = []
         for switch in self.switches.values():
-            t = threading.Thread(target=_load_openflow_from_switch, args=(switch,))
+            t = threading.Thread(
+                target=_load_openflow_from_switch, args=(switch,))
             threads.append(t)
             t.start()
         for t in threads:
             t.join()
-
-
 
         # load calculated groups
         topology = openflow.get_topology(ctrl, 'flow:1:sr')
@@ -354,12 +378,10 @@ class Topology(object):
             for path in paths:
                 self.process_calculated(path)
 
-
         elines = openflow.get_elines(ctrl)
         if elines:
             for eline in elines:
                 self.process_calculated(eline)
-
 
         treepaths = openflow.get_treepaths(ctrl)
         if treepaths:
@@ -383,10 +405,10 @@ class Topology(object):
         if nodes:
             self.process_calculated(nodes)
 
-
     def get_node_cluster_owner(self, openflow_name):
-        controller=self.controllers[self.ctrl_name]
-        resp = controller.http_get(controller.get_operational_url() + '/entity-owners:entity-owners/entity-type/org.opendaylight.mdsal.ServiceEntityType/entity/%2Fodl-general-entity%3Aentity%5Bodl-general-entity%3Aname%3D%27{}%27%5D'.format(openflow_name))
+        controller = self.controllers[self.ctrl_name]
+        resp = controller.http_get(controller.get_operational_url(
+        ) + '/entity-owners:entity-owners/entity-type/org.opendaylight.mdsal.ServiceEntityType/entity/%2Fodl-general-entity%3Aentity%5Bodl-general-entity%3Aname%3D%27{}%27%5D'.format(openflow_name))
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             entity = data.get('entity')
@@ -399,39 +421,45 @@ class Topology(object):
         # for name in self.switches_openflow_names:
         for switch in self.switches.values():
             oname = switch.openflow_name
-	    roles=[i.lower() for i in switch.get_controllers_role()]
+            roles = [i.lower() for i in switch.get_controllers_role()]
             owner = self.get_node_cluster_owner(oname)
             if owner and roles and 'master' not in roles:
-                logging.error("%s(%s) node does not contain master in the switch. Current roles in switch%s",switch.name, oname, roles)
+                logging.error(
+                    "%s(%s) node does not contain master in the switch. Current roles in switch%s", switch.name, oname, roles)
                 found_error = True
             if not owner:
-                logging.error("%s(%s) node does not contain any master in the controller. Current roles in switch%s",switch.name, oname, roles)
+                logging.error(
+                    "%s(%s) node does not contain any master in the controller. Current roles in switch%s", switch.name, oname, roles)
                 found_error = True
             elif not roles:
-                logging.error("%s(%s)  node does not have any role. Current roles in switch%s",switch.name, oname, roles)
+                logging.error(
+                    "%s(%s)  node does not have any role. Current roles in switch%s", switch.name, oname, roles)
                 found_error = True
             else:
                 memberIdRegex = re.compile(r'member-(\d+)', re.IGNORECASE)
                 match = memberIdRegex.findall(owner)
-                memberId=None
+                memberId = None
                 if match:
                     memberId = int(match[0])
                 if not memberId:
-                    logging.error("%s(%s) node cannot find the member id %s. Current roles in switch %s",switch.name, oname, owner, roles)
+                    logging.error(
+                        "%s(%s) node cannot find the member id %s. Current roles in switch %s", switch.name, oname, owner, roles)
                     found_error = True
                 elif memberId > len(roles) or memberId < 0:
-                    logging.error("%s(%s) node master member id %s(%s) is out of range. Current roles in switch %s",switch.name, oname, memberId, owner, roles)
+                    logging.error("%s(%s) node master member id %s(%s) is out of range. Current roles in switch %s",
+                                  switch.name, oname, memberId, owner, roles)
                     found_error = True
-                elif roles[memberId - 1] !=  'master':
-		    logging.info(roles[memberId - 1])
-                    logging.error("%s(%s) node, member %s(%s) is not master on the switch as expected by the controller. Current roles in switch %s",switch.name, oname, memberId, owner, roles)
+                elif roles[memberId - 1] != 'master':
+                    logging.info(roles[memberId - 1])
+                    logging.error("%s(%s) node, member %s(%s) is not master on the switch as expected by the controller. Current roles in switch %s",
+                                  switch.name, oname, memberId, owner, roles)
                     found_error = True
 
         if not found_error:
-            logging.info("%d node roles have been detected properly",len(self.switches))
+            logging.info(
+                "%d node roles have been detected properly", len(self.switches))
             return True
         return False
-
 
     def process_calculated(self, data):
         self.process_calculated_groups(data)
@@ -457,7 +485,8 @@ class Topology(object):
                             continue
                         switch = self.get_switch(group['node-id'])
                         if switch:
-                            switch.get_group(group['group-id']).mark_as_calculated()
+                            switch.get_group(
+                                group['group-id']).mark_as_calculated()
 
     def process_calculated_flows(self, data):
         if data and 'calculated-flows' in data:
@@ -470,7 +499,8 @@ class Topology(object):
                             continue
                         switch = self.get_switch(flow['node-id'])
                         if switch:
-                            switch.get_flow(table=flow['table-id'], name=flow['flow-name']).mark_as_calculated()
+                            switch.get_flow(
+                                table=flow['table-id'], name=flow['flow-name']).mark_as_calculated()
 
 
 def _load_openflow_from_switch(switch):
@@ -478,7 +508,8 @@ def _load_openflow_from_switch(switch):
     try:
         groups = switch.get_groups()
     except:
-        logging.debug("TOPOLOGY: error getting groups from %s(%s)",switch.name, switch.openflow_name)
+        logging.debug("TOPOLOGY: error getting groups from %s(%s)",
+                      switch.name, switch.openflow_name)
         pass
     if groups:
         for group in groups:
@@ -488,7 +519,8 @@ def _load_openflow_from_switch(switch):
     try:
         flows = switch.get_flows()
     except:
-        logging.debug("TOPOLOGY: error getting flows from %s(%s)",switch.name, switch.openflow_name)
+        logging.debug("TOPOLOGY: error getting flows from %s(%s)",
+                      switch.name, switch.openflow_name)
         pass
     if flows:
         for flow in flows:

@@ -26,15 +26,19 @@ class Controller(object):
         self.props = props
 
         self.name = props.get('name')
-        self.protocol = 'http' if not props.get('protocol') else props['protocol']
+        self.protocol = 'http' if not props.get(
+            'protocol') else props['protocol']
         self.vip = props.get['vip'] if props.get('vip') else controller_vip
         self.ip = '127.0.0.1' if not props.get('ip') else props['ip']
         self.port = '8181' if not props.get('port') else int(props['port'])
         self.user = 'admin' if not props.get('user') else props['user']
-        self.password = 'admin' if not props.get('password') else props['password']
-        self.timeout = 60 if not props.get('timeout') else int(props['timeout'])
+        self.password = 'admin' if not props.get(
+            'password') else props['password']
+        self.timeout = 60 if not props.get(
+            'timeout') else int(props['timeout'])
         self.sshuser = 'root' if not props.get('sshuser') else props['sshuser']
-        self.sshpassword = 'lumina' if not props.get('sshpassword') else props['sshpassword']
+        self.sshpassword = 'lumina' if not props.get(
+            'sshpassword') else props['sshpassword']
         self.sshport = '22' if not props.get('sshport') else props['sshport']
 
         # if IP address and user is not given
@@ -109,13 +113,14 @@ class Controller(object):
     def http_get(self, url):
         try:
             result = requests.get(url,
-                                auth=HTTPBasicAuth(self.user,self.password),
-                                headers=DEFAULT_HEADERS,
-                                timeout=self.timeout,
-                                verify=False)
+                                  auth=HTTPBasicAuth(self.user, self.password),
+                                  headers=DEFAULT_HEADERS,
+                                  timeout=self.timeout,
+                                  verify=False)
             return result
         except requests.exceptions.ConnectionError as errc:
-            logging.error("%s",errc)
+            logging.error("%s", errc)
+
     def http_post(self, url, data):
         return requests.post(url,
                              auth=HTTPBasicAuth(self.user,
@@ -139,6 +144,7 @@ class Controller(object):
                                headers=DEFAULT_HEADERS,
                                timeout=self.timeout,
                                verify=False)
+
 
 '''
     def reboot(self, seconds=0):
