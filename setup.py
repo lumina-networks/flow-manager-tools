@@ -9,7 +9,7 @@ setup(
     author_email='jcastro@brocade.com',
     packages=[
         'docopt',
-        'fmtopo'
+        'flowmanager'
     ],
     description='Flow Manager tools',
     license='LICENSE',
@@ -18,7 +18,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'fmcheck2 = fmtopo.shell:main'
+            'fmcheck2 = flowmanager.fmcheck:main'
         ]
     }
 
