@@ -5,6 +5,7 @@ This module contains the primitives to access controller information.
 """
 import logging
 import requests
+from flowmanager.ssh import SSH
 from requests.auth import HTTPBasicAuth
 
 from flowmanager.utils import check_mandatory_values
@@ -47,6 +48,7 @@ class Controller(object):
         self.execute_local = True if self.ip == '127.0.0.1' else self.execute_local
 
         self.fm_prefix = None
+        self.lumina = False
 
     def is_running(self):
         raise Exception("to implement. check if process is up")
@@ -145,31 +147,32 @@ class Controller(object):
                                timeout=self.timeout,
                                verify=False)
 
+    def execute_command_controller(self, command):
+        SSHobj = SSH(self.ip, self.sshuser, self.sshport, self.sshpassword)
+        SSHobj.execute_single_command(command)
 
-'''
     def reboot(self, seconds=0):
-        if not self.execute_command_controller('sudo service-' + ('lsc' if self.lumina else 'brcd') + ' stop' ):
+        if not self.execute_command_controller('sudo service-' + ('lsc' if self.lumina else 'brcd') + ' stop'):
             return False
         if int(seconds) > 0:
             time.sleep(int(seconds))
-        if not self.execute_command_controller('sudo service-' + ('lsc' if self.lumina else 'brcd') + ' start' ):
+        if not self.execute_command_controller('sudo service-' + ('lsc' if self.lumina else 'brcd') + ' start'):
             return False
         return True
 
-    def reboot_server(self):
-        return self.execute_command_controller('sudo reboot'):
+    # def reboot_server(self):
+    #     return self.execute_command_controller('sudo reboot')
 
-    def isolate(self, seconds=0):
-        if 'isolate_cmd' not in self.props or len(self.props['isolate_cmd']) <=0 or 'isolate_undo_cmd' not in self.props or len(self.props['isolate_undo_cmd']) <=0:
-         raise Exception("ERROR: isolate commands not found in controller {}".format(self.name)
+    # def isolate(self, seconds=0):
+    #     if 'isolate_cmd' not in self.props or len(self.props['isolate_cmd']) <= 0 or 'isolate_undo_cmd' not in self.props or len(self.props['isolate_undo_cmd']) <= 0:
+    #         raise Exception("ERROR: isolate commands not found in controller {}".format(self.name)
 
-        for command in controller['isolate_cmd']:
-         if not self.execute_command_controller(command):
-             return False
-        if int(seconds) > 0:
-            time.sleep(int(seconds))
-        for command in controller['isolate_undo_cmd']:
-         if not self.execute_command_controller(command):
-             return False
-        return True
-'''
+    #     for command in controller['isolate_cmd']:
+    #         if not self.execute_command_controller(command):
+    #             return False
+    #     if int(seconds) > 0:
+    #         time.sleep(int(seconds))
+    #     for command in controller['isolate_undo_cmd']:
+    #         if not self.execute_command_controller(command):
+    #             return False
+    #     return True

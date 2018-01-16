@@ -139,7 +139,7 @@ class Shell(object):
                 result = False
                 logging.error("controller not found")
             else:
-                result = ctrl.reboot(checker.get_random_controller())
+                result = ctrl.reboot(topology.get_random_controller())
 
         elif arguments['reboot-controller']:
             ctrl = topology.get_controller(arguments['<name>'])
