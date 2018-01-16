@@ -5,19 +5,19 @@ Usage:
   fmcheck nodes [-s] [-r] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-a] [--topology=FILE] [--controller=IP]...
   fmcheck roles [--topology=FILE] [--controller=IP]...
-  
+
   fmcheck reboot-random-controller [--topology=FILE]
   fmcheck reboot-controller <name> [--topology=FILE]
   fmcheck reboot-controller-by-switch <name> [--topology=FILE]
   fmcheck reboot-controller-by-random-switch [--topology=FILE]
   fmcheck reboot-random-switch [--topology=FILE]
   fmcheck reboot-switch <name> [--topology=FILE]
-  
+
   fmcheck break-random-gw-switch <seconds> [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [--topology=FILE]
   fmcheck break-random-ctrl-switch <seconds> [--topology=FILE]
   fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [--topology=FILE]
-  
+
   fmcheck isolate-random-ctrl <seconds> [--topology=FILE]
   fmcheck isolate-ctrl <controller_name> <seconds> [--topology=FILE]
   fmcheck isolate-random-ctrl-switch <seconds> [--topology=FILE]
