@@ -107,13 +107,15 @@ class Controller(object):
         return self.get_operations_url() + '/' + self.get_fm_prefix() + name
 
     def http_get(self, url):
-        return requests.get(url,
-                            auth=HTTPBasicAuth(self.user,
-                                               self.password),
-                            headers=DEFAULT_HEADERS,
-                            timeout=self.timeout,
-                            verify=False)
-
+        try:
+            result = requests.get(url,
+                                auth=HTTPBasicAuth(self.user,self.password),
+                                headers=DEFAULT_HEADERS,
+                                timeout=self.timeout,
+                                verify=False)
+            return result
+        except requests.exceptions.ConnectionError as errc:
+            logging.error("%s",errc)
     def http_post(self, url, data):
         return requests.post(url,
                              auth=HTTPBasicAuth(self.user,
