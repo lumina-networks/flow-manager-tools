@@ -22,6 +22,7 @@ Following dependencies are installed with the installation.
 * **pexpect**
 * **pyyaml**
 * **requests**
+* **coloredlogs**
 
 ## Usage
 
