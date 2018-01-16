@@ -70,35 +70,35 @@ class Flow(object):
         fm = len(self.fm) > 0
 
         if (len(self.of_config) > 1):
-            print "ERROR: flow {} duplicated in configuration. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s duplicated in configuration. %s", self.flowid, self._get_info_msg())
         elif (len(self.of_operational) > 1):
-            print "ERROR: flow {} duplicated in operational. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s duplicated in operational. %s", self.flowid, self._get_info_msg())
         elif (len(self.switch) > 1):
-            print "ERROR: flow {} duplicated in switch. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s duplicated in switch. %s", self.flowid, self._get_info_msg())
         elif (len(self.fm) > 1):
-            print "ERROR: flow {} duplicated in monitored. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s duplicated in monitored. %s", self.flowid, self._get_info_msg())
         elif config and not switch:
-            print "ERROR: flow {} is not runnig in the switch. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s is not runnig in the switch. %s", self.flowid, self._get_info_msg())
         elif config and not operational:
-            print "ERROR: flow {} not found in operational datastore. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s not found in operational datastore. %s", self.flowid, self._get_info_msg())
         elif config and not fm:
-            print "ERROR: flow {} is not being monitored. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s is not being monitored. %s", self.flowid, self._get_info_msg())
         elif config and not self.calculated and str(self.of_config[0]['id']) not in CALCULATED_EXCEPTIONS:
-            print "ERROR: flow {} not found in calculated flows. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s not found in calculated flows. %s", self.flowid, self._get_info_msg())
         elif not config and switch:
-            print "ERROR: flow {} runnig in switch but not configured. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s runnig in switch but not configured. %s", self.flowid, self._get_info_msg())
         elif not config and operational:
-            print "ERROR: flow {} found operational datastore but not in configuration. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s found operational datastore but not in configuration. %s", self.flowid, self._get_info_msg())
         elif not config and not operational and not switch and fm:
-            print "ERROR: flow {} monitored but not running neither configured. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s monitored but not running neither configured. %s", self.flowid, self._get_info_msg())
         elif config and switch and self.of_config_version != self.switch_version:
-            print "ERROR: flow {} config and switch version is different. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s config and switch version is different. %s", self.flowid, self._get_info_msg())
         elif config and operational and self.of_config_version != self.of_operational_version:
-            print "ERROR: flow {} config and operational version is different. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s config and operational version is different. %s", self.flowid, self._get_info_msg())
         elif config and switch and self.of_config_id != self.switch_id:
-            print "ERROR: flow {} config and switch id is different. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s config and switch id is different. %s", self.flowid, self._get_info_msg())
         elif config and operational and self.of_config_id != self.of_operational_id:
-            print "ERROR: flow {} config and operational id is different. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s config and operational id is different. %s", self.flowid, self._get_info_msg())
         else:
             logging.debug("FLOW: OK: %s %s", self.flowid, self._get_info_msg())
             return True
