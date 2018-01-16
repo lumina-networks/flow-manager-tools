@@ -18,14 +18,14 @@ Usage:
   fmcheck break-random-ctrl-switch <seconds> [--topology=FILE]
   fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [--topology=FILE]
   
-  fmcheck random-isolate-ctrl <seconds> [--topology=FILE]
+  fmcheck isolate-random-ctrl <seconds> [--topology=FILE]
   fmcheck isolate-ctrl <controller_name> <seconds> [--topology=FILE]
-  fmcheck random-isolate-ctrl-switch <seconds> [--topology=FILE]
+  fmcheck isolate-random-ctrl-switch <seconds> [--topology=FILE]
   fmcheck isolate-ctrl-switch <switch_name> <seconds> [--topology=FILE]
 
-  fmcheck random-delete-groups [--topology=FILE]
+  fmcheck delete-random-groups [--topology=FILE]
   fmcheck delete-groups <name> [--topology=FILE]
-  fmcheck random-delete-flows [--topology=FILE]
+  fmcheck delete-random-flows [--topology=FILE]
   fmcheck delete-flows <name> [--topology=FILE]
 
   fmcheck get-flow-stats-all [--topology=FILE]
@@ -152,21 +152,21 @@ class Shell(object):
             result = checker.break_controller_switch(name, checker.get_master_controller_name(name), arguments['<seconds>'])
         elif arguments['isolate-ctrl']:
             result = checker.isolate_controller(arguments['<controller_name>'],arguments['<seconds>'])
-        elif arguments['random-isolate-ctrl']:
+        elif arguments['isolate-random-ctrl']:
             name = checker.get_random_controller()
             result = checker.isolate_controller(name, arguments['<seconds>'])
         elif arguments['isolate-ctrl-switch']:
             result = checker.isolate_controller(checker.get_master_controller_name(arguments['<switch_name>']),arguments['<seconds>'])
-        elif arguments['random-isolate-ctrl-switch']:
+        elif arguments['isolate-random-ctrl-switch']:
             name = checker.get_random_switch()
             result = checker.isolate_controller(checker.get_master_controller_name(name), arguments['<seconds>'])
         elif arguments['reboot-switch']:
             result = checker.reboot_switch(arguments['<name>'])
-        elif arguments['random-delete-groups']:
+        elif arguments['delete-random-groups']:
             result = checker.delete_groups(checker.get_random_switch())
         elif arguments['delete-groups']:
             result = checker.delete_groups(arguments['<name>'])
-        elif arguments['random-delete-flows']:
+        elif arguments['delete-random-flows']:
             result = checker.delete_flows(checker.get_random_switch())
         elif arguments['delete-flows']:
             result = checker.delete_flows(arguments['<name>'])
