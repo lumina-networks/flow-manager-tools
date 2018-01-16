@@ -67,7 +67,7 @@ from docopt.docopt import docopt
 class Shell(object):
 
     def __init__(self):
-        arguments = docopt(__doc__, version='Flow Manager Testing Tools 1.0')
+        arguments = docopt(__doc__, version='Flow Manager Testing Tools 1.1')
 
         if arguments['--debug']:
             logging.getLogger().setLevel(logging.DEBUG)
