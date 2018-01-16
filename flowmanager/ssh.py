@@ -31,12 +31,12 @@ class SSH(object):
         self.timeout = timeout
         self.session_open = False
 
-    def is_session_open():
+    def is_session_open(self):
         return self.session_open
 
     def execute_single_command(self, command):
         cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{} '{}'".format(
-            port, self.user, self.ip, command)
+            self.port, self.user, self.ip, command)
         if self.password:
             child = pexpect.spawn(cmd)
             i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
