@@ -68,6 +68,7 @@ import logging
 import coloredlogs
 from flowmanager.topology import Topology
 from docopt.docopt import docopt
+from __future__ import print_function
 
 
 class Shell(object):
@@ -78,7 +79,7 @@ class Shell(object):
         if arguments['--debug']:
             logging.getLogger().setLevel(logging.DEBUG)
             coloredlogs.install(level='DEBUG')
-            print arguments
+            print(arguments)
         else:
             logging.getLogger().setLevel(logging.INFO)
             coloredlogs.install(level='INFO')
@@ -138,6 +139,7 @@ class Shell(object):
                 check_stats=True if arguments['--check-stats'] else False)
 
         elif arguments['reboot-random-controller']:
+            print("Reboot Random controller")
             ctrl = topology.get_random_controller()
             if not ctrl:
                 result = False
