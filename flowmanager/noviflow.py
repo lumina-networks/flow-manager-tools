@@ -30,7 +30,7 @@ class Noviflow(Switch):
 
     def delete_groups(self):
         if self.ssh.execute_command('del config group groupid all'):
-            ssh.close()
+            self.ssh.close()
             return True
 
     def delete_flows(self):
@@ -91,7 +91,7 @@ class Noviflow(Switch):
                 current_flow['bytes'] = match[0]
                 continue
 
-        ssh.close()
+        self.ssh.close()
         return flows
 
     def get_groups(self):
@@ -129,11 +129,11 @@ class Noviflow(Switch):
                     current_group = None
                 continue
 
-        ssh.close()
+        self.ssh.close()
         return groups
 
     def get_controllers_role(self):
-        ssh = self._get_ssh()
+        ssh = self.ssh
         if not ssh.create_session():
             return None
         text_groups = self.ssh.execute_command('show status ofchannel')
