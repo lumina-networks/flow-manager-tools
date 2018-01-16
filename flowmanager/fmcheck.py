@@ -78,6 +78,7 @@ class Shell(object):
         if arguments['--debug']:
             logging.getLogger().setLevel(logging.DEBUG)
             coloredlogs.install(level='DEBUG')
+            print arguments
         else:
             logging.getLogger().setLevel(logging.INFO)
             coloredlogs.install(level='INFO')
