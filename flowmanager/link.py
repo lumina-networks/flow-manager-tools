@@ -37,22 +37,22 @@ class Link(object):
         if not validate_host and 'type' in self.expected and self.expected['type'] == 'host':
             return True
         if (not self.expected_dst_name):
-            print "ERROR: unexpected link detected. Source: '{}'. Destination: openflow '{}', sr '{}'".format(self.name, self.of_dst, self.sr_dst)
+            logging.ERROR("unexpected link detected. Source: %s. Destination: openflow %s, sr %s", self.name, self.of_dst, self.sr_dst)
         elif (not should_be_up and self.of_dst):
-            print "ERROR: link should be down. Source '{}'. Destination: expected '{}', openflow '{}', sr '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+            logging.ERROR("link should be down. Source %s. Destination: expected %s, openflow %s, sr %s", self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
         elif (should_be_up and self.of_dst != self.expected_dst_name):
-            print "ERROR: wrong destination. Source '{}'. Destination: expected '{}', openflow '{}', sr '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+            logging.ERROR("wrong destination. Source %s. Destination: expected %s, openflow %s, sr %s", self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
         elif (validate_sr and not should_be_up and self.sr_dst):
-            print "ERROR: link should be down. Source '{}'. Destination: expected '{}', openflow '{}', sr '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+            logging.ERROR("link should be down. Source %s. Destination: expected %s, openflow %s, sr %s", self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
         elif (validate_sr and should_be_up and self.sr_dst != self.expected_dst_name):
-            print "ERROR: wrong destination. Source '{}'. Destination: expected '{}', openflow '{}', sr '{}'".format(self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
+            logging.ERROR("wrong destination. Source %s. Destination: expected %s, openflow %s, sr %s", self.name, self.expected_dst_name, self.of_dst, self.sr_dst)
         else:
             return True
 
 def _get_link_properties(name):
     elements = name.split(':')
     if len(elements) > 3 or len(elements) < 2:
-        raise Exception("wrong link {} format ".format(name))
+        raise Exception("wrong link {} format ", name)
 
     return {
         'name': name,
