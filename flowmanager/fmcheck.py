@@ -65,6 +65,7 @@ import os
 import sys
 import yaml
 import logging
+import coloredlogs
 from flowmanager.topology import Topology
 from docopt.docopt import docopt
 
@@ -76,6 +77,11 @@ class Shell(object):
 
         if arguments['--debug']:
             logging.getLogger().setLevel(logging.DEBUG)
+            coloredlogs.install(level='DEBUG')
+        else:
+            logging.getLogger().setLevel(logging.INFO)
+            coloredlogs.install(level='INFO')
+            
 
         if arguments['--topology']:
             file = arguments['--topology']
