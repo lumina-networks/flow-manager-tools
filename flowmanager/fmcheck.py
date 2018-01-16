@@ -5,29 +5,24 @@ Usage:
   fmcheck nodes [-srd] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-ad] [--topology=FILE] [--controller=IP]...
   fmcheck roles [-d] [--topology=FILE] [--controller=IP]...
-
   fmcheck reboot-random-controller [-d] [--topology=FILE]
   fmcheck reboot-controller <name> [-d] [--topology=FILE]
   fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
   fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
   fmcheck reboot-random-switch [-d] [--topology=FILE]
   fmcheck reboot-switch <name> [-d] [--topology=FILE]
-
   fmcheck break-random-gw-switch <seconds> [-d] [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [-d] [--topology=FILE]
   fmcheck break-random-ctrl-switch <seconds> [-d] [--topology=FILE]
   fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [-d] [--topology=FILE]
-
   fmcheck isolate-random-ctrl <seconds> [-d] [--topology=FILE]
   fmcheck isolate-ctrl <controller_name> <seconds> [-d] [--topology=FILE]
   fmcheck isolate-random-ctrl-switch <seconds> [-d] [--topology=FILE]
   fmcheck isolate-ctrl-switch <switch_name> <seconds> [-d] [--topology=FILE]
-
   fmcheck delete-random-groups [-d] [--topology=FILE]
   fmcheck delete-groups <name> [-d] [--topology=FILE]
   fmcheck delete-random-flows [-d] [--topology=FILE]
   fmcheck delete-flows <name> [-d] [--topology=FILE]
-
   fmcheck get-flow-stats-all [-d] [--topology=FILE]
   fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
   fmcheck get-flow-node-stats-all <node> [-d] [--topology=FILE]
@@ -60,7 +55,7 @@ Options:
   --version     Show version.
 
 """
-
+from __future__ import print_function
 import os
 import sys
 import yaml
@@ -68,7 +63,6 @@ import logging
 import coloredlogs
 from flowmanager.topology import Topology
 from docopt.docopt import docopt
-from __future__ import print_function
 
 
 class Shell(object):
