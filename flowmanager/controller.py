@@ -147,6 +147,50 @@ class Controller(object):
                                timeout=self.timeout,
                                verify=False)
 
+    def get_flow_stats(self, filters=None, node_name=None):
+        resp = self.http_get(self.get_operational_url())
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            logging.error(
+                'no data found while trying to get openflow information')
+            return
+
+        data = json.loads(resp.content)
+        if 'nodes' not in data or 'node' not in data['nodes']:
+            logging.error(
+                'no nodes found while trying to get openflow information')
+            return
+
+        for node in data['nodes']['node']:
+            nodeid = node['id']
+            if not self.containsSwitch(nodeid):
+                continue
+
+            if node_name and node['id'] != node_name:
+                continue
+
+            tables = node.get('flow-node-inventory:table')
+            if tables is None:
+                tables = node.get('table')
+
+            if tables is not None:
+                for table in tables:
+                    tableid = table['id']
+                    theflows = table.get('flow')
+                    if theflows is not None:
+                        for flow in theflows:
+                            if not contains_filters(filters, flow['id']):
+                                continue
+
+                            flowid = 'node/{}/table/{}/flow/{}'.format(
+                                node['id'], tableid, flow['id'])
+                            stats = flow.get('flow-statistics')
+                            if stats is None:
+                                stats = flow.get(
+                                    'opendaylight-flow-statistics:flow-statistics')
+                            if stats:
+                                print flowid
+                                print json.dumps(stats, indent=2)
+
     def execute_command_controller(self, command):
         SSHobj = SSH(self.ip, self.sshuser, self.sshport, self.sshpassword)
         SSHobj.execute_single_command(command)

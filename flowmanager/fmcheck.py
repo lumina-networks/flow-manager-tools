@@ -226,10 +226,10 @@ class Shell(object):
             result = checker.delete_flows(arguments['<name>'])
 
         elif arguments['get-flow-stats-all']:
-            result = checker.print_flow_stats()
+            result = topology.get_random_controller().get_flow_stats()
 
         elif arguments['get-flow-stats']:
-            result = checker.print_flow_stats(filters=arguments['<filter>'])
+            result = topology.get_controller(name=arguments['<name>'])
 
         elif arguments['get-flow-node-stats-all']:
             result = checker.print_flow_stats(node_name=arguments['<node>'])
