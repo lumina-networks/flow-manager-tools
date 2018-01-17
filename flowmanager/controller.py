@@ -200,11 +200,11 @@ class Controller(object):
         SSHobj.execute_single_command(command)
 
     def reboot(self, seconds=0):
-        if not self.execute_command_controller('sudo service-' + ('lsc' if self.lumina else 'brcd') + ' stop'):
+        if not self.execute_command_controller('sudo service ' + ('lsc' if self.lumina else 'brcd') + ' stop'):
             return False
         if int(seconds) > 0:
             time.sleep(int(seconds))
-        if not self.execute_command_controller('sudo service-' + ('lsc' if self.lumina else 'brcd') + ' start'):
+        if not self.execute_command_controller('sudo service ' + ('lsc' if self.lumina else 'brcd') + ' start'):
             return False
         return True
 
