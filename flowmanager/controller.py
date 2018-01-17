@@ -182,8 +182,8 @@ class Controller(object):
                     theflows = table.get('flow')
                     if theflows is not None:
                         for flow in theflows:
-                            if not contains_filters(filters, flow['id']):
-                                continue
+                            # if not contains_filters(filters, flow['id']):
+                                # continue
 
                             flowid = 'node/{}/table/{}/flow/{}'.format(
                                 node['id'], tableid, flow['id'])
