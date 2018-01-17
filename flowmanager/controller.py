@@ -192,8 +192,8 @@ class Controller(object):
                                 stats = flow.get(
                                     'opendaylight-flow-statistics:flow-statistics')
                             if stats:
-                                print flowid
-                                print json.dumps(stats, indent=2)
+                                logging.info(flowid)
+                                logging.info(json.dumps(stats, indent=2))
 
     def execute_command_controller(self, command):
         SSHobj = SSH(self.ip, self.sshuser, self.sshport, self.sshpassword)
