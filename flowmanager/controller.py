@@ -5,6 +5,7 @@ This module contains the primitives to access controller information.
 """
 import logging
 import requests
+import json
 from flowmanager.ssh import SSH
 from requests.auth import HTTPBasicAuth
 
