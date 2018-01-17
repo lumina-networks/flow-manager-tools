@@ -192,7 +192,7 @@ class Controller(object):
                                 stats = flow.get(
                                     'opendaylight-flow-statistics:flow-statistics')
                             if stats:
-                                logging.info('\n' + flowid + '\n' +
+                                logging.info('\n %s \n %s', flowid,
                                              json.dumps(stats, indent=2))
 
     def execute_command_controller(self, command):
