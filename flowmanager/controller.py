@@ -151,7 +151,7 @@ class Controller(object):
                                verify=False)
 
     def get_flow_stats(self, filters=None, node_name=None):
-        resp = self.http_get(self.get_operational_openflow())
+        resp = self.http_get(self._get_operational_openflow())
         if resp is None or resp.status_code != 200 or resp.content is None:
             logging.error(
                 'no data found while trying to get openflow information')
