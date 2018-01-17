@@ -229,8 +229,8 @@ class Shell(object):
             result = topology.get_random_controller().get_flow_stats()
 
         elif arguments['get-flow-stats']:
-            result = topology.get_controller(
-                filters=arguments['<filter>']).get_flow_stats()
+            result = topology.get_random_controller().get_flow_stats(
+                filters=arguments['<filter>'])
 
         elif arguments['get-flow-node-stats-all']:
             result = checker.print_flow_stats(node_name=arguments['<node>'])
