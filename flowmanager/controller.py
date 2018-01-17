@@ -100,8 +100,8 @@ class Controller(object):
     def get_operations_url(self):
         return self.get_base_url_restconf() + '/operations'
 
-    def _get_operational_openflow(self):
-        return self._get_operational_url() + '/opendaylight-inventory:nodes'
+    def get_operational_openflow(self):
+        return self.get_operational_url() + '/opendaylight-inventory:nodes'
 
     def get_container_fm(self, name):
         return self.get_fm_prefix() + name
@@ -151,7 +151,7 @@ class Controller(object):
                                verify=False)
 
     def get_flow_stats(self, filters=None, node_name=None):
-        resp = self.http_get(self._get_operational_openflow())
+        resp = self.http_get(self.get_operational_openflow())
         if resp is None or resp.status_code != 200 or resp.content is None:
             logging.error(
                 'no data found while trying to get openflow information')
