@@ -151,6 +151,16 @@ class Controller(object):
                                timeout=self.timeout,
                                verify=False)
 
+    def contains_filters(filters=None, value=None):
+        if not value:
+            return False
+        if not filters or len(filters) <= 0:
+            return True
+        for fil in filters:
+            if fil not in value:
+                return False
+        return True
+
     def get_flow_stats(self, filters=None, node_name=None):
         resp = self.http_get(self.get_operational_openflow())
         if resp is None or resp.status_code != 200 or resp.content is None:
@@ -182,8 +192,8 @@ class Controller(object):
                     theflows = table.get('flow')
                     if theflows is not None:
                         for flow in theflows:
-                            # if not contains_filters(filters, flow['id']):
-                                # continue
+                            if not contains_filters(filters, flow['id']):
+                                continue
 
                             flowid = 'node/{}/table/{}/flow/{}'.format(
                                 node['id'], tableid, flow['id'])
