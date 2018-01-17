@@ -147,15 +147,15 @@ class Shell(object):
                 result = False
                 logging.error("controller %s not found", arguments['<name>'])
             else:
-                result = ctrl.reboot(checker.get_random_controller())
+                result = ctrl.reboot(topology.get_random_controller())
 
         elif arguments['reboot-controller-by-switch']:
-            result = checker.reboot_controller(
-                checker.get_master_controller_name(arguments['<name>']))
+            result = topology.get_node_cluster_owner(
+                arguments['<name>']).reboot()
 
         elif arguments['reboot-controller-by-random-switch']:
-            result = checker.reboot_controller(
-                checker.get_master_controller_name(checker.get_random_switch()))
+            result = topology.get_node_cluster_owner(
+                topology.get_random_switch().openflow_name).reboot()
 
         elif arguments['reboot-random-switch']:
             switch = topology.get_random_switch()

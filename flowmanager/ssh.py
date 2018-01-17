@@ -37,12 +37,18 @@ class SSH(object):
     def execute_single_command(self, command):
         cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{} '{}'".format(
             self.port, self.user, self.ip, command)
+        print(cmd)
         if self.password:
             child = pexpect.spawn(cmd)
-            i = child.expect([pexpect.TIMEOUT, unicode('(?i)password')])
+            i = child.expect(
+                [pexpect.EOF, pexpect.TIMEOUT, unicode('(?i)password')])
             if i == 0:
-                print('ERROR: could not connect to controller via SSH. {} port ({})'.format(
-                    target, port))
+                print('ERROR: reached end of file. {}:{}'.format(
+                    self.ip, self.port))
+                return False
+            if i == 1:
+                print('ERROR: could not connect to controller via SSH. {}:{}'.format(
+                    self.ip, self.port))
                 return False
 
             child.sendline(self.password)
