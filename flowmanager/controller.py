@@ -166,8 +166,8 @@ class Controller(object):
 
         for node in data['nodes']['node']:
             nodeid = node['id']
-            if not self.containsSwitch(nodeid):
-                continue
+            # if not self.containsSwitch(nodeid):
+            # continue
 
             if node_name and node['id'] != node_name:
                 continue
