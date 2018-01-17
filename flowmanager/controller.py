@@ -151,7 +151,7 @@ class Controller(object):
                                timeout=self.timeout,
                                verify=False)
 
-    def contains_filters(filters=None, value=None):
+    def contains_filters(self, filters=None, value=None):
         if not value:
             return False
         if not filters or len(filters) <= 0:
