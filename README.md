@@ -44,6 +44,17 @@ Usage:
 
   fmcheck get-flow-stats-all [-d] [--topology=FILE]
   fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
+  fmcheck (-h | --help)
+
+Options:
+  -h --help     Show this screen.
+  -t, --topology=FILE   Topolofy file name [default: fm-topo.yml].
+  -c, --controller=IP   Controller IP address
+  -s --stopped      If Mininet is not running.
+  -r --segementrouting  Use segment routing topology.
+  -a --check-stats  Check flow/groups states with previous check
+  -d --debug  Log debug level
+  --version     Show version.
 ```
 
 **Not working**
@@ -85,16 +96,5 @@ Usage:
   fmcheck get-etree-summary <filter>... [-d] [--topology=FILE]
   fmcheck get-sr-summary-all [-d] [--topology=FILE]
   fmcheck get-sr-summary <source> <destination> [-d] [--topology=FILE]
-  fmcheck get-node-summary [-d] [--topology=FILE]~~
-  fmcheck (-h | --help)
-
-Options:
-  -h --help     Show this screen.
-  -t, --topology=FILE   Topolofy file name [default: fm-topo.yml].
-  -c, --controller=IP   Controller IP address
-  -s --stopped      If Mininet is not running.
-  -r --segementrouting  Use segment routing topology.
-  -a --check-stats  Check flow/groups states with previous check
-  -d --debug  Log debug level
-  --version     Show version.
+  fmcheck get-node-summary [-d] [--topology=FILE]
 ```
