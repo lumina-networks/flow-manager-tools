@@ -425,14 +425,15 @@ class Topology(object):
 
     def get_node_cluster_owner(self, openflow_name):
         controller = self.controllers[self.ctrl_name]
-        resp = controller.http_get(controller.get_operational_url(
-        ) + '/entity-owners:entity-owners/entity-type/org.opendaylight.mdsal.ServiceEntityType/entity/%2Fodl-general-entity%3Aentity%5Bodl-general-entity%3Aname%3D%27{}%27%5D'.format(openflow_name))
+        resp = controller.http_get(controller.get_base_url_restconf(
+        ) + '/operational/entity-owners:entity-owners/entity-type/org.opendaylight.mdsal.ServiceEntityType/entity/%2Fodl-general-entity%3Aentity%5Bodl-general-entity%3Aname%3D%27{}%27%5D'.format(openflow_name))
+        logging.debug(resp.content)
         if resp is not None and resp.status_code == 200 and resp.content is not None:
             data = json.loads(resp.content)
             entity = data.get('entity')
             if entity and len(entity) > 0:
                 if entity[0]:
-                    print entity[0].get('owner')
+                    logging.debug(entity[0].get('owner'))
                     return entity[0].get('owner')
 
     def validate_nodes_roles(self):
