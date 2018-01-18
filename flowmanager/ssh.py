@@ -35,26 +35,33 @@ class SSH(object):
         return self.session_open
 
     def execute_single_command(self, command):
-        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{} '{}'".format(
-            self.port, self.user, self.ip, command)
-        print(cmd)
+        target = "{}@{}".format(self.user, self.ip) if self.user else self.ip
+        port = self.port if self.port else 22
+
+        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {} '{}'".format(
+            port, target, command)
         if self.password:
             child = pexpect.spawn(cmd)
-            i = child.expect(
-                [pexpect.EOF, pexpect.TIMEOUT, unicode('(?i)password')])
+            i = child.expect([pexpect.TIMEOUT, unicode(
+                '(?i)password'), unicode('No route to host'), pexpect.EOF])
             if i == 0:
-                print('ERROR: reached end of file. {}:{}'.format(
-                    self.ip, self.port))
+                logging.error('could not connect to host via SSH')
                 return False
-            if i == 1:
-                print('ERROR: could not connect to controller via SSH. {}:{}'.format(
-                    self.ip, self.port))
+            if i == 2:
+                logging.error('No route to host')
+                return False
+            if i == 3:
+                logging.error('Reached end of file')
                 return False
 
             child.sendline(self.password)
             child.expect([pexpect.TIMEOUT, pexpect.EOF])
             child.close()
-        return child.before
+
+        else:
+            output = subprocess.check_output(cmd, shell=True)
+
+        return True
 
     def create_session(self):
         ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(
@@ -125,3 +132,28 @@ class NoviflowSSH(SSH):
                         return self.execute_command('set config page off')
                     else:
                         return result
+
+
+'''
+    def execute_single_command(self, command):
+        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{} '{}'".format(
+            self.port, self.user, self.ip, command)
+        print(cmd)
+        if self.password:
+            child = pexpect.spawn(cmd)
+            i = child.expect(
+                [pexpect.EOF, pexpect.TIMEOUT, unicode('(?i)password')])
+            if i == 0:
+                print('ERROR: reached end of file. {}:{}'.format(
+                    self.ip, self.port))
+                return False
+            if i == 1:
+                print('ERROR: could not connect to controller via SSH. {}:{}'.format(
+                    self.ip, self.port))
+                return False
+
+            child.sendline(self.password)
+            child.expect([pexpect.TIMEOUT, pexpect.EOF])
+            child.close()
+        return child.before
+'''
