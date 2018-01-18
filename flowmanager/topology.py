@@ -432,6 +432,7 @@ class Topology(object):
             entity = data.get('entity')
             if entity and len(entity) > 0:
                 if entity[0]:
+                    print entity[0].get('owner')
                     return entity[0].get('owner')
 
     def validate_nodes_roles(self):
