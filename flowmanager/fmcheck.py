@@ -146,7 +146,7 @@ class Shell(object):
                 result = False
                 logging.error("controller %s not found", arguments['<name>'])
             else:
-                result = ctrl.reboot(topology.get_random_controller())
+                result = topology.get_controller(arguments['<name>']).reboot()
 
         elif arguments['reboot-controller-by-switch']:
             result = topology.get_node_cluster_owner(
