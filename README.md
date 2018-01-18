@@ -28,6 +28,7 @@ Following dependencies are installed with the installation.
 
 `fmcheck` validates if links, nodes and flows are in sync between the switch, configuration and operational data store. It also provides the ability to restart a switch or controller and delete all flows or groups directly from a switch. Finally, it also provides commands to obtain flow/group/services stats.
 
+**Working:**
 ```
 $ fmcheck -h
 Flow Manager Testing Tools
@@ -40,7 +41,14 @@ Usage:
 
   fmcheck reboot-random-controller [-d] [--topology=FILE]
   fmcheck reboot-controller <name> [-d] [--topology=FILE]
-  ~~fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
+
+  fmcheck get-flow-stats-all [-d] [--topology=FILE]
+  fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
+```
+
+**Not working**
+```
+  fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
   fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
   fmcheck reboot-random-switch [-d] [--topology=FILE]
   fmcheck reboot-switch <name> [-d] [--topology=FILE]
@@ -58,11 +66,10 @@ Usage:
   fmcheck delete-random-groups [-d] [--topology=FILE]
   fmcheck delete-groups <name> [-d] [--topology=FILE]
   fmcheck delete-random-flows [-d] [--topology=FILE]
-  fmcheck delete-flows <name> [-d] [--topology=FILE] ~~
+  fmcheck delete-flows <name> [-d] [--topology=FILE]
 
-  fmcheck get-flow-stats-all [-d] [--topology=FILE]
-  fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
-  ~~fmcheck get-flow-node-stats-all <node> [-d] [--topology=FILE]
+
+  fmcheck get-flow-node-stats-all <node> [-d] [--topology=FILE]
   fmcheck get-flow-node-stats <node> <filter>... [-d] [--topology=FILE]
   fmcheck get-group-stats-all [-d] [--topology=FILE]
   fmcheck get-group-stats <filter>... [-d] [--topology=FILE]
