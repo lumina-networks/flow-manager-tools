@@ -71,7 +71,8 @@ class SSH(object):
             s.login(self.ip, self.user, self.password)
             s.sendline(command)
             s.prompt()
-            print(s.before())
+            logging.info(s.before)
+            s.logout()
             return True
         except pxssh.ExceptionPxssh, msg:
             logging.error(str(msg))
