@@ -16,6 +16,7 @@ import time
 import pdb
 import logging
 from functools import partial
+from pexpect import pxssh
 
 
 class SSH(object):
@@ -34,34 +35,45 @@ class SSH(object):
     def is_session_open(self):
         return self.session_open
 
+    # def execute_single_command(self, command):
+    #     target = "{}@{}".format(self.user, self.ip) if self.user else self.ip
+    #     port = self.port if self.port else 22
+
+    #     cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {} '{}'".format(
+    #         port, target, command)
+    #     if self.password:
+    #         child = pexpect.spawn(cmd)
+    #         i = child.expect([pexpect.TIMEOUT, unicode(
+    #             '(?i)password'), unicode('No route to host'), pexpect.EOF])
+    #         if i == 0:
+    #             logging.error('Could not connect to host via SSH')
+    #             return False
+    #         if i == 2:
+    #             logging.error('No route to host')
+    #             return False
+    #         if i == 3:
+    #             logging.error('Reached end of file')
+    #             return False
+
+    #         child.sendline(self.password)
+    #         child.expect([pexpect.TIMEOUT, pexpect.EOF])
+    #         child.close()
+    #         return child.before()
+
+    #     else:
+    #         output = subprocess.check_output(cmd, shell=True)
+
+    #     return True
+
     def execute_single_command(self, command):
-        target = "{}@{}".format(self.user, self.ip) if self.user else self.ip
-        port = self.port if self.port else 22
-
-        cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {} '{}'".format(
-            port, target, command)
-        if self.password:
-            child = pexpect.spawn(cmd)
-            i = child.expect([pexpect.TIMEOUT, unicode(
-                '(?i)password'), unicode('No route to host'), pexpect.EOF])
-            if i == 0:
-                logging.error('could not connect to host via SSH')
-                return False
-            if i == 2:
-                logging.error('No route to host')
-                return False
-            if i == 3:
-                logging.error('Reached end of file')
-                return False
-
-            child.sendline(self.password)
-            child.expect([pexpect.TIMEOUT, pexpect.EOF])
-            child.close()
-
-        else:
-            output = subprocess.check_output(cmd, shell=True)
-
-        return True
+        try:
+            s = pxssh.pxssh()
+            s.login(self.ip, self.user, self.password)
+            s.sendline(command)
+            s.prompt()
+            return s.before()
+        except pxssh.ExceptionPxssh, msg:
+            logging.error(str(msg))
 
     def create_session(self):
         ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(
