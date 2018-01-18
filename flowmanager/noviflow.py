@@ -92,6 +92,7 @@ class Noviflow(Switch):
                 continue
 
         self.ssh.close()
+        logging.info(flows)
         return flows
 
     def get_groups(self):
@@ -166,3 +167,6 @@ class Noviflow(Switch):
     def restart_port(self, port, seconds=0):
         raise Exception(
             'restart port method is not implemented by this switch {}'.format(self.name))
+
+    def get_flow_stats(self, filters=None):
+        raise Exception('get flow stats not implemented yet')

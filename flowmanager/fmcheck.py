@@ -232,11 +232,11 @@ class Shell(object):
                 filters=arguments['<filter>'])
 
         elif arguments['get-flow-node-stats-all']:
-            result = checker.print_flow_stats(node_name=arguments['<node>'])
+            result = topology.get_switch(arguments['<node>']).get_flow_stats()
 
         elif arguments['get-flow-node-stats']:
-            result = checker.print_flow_stats(
-                filters=arguments['<filter>'], node_name=arguments['<node>'])
+            result = topology.get_switch(arguments['<node>']).get_flow_stats(
+                filters=arguments['<filter>'])
 
         elif arguments['get-group-stats-all']:
             result = checker.print_group_stats()
