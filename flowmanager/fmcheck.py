@@ -133,13 +133,12 @@ class Shell(object):
                 check_stats=True if arguments['--check-stats'] else False)
 
         elif arguments['reboot-random-controller']:
-            print("Reboot Random controller")
             ctrl = topology.get_random_controller()
             if not ctrl:
                 result = False
                 logging.error("controller not found")
             else:
-                result = ctrl.reboot(topology.get_random_controller())
+                result = topology.get_random_controller().reboot()
 
         elif arguments['reboot-controller']:
             ctrl = topology.get_controller(arguments['<name>'])

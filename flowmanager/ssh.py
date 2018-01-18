@@ -76,6 +76,7 @@ class SSH(object):
             return True
         except pxssh.ExceptionPxssh, msg:
             logging.error(str(msg))
+            return False
 
     def create_session(self):
         ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(

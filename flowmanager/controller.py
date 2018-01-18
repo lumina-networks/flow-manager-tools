@@ -197,7 +197,7 @@ class Controller(object):
 
     def execute_command_controller(self, command):
         SSHobj = SSH(self.ip, self.sshuser, self.sshport, self.sshpassword)
-        SSHobj.execute_single_command(command)
+        return SSHobj.execute_single_command(command)
 
     def reboot(self, seconds=0):
         if not self.execute_command_controller('sudo service ' + ('lsc' if self.lumina else 'brcd-bsc') + ' stop'):
