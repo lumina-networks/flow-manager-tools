@@ -405,6 +405,24 @@ class Topology(object):
         if nodes:
             self.process_calculated(nodes)
 
+    def get_master_controller_name(self, name):
+        print(self.switches_by_openflow_name)
+        if name not in self.switches_by_openflow_name:
+            print "ERROR: switch {} not found".format(name)
+            return None
+        oname = self.switches_by_openflow_name[name]
+        owner = self.get_node_cluster_owner(oname)
+        if not owner:
+            print "ERROR: owner not found for switch {}".format(name)
+            return None
+        memberIdRegex = re.compile(r'member-(\d+)', re.IGNORECASE)
+        match = memberIdRegex.findall(owner)
+        if match:
+            memberId = int(match[0])
+            if (memberId <= len(self.controllers)):
+                return self.controllers[memberId - 1].get('name')
+        print "ERROR: owner not found for switch {}".format(name)
+
     def get_node_cluster_owner(self, openflow_name):
         controller = self.controllers[self.ctrl_name]
         resp = controller.http_get(controller.get_operational_url(
