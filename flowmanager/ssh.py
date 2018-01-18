@@ -73,6 +73,7 @@ class SSH(object):
             s.prompt()
             logging.info(s.before)
             s.logout()
+            return True
         except pxssh.ExceptionPxssh, msg:
             logging.error(str(msg))
 
