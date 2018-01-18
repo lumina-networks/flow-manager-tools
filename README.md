@@ -40,7 +40,7 @@ Usage:
 
   fmcheck reboot-random-controller [-d] [--topology=FILE]
   fmcheck reboot-controller <name> [-d] [--topology=FILE]
-  fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
+  ~~fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
   fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
   fmcheck reboot-random-switch [-d] [--topology=FILE]
   fmcheck reboot-switch <name> [-d] [--topology=FILE]
@@ -58,11 +58,11 @@ Usage:
   fmcheck delete-random-groups [-d] [--topology=FILE]
   fmcheck delete-groups <name> [-d] [--topology=FILE]
   fmcheck delete-random-flows [-d] [--topology=FILE]
-  fmcheck delete-flows <name> [-d] [--topology=FILE]
+  fmcheck delete-flows <name> [-d] [--topology=FILE] ~~
 
   fmcheck get-flow-stats-all [-d] [--topology=FILE]
   fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
-  fmcheck get-flow-node-stats-all <node> [-d] [--topology=FILE]
+  ~~fmcheck get-flow-node-stats-all <node> [-d] [--topology=FILE]
   fmcheck get-flow-node-stats <node> <filter>... [-d] [--topology=FILE]
   fmcheck get-group-stats-all [-d] [--topology=FILE]
   fmcheck get-group-stats <filter>... [-d] [--topology=FILE]
@@ -78,7 +78,7 @@ Usage:
   fmcheck get-etree-summary <filter>... [-d] [--topology=FILE]
   fmcheck get-sr-summary-all [-d] [--topology=FILE]
   fmcheck get-sr-summary <source> <destination> [-d] [--topology=FILE]
-  fmcheck get-node-summary [-d] [--topology=FILE]
+  fmcheck get-node-summary [-d] [--topology=FILE]~~
   fmcheck (-h | --help)
 
 Options:
