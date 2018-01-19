@@ -150,8 +150,8 @@ class Shell(object):
                 result = topology.get_controller(arguments['<name>']).reboot()
 
         elif arguments['reboot-controller-by-switch']:
-            result = topology.get_controller(
-                topology.get_master_controller_name(arguments['<name>']))
+            result = topology.get_node_cluster_owner(
+                topology.get_switch(arguments['<name>']).openflow_name).reboot()
 
         elif arguments['reboot-controller-by-random-switch']:
             result = topology.get_node_cluster_owner(
