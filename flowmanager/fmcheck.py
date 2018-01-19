@@ -73,7 +73,7 @@ class Shell(object):
         if arguments['--debug']:
             logging.getLogger().setLevel(logging.DEBUG)
             coloredlogs.install(level='DEBUG')
-            print(arguments)
+            # print(arguments)
         else:
             logging.getLogger().setLevel(logging.INFO)
             coloredlogs.install(level='INFO')
@@ -173,21 +173,20 @@ class Shell(object):
 
         # Break Commands
         elif arguments['break-gw-switch']:
-            result = checker.break_gw_switch(
-                arguments['<name>'], arguments['<seconds>'])
+            result = topology.get_switch(arguments['<name>']).break_gateway(
+                seconds=arguments['<seconds>'])
 
         elif arguments['break-random-gw-switch']:
-            result = checker.break_gw_switch(
-                checker.get_random_switch(), arguments['<seconds>'])
+            result = topology.get_random_switch().break_gateway(
+                seconds=arguments['<seconds>'])
 
         elif arguments['break-ctrl-switch']:
-            result = checker.break_controller_switch(
-                arguments['<switch_name>'], arguments['<controller_name>'], arguments['<seconds>'])
+            result = topology.get_switch(arguments['<switch_name>']).break_controller_switch(
+                controller_name=arguments['<controller_name>'], seconds=arguments['<seconds>'])
 
         elif arguments['break-random-ctrl-switch']:
-            name = checker.get_random_switch()
-            result = checker.break_controller_switch(
-                name, checker.get_master_controller_name(name), arguments['<seconds>'])
+            result = topology.get_random_switch().break_controller_switch(
+                controller_name=arguments['<controller_name>'], seconds=arguments['<seconds>'])
 
         # Isolate Commands
         elif arguments['isolate-ctrl']:

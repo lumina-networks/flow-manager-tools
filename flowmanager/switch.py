@@ -118,6 +118,10 @@ class Switch(object):
         raise Exception(
             'break method is not implemented by this switch {}'.format(self.name))
 
+    def break_controller_switch(self, controller_name, seconds=30):
+        raise Exception(
+            'break method is not implemented by this switch {}'.format(self.name))
+
     def delete_groups(self):
         raise Exception(
             'delete groups method is not implemented by this switch {}'.format(self.name))

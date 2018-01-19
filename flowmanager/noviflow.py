@@ -27,6 +27,42 @@ class Noviflow(Switch):
     def break_gateway(self, seconds=0):
         raise Exception(
             'break method is not implemented by this switch {}'.format(self.name))
+        # switch = self.switches.get(name)
+        # if not switch:
+        #     print "ERROR: {} switch does not exists".format(name)
+        #     return False
+        # seconds = int(seconds)
+        # seconds = 0 if not seconds or seconds <=0 else seconds
+        # print "INFO: trying to break connectivity to the switch {} switch".format(name)
+        # if 'disable_gw' not in switch or len(switch['disable_gw']) <=0 or 'enable_gw' not in switch or len(switch['enable_gw']) <=0:
+        #     print "ERROR: enable or disable gw commands not found in switch {} switch".format(name)
+        #     return False
+        # if switch['type'] == 'noviflow':
+        #     if not _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],switch['disable_gw']):
+        #         return False
+        #     time.sleep(seconds)
+        #     return _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],switch['enable_gw'])
+        # else:
+        #     if not _execute_commands_locally(switch['disable_gw']):
+        #         return False
+        #     time.sleep(seconds)
+        #     return _execute_commands_locally(switch['enable_gw'])
+
+    def break_controller_switch(self, controller_name, seconds=30):
+        raise Exception(
+            'break method is not implemented by this switch {}'.format(self.name))
+        # switch = self
+        # if not switch:
+        #     print "ERROR: {} switch does not exists".format(sw_name)
+        #     return False
+        # seconds = int(seconds)
+        # seconds = 0 if not seconds or seconds <=0 else seconds
+        # print "INFO: trying to break controller {} connection in the switch {} switch".format(controller_name, sw_name)
+        # all_ctrl_config = switch.get('controller_config')
+        # ctrl_config = all_ctrl_config.get(controller_name) if all_ctrl_config else None
+        # if not ctrl_config or 'remove_controller' not in ctrl_config or len(ctrl_config['remove_controller']) <= 0:
+        #     print "ERROR: remove controller commands not found in switch {} for controller {}".format(sw_name, controller_name)
+        #     return False
 
     def delete_groups(self):
         if self.ssh.execute_command('del config group groupid all'):
