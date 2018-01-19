@@ -420,11 +420,12 @@ class Topology(object):
         if match:
             memberId = int(match[0])
             if (memberId <= len(self.controllers)):
-                return self.controllers[memberId - 1].get('name')
+                return self.controllers[memberId - 1].name
         print "ERROR: owner not found for switch {}".format(name)
 
     def get_node_cluster_owner(self, openflow_name):
         controller = self.controllers[self.ctrl_name]
+        logging.debug(openflow_name)
         resp = controller.http_get(controller.get_base_url_restconf(
         ) + '/operational/entity-owners:entity-owners/entity-type/org.opendaylight.mdsal.ServiceEntityType/entity/%2Fodl-general-entity%3Aentity%5Bodl-general-entity%3Aname%3D%27{}%27%5D'.format(openflow_name))
         logging.debug(resp.content)
@@ -434,7 +435,15 @@ class Topology(object):
             if entity and len(entity) > 0:
                 if entity[0]:
                     logging.debug(entity[0].get('owner'))
-                    return entity[0].get('owner')
+                    match = entity[0].get('owner')
+                    if match:
+                        memberId = int(match[-1])
+                        # print(memberId)
+                        # print self.controllers[2]
+                        if (memberId <= len(self.controllers)):
+                            return self.controllers['c' + str(memberId - 1)]
+                    logging.error(
+                        "Owner not found for switch %s", openflow_name)
 
     def validate_nodes_roles(self):
         found_error = False
