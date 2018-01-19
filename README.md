@@ -50,6 +50,11 @@ Usage:
   fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
   fmcheck (-h | --help)
 
+  fmcheck break-random-gw-switch <seconds> [-d] [--topology=FILE]
+  fmcheck break-gw-switch <name> <seconds> [-d] [--topology=FILE]
+  fmcheck break-random-ctrl-switch <seconds> [-d] [--topology=FILE]
+  fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [-d] [--topology=FILE]
+  
 Options:
   -h --help     Show this screen.
   -t, --topology=FILE   Topolofy file name [default: fm-topo.yml].
@@ -63,11 +68,6 @@ Options:
 
 **Not working**
 ```
-  fmcheck break-random-gw-switch <seconds> [-d] [--topology=FILE]
-  fmcheck break-gw-switch <name> <seconds> [-d] [--topology=FILE]
-  fmcheck break-random-ctrl-switch <seconds> [-d] [--topology=FILE]
-  fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [-d] [--topology=FILE]
-
   fmcheck isolate-random-ctrl <seconds> [-d] [--topology=FILE]
   fmcheck isolate-ctrl <controller_name> <seconds> [-d] [--topology=FILE]
   fmcheck isolate-random-ctrl-switch <seconds> [-d] [--topology=FILE]
