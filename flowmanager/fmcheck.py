@@ -190,21 +190,20 @@ class Shell(object):
 
         # Isolate Commands
         elif arguments['isolate-ctrl']:
-            result = checker.isolate_controller(
-                arguments['<controller_name>'], arguments['<seconds>'])
+            result = topology.get_controller(
+                arguments['<controller_name>']).isolate(seconds=arguments['<seconds>'])
 
         elif arguments['isolate-random-ctrl']:
-            name = checker.get_random_controller()
-            result = checker.isolate_controller(name, arguments['<seconds>'])
+            result = topology.get_random_controller().isolate(
+                seconds=arguments['<seconds>'])
 
         elif arguments['isolate-ctrl-switch']:
-            result = checker.isolate_controller(checker.get_master_controller_name(
-                arguments['<switch_name>']), arguments['<seconds>'])
+            result = topology.get_node_cluster_owner(
+                arguments['<switch_name>']).isolate(seconds=arguments['<seconds>'])
 
         elif arguments['isolate-random-ctrl-switch']:
-            name = checker.get_random_switch()
-            result = checker.isolate_controller(
-                checker.get_master_controller_name(name), arguments['<seconds>'])
+            result = topology.get_node_cluster_owner(
+                topology.get_random_switch_name()).isolate(seconds=arguments['<seconds>'])
 
         # Delete commands
         elif arguments['delete-random-groups']:
