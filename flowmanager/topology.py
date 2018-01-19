@@ -425,6 +425,8 @@ class Topology(object):
 
     def get_node_cluster_owner(self, openflow_name):
         controller = self.controllers[self.ctrl_name]
+        if openflow_name not in self.switches_by_openflow_name:
+            logging.error("'%s' not detected in topology", openflow_name)
         logging.debug(openflow_name)
         resp = controller.http_get(controller.get_base_url_restconf(
         ) + '/operational/entity-owners:entity-owners/entity-type/org.opendaylight.mdsal.ServiceEntityType/entity/%2Fodl-general-entity%3Aentity%5Bodl-general-entity%3Aname%3D%27{}%27%5D'.format(openflow_name))

@@ -3,6 +3,7 @@
 This class contains common methods to be consumed by all modules.
 
 """
+import logging
 
 
 def check_mandatory_values(obj, names):
@@ -17,6 +18,9 @@ def contains_filters(filters=None, value=None):
     if not filters or len(filters) <= 0:
         return True
     for fil in filters:
-        if fil not in value:
-            return False
+        try:
+            if fil not in value:
+                return False
+        except Exception:
+            logging.error('Filter error')
     return True

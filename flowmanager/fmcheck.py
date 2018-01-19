@@ -241,20 +241,24 @@ class Shell(object):
         elif arguments['get-flow-node-stats']:
             result = topology.get_node_cluster_owner(
                 arguments['<node>']).get_flow_stats(node_name=arguments['<node>'], filters=arguments['<filter>'])
+
         # Get group stats
         elif arguments['get-group-stats-all']:
-            result = checker.print_group_stats()
+            result = topology.get_random_controller().get_group_stats()
 
         elif arguments['get-group-stats']:
-            result = checker.print_group_stats(filters=arguments['<filter>'])
+            result = topology.get_random_controller().get_group_stats(
+                filters=arguments['<filter>'])
 
         elif arguments['get-group-node-stats-all']:
-            result = checker.print_group_stats(node_name=arguments['<node>'])
+            result = topology.get_node_cluster_owner(
+                openflow_name=arguments['<node>']).get_group_stats(node_name=arguments['<node>'])
 
         elif arguments['get-group-node-stats']:
-            result = checker.print_group_stats(
-                filters=arguments['<filter>'], node_name=arguments['<node>'])
+            result = topology.get_node_cluster_owner(
+                openflow_name=arguments['<node>']).get_group_stats(filters=arguments['<filter>'], node_name=arguments['<node>'])
 
+        # Get Eline stats
         elif arguments['get-eline-stats-all']:
             result = checker.print_eline_stats()
         elif arguments['get-eline-stats']:
