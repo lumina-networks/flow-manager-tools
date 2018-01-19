@@ -130,9 +130,17 @@ class Switch(object):
         raise Exception(
             'get flows method is not implemented by this switch {}'.format(self.name))
 
+    def get_flow_stats(self):
+        raise Exception(
+            'get flows method is not implemented by this switch {}'.format(self.name))
+
     def get_groups(self):
         raise Exception(
             'get groups method is not implemented by this switch {}'.format(self.name))
+
+    def get_group_stats(self):
+        raise Exception(
+            'get flows method is not implemented by this switch {}'.format(self.name))
 
     def get_controllers_role(self):
         raise Exception(
