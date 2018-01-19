@@ -211,16 +211,17 @@ class Controller(object):
     # def reboot_server(self):
     #     return self.execute_command_controller('sudo reboot')
 
-    # def isolate(self, seconds=0):
-    #     if 'isolate_cmd' not in self.props or len(self.props['isolate_cmd']) <= 0 or 'isolate_undo_cmd' not in self.props or len(self.props['isolate_undo_cmd']) <= 0:
-    #         raise Exception("ERROR: isolate commands not found in controller {}".format(self.name)
+    def isolate(self, seconds=0):
+        raise Exception('to be implemented')
+        # if 'isolate_cmd' not in self.props or len(self.props['isolate_cmd']) <= 0 or 'isolate_undo_cmd' not in self.props or len(self.props['isolate_undo_cmd']) <= 0:
+        #     raise Exception("ERROR: isolate commands not found in controller {}".format(self.name)
 
-    #     for command in controller['isolate_cmd']:
-    #         if not self.execute_command_controller(command):
-    #             return False
-    #     if int(seconds) > 0:
-    #         time.sleep(int(seconds))
-    #     for command in controller['isolate_undo_cmd']:
-    #         if not self.execute_command_controller(command):
-    #             return False
-    #     return True
+        # for command in controller['isolate_cmd']:
+        #     if not self.execute_command_controller(command):
+        #         return False
+        # if int(seconds) > 0:
+        #     time.sleep(int(seconds))
+        # for command in controller['isolate_undo_cmd']:
+        #     if not self.execute_command_controller(command):
+        #         return False
+        # return True
