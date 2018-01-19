@@ -43,6 +43,8 @@ Usage:
   fmcheck reboot-controller <name> [-d] [--topology=FILE]
   fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
   fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
+  fmcheck reboot-random-switch [-d] [--topology=FILE]
+  fmcheck reboot-switch <name> [-d] [--topology=FILE]
 
   fmcheck get-flow-stats-all [-d] [--topology=FILE]
   fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
@@ -62,8 +64,7 @@ Options:
 **Not working**
 ```
 
-  fmcheck reboot-random-switch [-d] [--topology=FILE]
-  fmcheck reboot-switch <name> [-d] [--topology=FILE]
+
 
   fmcheck break-random-gw-switch <seconds> [-d] [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [-d] [--topology=FILE]
