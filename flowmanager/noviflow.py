@@ -169,4 +169,9 @@ class Noviflow(Switch):
             'restart port method is not implemented by this switch {}'.format(self.name))
 
     def get_flow_stats(self, filters=None):
-        raise Exception('get flow stats not implemented yet')
+        raise Exception(
+            'restart port method is not implemented by this switch {}'.format(self.name))
+
+    def get_group_stats(self, filters=None):
+        raise Exception(
+            'restart port method is not implemented by this switch {}'.format(self.name))

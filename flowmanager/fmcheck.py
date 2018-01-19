@@ -132,6 +132,7 @@ class Shell(object):
             result = topology.validate_openflow_elements(
                 check_stats=True if arguments['--check-stats'] else False)
 
+        # Reboot Commands
         elif arguments['reboot-random-controller']:
             ctrl = topology.get_random_controller()
             if not ctrl:
@@ -170,6 +171,7 @@ class Shell(object):
             else:
                 logging.error("switch %s not found", arguments['<name>'])
 
+        # Break Commands
         elif arguments['break-gw-switch']:
             result = checker.break_gw_switch(
                 arguments['<name>'], arguments['<seconds>'])
@@ -187,6 +189,7 @@ class Shell(object):
             result = checker.break_controller_switch(
                 name, checker.get_master_controller_name(name), arguments['<seconds>'])
 
+        # Isolate Commands
         elif arguments['isolate-ctrl']:
             result = checker.isolate_controller(
                 arguments['<controller_name>'], arguments['<seconds>'])
@@ -204,6 +207,7 @@ class Shell(object):
             result = checker.isolate_controller(
                 checker.get_master_controller_name(name), arguments['<seconds>'])
 
+        # Delete commands
         elif arguments['delete-random-groups']:
             switch = topology.get_random_switch()
             if switch:
@@ -224,6 +228,7 @@ class Shell(object):
         elif arguments['delete-flows']:
             result = checker.delete_flows(arguments['<name>'])
 
+        # Get flow stats
         elif arguments['get-flow-stats-all']:
             result = topology.get_random_controller().get_flow_stats()
 
@@ -237,7 +242,7 @@ class Shell(object):
         elif arguments['get-flow-node-stats']:
             result = topology.get_switch(arguments['<node>']).get_flow_stats(
                 filters=arguments['<filter>'])
-
+        # Get group stats
         elif arguments['get-group-stats-all']:
             result = checker.print_group_stats()
 
@@ -250,6 +255,7 @@ class Shell(object):
         elif arguments['get-group-node-stats']:
             result = checker.print_group_stats(
                 filters=arguments['<filter>'], node_name=arguments['<node>'])
+
         elif arguments['get-eline-stats-all']:
             result = checker.print_eline_stats()
         elif arguments['get-eline-stats']:
