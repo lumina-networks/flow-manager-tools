@@ -63,9 +63,6 @@ Options:
 
 **Not working**
 ```
-
-
-
   fmcheck break-random-gw-switch <seconds> [-d] [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [-d] [--topology=FILE]
   fmcheck break-random-ctrl-switch <seconds> [-d] [--topology=FILE]
@@ -80,7 +77,6 @@ Options:
   fmcheck delete-groups <name> [-d] [--topology=FILE]
   fmcheck delete-random-flows [-d] [--topology=FILE]
   fmcheck delete-flows <name> [-d] [--topology=FILE]
-
 
   fmcheck get-flow-node-stats-all <node> [-d] [--topology=FILE]
   fmcheck get-flow-node-stats <node> <filter>... [-d] [--topology=FILE]
