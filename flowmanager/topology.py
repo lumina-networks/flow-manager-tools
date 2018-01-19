@@ -445,13 +445,31 @@ class Topology(object):
         else:
             logging.error(resp.status_code)
 
+    def get_node_cluster_owner_name(self, openflow_name):
+        controller = self.controllers[self.ctrl_name]
+        logging.debug(openflow_name)
+        resp = controller.http_get(controller.get_base_url_restconf(
+        ) + '/operational/entity-owners:entity-owners/entity-type/org.opendaylight.mdsal.ServiceEntityType/entity/%2Fodl-general-entity%3Aentity%5Bodl-general-entity%3Aname%3D%27{}%27%5D'.format(openflow_name))
+        logging.debug(resp.content)
+        if resp is not None and resp.status_code == 200 and resp.content is not None:
+            data = json.loads(resp.content)
+            entity = data.get('entity')
+            if entity and len(entity) > 0:
+                if entity[0]:
+                    logging.debug(entity[0].get('owner'))
+                    return entity[0].get('owner')
+                logging.error(
+                    "Owner not found for switch %s", openflow_name)
+        else:
+            logging.error(resp.status_code)
+
     def validate_nodes_roles(self):
         found_error = False
         # for name in self.switches_openflow_names:
         for switch in self.switches.values():
             oname = switch.openflow_name
             roles = [i.lower() for i in switch.get_controllers_role()]
-            owner = self.get_node_cluster_owner(oname)
+            owner = self.get_node_cluster_owner_name(oname)
             if owner and roles and 'master' not in roles:
                 logging.error(
                     "%s(%s) node does not contain master in the switch. Current roles in switch%s", switch.name, oname, roles)
