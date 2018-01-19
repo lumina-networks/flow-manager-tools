@@ -221,10 +221,10 @@ class Shell(object):
                 logging.error("switch %s not found", arguments['<name>'])
 
         elif arguments['delete-random-flows']:
-            result = checker.delete_flows(checker.get_random_switch())
+            result = topology.get_random_switch().delete_flows()
 
         elif arguments['delete-flows']:
-            result = checker.delete_flows(arguments['<name>'])
+            result = topology.get_switch(arguments['<name>']).delete_flows()
 
         # Get flow stats
         elif arguments['get-flow-stats-all']:
@@ -235,11 +235,12 @@ class Shell(object):
                 filters=arguments['<filter>'])
 
         elif arguments['get-flow-node-stats-all']:
-            result = topology.get_switch(arguments['<node>']).get_flow_stats()
+            result = topology.get_node_cluster_owner(
+                arguments['<node>']).get_flow_stats(node_name=arguments['<node>'])
 
         elif arguments['get-flow-node-stats']:
-            result = topology.get_switch(arguments['<node>']).get_flow_stats(
-                filters=arguments['<filter>'])
+            result = topology.get_node_cluster_owner(
+                arguments['<node>']).get_flow_stats(node_name=arguments['<node>'], filters=arguments['<filter>'])
         # Get group stats
         elif arguments['get-group-stats-all']:
             result = checker.print_group_stats()
