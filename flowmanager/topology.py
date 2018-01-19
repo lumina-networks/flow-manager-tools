@@ -438,12 +438,12 @@ class Topology(object):
                     match = entity[0].get('owner')
                     if match:
                         memberId = int(match[-1])
-                        # print(memberId)
-                        # print self.controllers[2]
                         if (memberId <= len(self.controllers)):
                             return self.controllers['c' + str(memberId - 1)]
                     logging.error(
                         "Owner not found for switch %s", openflow_name)
+        else:
+            logging.error(resp.status_code)
 
     def validate_nodes_roles(self):
         found_error = False

@@ -156,7 +156,6 @@ class Shell(object):
         elif arguments['reboot-controller-by-random-switch']:
             result = topology.get_node_cluster_owner(
                 topology.get_random_switch().openflow_name).reboot()
-            print(result)
 
         elif arguments['reboot-random-switch']:
             switch = topology.get_random_switch()
