@@ -290,7 +290,8 @@ class Shell(object):
                 source=arguments['<source>'], destination=arguments['<destination>'])
         # Get Node Summary
         elif arguments['get-node-summary']:
-            result = topology.get_random_controller().get_node_summary()
+            result = topology.get_random_controller().get_node_summary(
+                topology.switches_by_openflow_name)
 
         if not result:
             sys.exit(1)
