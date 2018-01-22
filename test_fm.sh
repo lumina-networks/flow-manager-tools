@@ -2,12 +2,12 @@ echo "Checking links"
 ./fmcheck links -t fm-topo.yml 
 echo "Checking nodes"
 ./fmcheck nodes -t fm-topo.yml 
-# echo "Checking flows"
-# ./fmcheck flows -t fm-topo.yml 
-# echo "Checking links -sr"
-# ./fmcheck links -sr -t fm-topo.yml
-# echo "Checking nodes -sr" 
-# ./fmcheck nodes -sr -t fm-topo.yml 
+echo "Checking flows"
+./fmcheck flows -t fm-topo.yml 
+echo "Checking links -sr"
+./fmcheck links -sr -t fm-topo.yml
+echo "Checking nodes -sr" 
+./fmcheck nodes -sr -t fm-topo.yml 
 echo "Checking roles"
 ./fmcheck roles -t fm-topo.yml 
 
@@ -51,7 +51,7 @@ echo "checking Etree"
 ./fmcheck get-etree-stats 0 -t fm-topo.yml
 ./fmcheck get-etree-summary-all -t fm-topo.yml
 ./fmcheck get-etree-summary 0 -t fm-topo.yml
-# ./fmcheck get-sr-summary-all -t fm-topo.yml
+./fmcheck get-sr-summary-all -t fm-topo.yml
 # ./fmcheck get-sr-summary <source> <destination> -t fm-topo.yml
 ./fmcheck get-node-summary -t fm-topo.yml
 # ./fmcheck (-h | --help)
