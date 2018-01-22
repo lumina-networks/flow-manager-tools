@@ -151,7 +151,7 @@ class Shell(object):
 
         elif arguments['reboot-controller-by-switch']:
             result = topology.get_node_cluster_owner(
-                topology.get_switch(arguments['<name>']).openflow_name).reboot()
+                arguments['<name>']).reboot()
 
         elif arguments['reboot-controller-by-random-switch']:
             result = topology.get_node_cluster_owner(
@@ -260,21 +260,29 @@ class Shell(object):
 
         # Get Eline stats
         elif arguments['get-eline-stats-all']:
-            result = checker.print_eline_stats()
+            result = topology.get_random_controller().get_eline_stats()
         elif arguments['get-eline-stats']:
-            result = checker.print_eline_stats(filters=arguments['<filter>'])
+            result = topology.get_random_controller().get_eline_stats(
+                filters=arguments['<filter>'])
         elif arguments['get-eline-summary-all']:
-            result = checker.print_eline_summary()
+            result = topology.get_random_controller().get_eline_summary()
         elif arguments['get-eline-summary']:
-            result = checker.print_eline_summary(filters=arguments['<filter>'])
+            result = topology.get_random_controller().get_eline_summary(
+                filters=arguments['<filter>'])
+
+        # Get Etree stats
         elif arguments['get-etree-stats-all']:
-            result = checker.print_etree_stats()
+            result = topology.get_random_controller().get_etree_stats()
         elif arguments['get-etree-stats']:
-            result = checker.print_etree_stats(filters=arguments['<filter>'])
+            result = topology.get_random_controller().get_etree_stats(
+                filters=arguments['<filter>'])
         elif arguments['get-etree-summary-all']:
-            result = checker.print_etree_summary()
+            result = topology.get_random_controller().get_etree_summary()
         elif arguments['get-etree-summary']:
-            result = checker.print_etree_summary(filters=arguments['<filter>'])
+            result = topology.get_random_controller().get_etree_summary(
+                filters=arguments['<filter>'])
+
+        # Get Segment Routing info
         elif arguments['get-sr-summary-all']:
             result = checker.print_sr_summary_all()
         elif arguments['get-sr-summary']:
