@@ -181,17 +181,19 @@ class Topology(object):
 
     def validate_nodes(self, should_be_up=True, include_sr=True):
         """Validates nodes against the topology"""
-        logging.info('Validating nodes...')
+        # logging.info('Validating nodes...')
         self.load_nodes()  # Populates switches dict
         result = True
         for switch in self.switches.values():
             result = False if not switch.check(
                 should_be_up=should_be_up, validate_sr=include_sr) else result
+        if result != False:
+            logging.info('All nodes detected')
         return result
 
     def load_nodes(self):
         """Populates switches dict by nodes"""
-        logging.info('Loading nodes...')
+        # logging.info('Loading nodes...')
         ctrl = self.default_ctrl
         nodes = openflow.get_topology_nodes(ctrl, 'flow:1')
         if nodes:
@@ -216,14 +218,17 @@ class Topology(object):
 
     def validate_links(self, should_be_up=True, include_sr=True):
         """Validates links against the topology"""
-        logging.info('Validating links...')
+        # logging.info('Validating links...')
         self.load_links()  # Populates switches dict
         result = True
         for switch in self.switches.values():
             for link in switch.links.values():
-                result = False if not link.check(
-                    should_be_up=should_be_up, validate_sr=include_sr) else result
-
+                if not link.check(should_be_up=should_be_up, validate_sr=include_sr):
+                    result = False
+                else:
+                    result
+        if result != False:
+            logging.info('All links detected')
         return result
 
     def load_links(self):
