@@ -2,12 +2,12 @@ echo "Checking links"
 ./fmcheck links -t fm-topo.yml 
 echo "Checking nodes"
 ./fmcheck nodes -t fm-topo.yml 
-echo "Checking flows"
-./fmcheck flows -t fm-topo.yml 
-echo "Checking links -sr"
-./fmcheck links -sr -t fm-topo.yml
-echo "Checking nodes -sr" 
-./fmcheck nodes -sr -t fm-topo.yml 
+# echo "Checking flows"
+# ./fmcheck flows -t fm-topo.yml 
+# echo "Checking links -sr"
+# ./fmcheck links -sr -t fm-topo.yml
+# echo "Checking nodes -sr" 
+# ./fmcheck nodes -sr -t fm-topo.yml 
 echo "Checking roles"
 ./fmcheck roles -t fm-topo.yml 
 
