@@ -288,6 +288,7 @@ class Shell(object):
         elif arguments['get-sr-summary']:
             result = topology.get_random_controller().get_sr_summary(
                 source=arguments['<source>'], destination=arguments['<destination>'])
+        # Get Node Summary
         elif arguments['get-node-summary']:
             result = topology.get_random_controller().get_node_summary()
 
