@@ -433,3 +433,11 @@ class Controller(object):
         #     if not self.execute_command_controller(command):
         #         return False
         # return True
+    def get_sr_summary_all(self):
+        raise NotImplementedError
+
+    def get_sr_summary(self):
+        raise NotImplementedError
+
+    def get_node_summary(self):
+        raise NotImplementedError
