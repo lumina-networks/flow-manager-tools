@@ -116,6 +116,9 @@ class Controller(object):
     def get_operations_fm_url(self, name):
         return self.get_operations_url() + '/' + self.get_fm_prefix() + name
 
+    def get_eline_url(self):
+        return self.get_operations_url() + '/' + 'brocade-bsc-eline:get-stats'
+
     def http_get(self, url):
         try:
             result = requests.get(url,
@@ -240,6 +243,165 @@ class Controller(object):
                     if stats:
                         logging.info(groupid)
                         logging.info(json.dumps(stats, indent=2))
+
+    def get_eline_stats(self, filters=None):
+        logging.debug(self.get_eline_url())
+        resp = self.http_get(self.get_eline_url())
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            logging.error(
+                'no data found while trying to get openflow information %s', resp.status_code)
+            return
+
+        data = json.loads(resp.content)
+        if 'elines' not in data or 'eline' not in data['elines'] or data['elines']['eline'] is None:
+            return
+
+        for eline in data['elines']['eline']:
+            if contains_filters(filters, eline['name']):
+                print 'eline: ' + eline['name']
+                resp = self._http_post(self._get_operations_url(
+                ) + REST_URL_ELINE_STATS, '{"input":{"name": "' + eline['name'] + '"}}')
+                print json.dumps(json.loads(resp.content), indent=2)
+
+    def get_eline_summary(self, filters=None):
+
+        resp = self._http_get(self._get_config_url() + REST_URL_ELINE)
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            print 'ERROR: no data found while trying to get eline information'
+            return
+
+        data = json.loads(resp.content)
+        if 'elines' not in data or 'eline' not in data['elines'] or data['elines']['eline'] is None:
+            return
+
+        for eline in data['elines']['eline']:
+            if contains_filters(filters, eline['name']):
+                resp = self._http_post(self._get_operations_url(
+                ) + REST_URL_ELINE_STATS, '{"input":{"name": "' + eline['name'] + '"}}')
+                if resp is None or resp.status_code != 200 or resp.content is None:
+                    print 'ERROR: cannot get stats for eline {}'.format(eline['name'])
+                    continue
+
+                eline_stats = json.loads(resp.content)
+                stats_output = eline_stats.get('output')
+                state = None if not stats_output else stats_output.get('state')
+                successful = bool(state.get('successful')
+                                  ) if state and 'successful' in state else False
+                error_msg = state.get('message') if state else ''
+                code = state.get('code') if state else -1
+                msg = 'state:OK' if successful else 'state: KO code:{} message:{}'.format(
+                    code, error_msg)
+                print "eline: '" + eline['name'] + "' " + msg
+
+                resp = self._http_get(self._get_config_url(
+                ) + REST_URL_PATH + '/path/{}'.format(eline['path-name']))
+                if resp is None or resp.status_code != 200 or resp.content is None:
+                    print 'ERROR: cannot get path for eline {}'.format(eline['name'])
+                    continue
+
+                # get endpoint names
+                eline_path = json.loads(resp.content)
+                e1 = eline_path['path'][0]['endpoint1']
+                e1Name = e1['node'] if e1 and 'node' in e1 else ''
+                e2 = eline_path['path'][0]['endpoint2']
+                e2Name = e2['node'] if e2 and 'node' in e1 else ''
+
+                # get endpoint ingress/egress packets
+                e1s = stats_output.get('endpoint1') if stats_output else None
+                e1si = e1s.get('ingress') if e1s else None
+                e1sip = e1si.get('statistics').get(
+                    'packet-count') if e1si and e1si.get('statistics') else -1
+                e1se = e1s.get('egress') if e1s else None
+                e1sep = e1se.get('statistics').get(
+                    'packet-count') if e1se and e1se.get('statistics') else -1
+                e2s = stats_output.get('endpoint2') if stats_output else None
+                e2si = e2s.get('ingress') if e2s else None
+                e2sip = e2si.get('statistics').get(
+                    'packet-count') if e2si and e2si.get('statistics') else -1
+                e2se = e2s.get('egress') if e2s else None
+                e2sep = e2se.get('statistics').get(
+                    'packet-count') if e2se and e2se.get('statistics') else -1
+
+                print "\tfrom '{}' (packets {}) to '{}' (packets {})".format(e1Name, e1sip, e2Name, e2sep)
+                print "\tfrom '{}' (packets {}) to '{}' (packets {})".format(e2Name, e2sip, e1Name, e1sep)
+                print ""
+
+    def get_etree_stats(self, filters=None):
+
+        resp = self._http_get(self._get_config_url() + REST_URL_ETREE)
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            print 'ERROR: no data found while trying to get openflow information'
+            return
+
+        data = json.loads(resp.content)
+        if 'etrees' not in data or 'etree' not in data['etrees'] or data['etrees']['etree'] is None:
+            return
+
+        for etree in data['etrees']['etree']:
+            if contains_filters(filters, etree['name']):
+                print 'etree: ' + etree['name']
+                resp = self._http_post(self._get_operations_url(
+                ) + REST_URL_ETREE_STATS, '{"input":{"name": "' + etree['name'] + '"}}')
+                print json.dumps(json.loads(resp.content), indent=2)
+
+    def get_etree_summary(self, filters=None):
+
+        resp = self._http_get(self._get_config_url() + REST_URL_ETREE)
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            print 'ERROR: no data found while trying to get etree information'
+            return
+
+        data = json.loads(resp.content)
+        if 'etrees' not in data or 'etree' not in data['etrees'] or data['etrees']['etree'] is None:
+            return
+
+        for etree in data['etrees']['etree']:
+            if contains_filters(filters, etree['name']):
+
+                resp = self._http_post(self._get_operations_url(
+                ) + REST_URL_ETREE_STATS, '{"input":{"name": "' + etree['name'] + '"}}')
+                if resp is None or resp.status_code != 200 or resp.content is None:
+                    print 'ERROR: cannot get stats for etree {}'.format(etree['name'])
+                    continue
+
+                etree_stats = json.loads(resp.content)
+                stats_output = etree_stats.get('output')
+                state = None if not stats_output else stats_output.get('state')
+                successful = bool(state.get('successful')
+                                  ) if state and 'successful' in state else False
+                error_msg = state.get('message') if state else ''
+                code = state.get('code') if state else -1
+                msg = 'state:OK' if successful else 'state: KO code:{} message:{}'.format(
+                    code, error_msg)
+                print "etree: '" + etree['name'] + "' " + msg
+
+                resp = self._http_get(self._get_config_url(
+                ) + REST_URL_TREEPATH + '/treepath/{}'.format(etree['treepath-name']))
+                if resp is None or resp.status_code != 200 or resp.content is None:
+                    print 'ERROR: cannot get treepath for etree {}'.format(etree['name'])
+                    continue
+
+                # get endpoint names
+                etree_path = json.loads(resp.content)
+                root = etree_path['treepath'][0]['root']
+                rootName = root['node'] if root and 'node' in root else ''
+
+                # get root/leaves ingress/egress packets
+                ri = stats_output.get('ingress') if stats_output else None
+                rip = ri.get('statistics').get(
+                    'packet-count') if ri and ri.get('statistics') else -1
+                if not stats_output or not stats_output.get('leaf-statistics') or len(stats_output.get('leaf-statistics')) <= 0:
+                    print 'ERROR: leaves not found in etree'
+                    continue
+
+                for leaf in stats_output.get('leaf-statistics'):
+                    leafName = leaf.get('node')
+                    leafe = leaf.get('egress')
+                    leafep = leafe.get('statistics').get(
+                        'packet-count') if leafe and leafe.get('statistics') else -1
+                    print "\tfrom '{}' (packets {}) to '{}' (packets {})".format(rootName, rip, leafName, leafep)
+
+                print ""
 
     def execute_command_controller(self, command):
         SSHobj = SSH(self.ip, self.sshuser, self.sshport, self.sshpassword)
