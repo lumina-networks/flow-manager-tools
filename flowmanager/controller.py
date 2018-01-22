@@ -119,6 +119,9 @@ class Controller(object):
     def get_eline_url(self):
         return self.get_operations_url() + '/' + 'brocade-bsc-eline:get-stats'
 
+    def get_etree_url(self):
+        return self.get_operational_url() + '/' + 'brocade-bsc-etree:get-stats'
+
     def http_get(self, url):
         try:
             result = requests.get(url,
@@ -265,9 +268,10 @@ class Controller(object):
 
     def get_eline_summary(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + REST_URL_ELINE)
+        resp = self.http_get(self.get_eline_url())
         if resp is None or resp.status_code != 200 or resp.content is None:
-            print 'ERROR: no data found while trying to get eline information'
+            logging.error(
+                'no data found while trying to get openflow information %s', resp.status_code)
             return
 
         data = json.loads(resp.content)
@@ -328,9 +332,10 @@ class Controller(object):
 
     def get_etree_stats(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + REST_URL_ETREE)
+        resp = self.http_get(self.get_etree_url())
         if resp is None or resp.status_code != 200 or resp.content is None:
-            print 'ERROR: no data found while trying to get openflow information'
+            logging.error(
+                'no data found while trying to get openflow information %s', resp.status_code)
             return
 
         data = json.loads(resp.content)
@@ -346,9 +351,9 @@ class Controller(object):
 
     def get_etree_summary(self, filters=None):
 
-        resp = self._http_get(self._get_config_url() + REST_URL_ETREE)
+        resp = self.http_get(self.get_etree_url())
         if resp is None or resp.status_code != 200 or resp.content is None:
-            print 'ERROR: no data found while trying to get etree information'
+            logging.error('no data found while trying to get openflow information %s', resp.status_code)
             return
 
         data = json.loads(resp.content)
@@ -439,5 +444,81 @@ class Controller(object):
     def get_sr_summary(self):
         raise NotImplementedError
 
-    def get_node_summary(self):
-        raise NotImplementedError
+    def get_node_summary(self, switches, node_name=None):
+        logging.debug(self.get_operational_openflow())
+        resp = self.http_get(self.get_operational_openflow())
+        if resp is None or resp.status_code != 200 or resp.content is None:
+            logging.error('no data found while trying to get openflow information %s', resp.status_code)
+            return
+        logging.debug(len(resp.content))
+        data = json.loads(resp.content)
+        if 'nodes' not in data or 'node' not in data['nodes']:
+            print 'ERROR: no nodes found while trying to get openflow information'
+            return
+
+        result = []
+        rspeed = {}
+        total_ports = 0
+        total_ports_up = 0
+
+        for node in data['nodes']['node']:
+            nodeid = node['id']
+            logging.debug(nodeid, switches)
+            if not nodeid in switches:
+                continue
+            logging.debug(node_name, node['id'])
+            if node_name and node['id'] != node_name:
+                continue
+
+            rconnectors =[]
+            num_ports = 0
+            num_ports_up = 0
+
+            connectors = node.get('node-connector')
+            if connectors is not None:
+                for connector in connectors:
+                    # skip local ports
+                    cname = connector.get('flow-node-inventory:name')
+                    cname = cname if cname else connector.get('name')
+                    if not cname or str(cname) == str("local"):
+                        continue
+
+                    num_ports += 1
+                    port_number = connector.get('flow-node-inventory:port-number')
+                    port_number = port_number if port_number else connector.get('port-number')
+                    port_number = port_number if port_number else "unkown"
+
+                    current_speed = connector.get('flow-node-inventory:current-speed')
+                    current_speed = current_speed if current_speed else connector.get('current-speed')
+                    current_speed = current_speed if current_speed else 0
+                    current_speed = "{} gbps".format(current_speed/1000000)
+
+                    if current_speed not in rspeed:
+                        rspeed[current_speed]=0
+                    rspeed[current_speed] += 1
+
+                    state = connector.get('flow-node-inventory:state')
+                    state = state if state else connector.get('state')
+
+                    is_up = state and not state.get('blocked') and not state.get('link-down') and state.get('live')
+                    if is_up:
+                        num_ports_up += 1
+
+                    rconnectors.append({'port':port_number,'up':is_up,'speed': current_speed})
+
+            total_ports += num_ports
+            total_ports_up += num_ports_up
+            result.append({'id':nodeid, 'ports': rconnectors, 'total_ports': num_ports, 'total_ports_up': num_ports_up})
+
+
+        print "Total number of switches: {}".format(len(result))
+        print "Total number of ports: {}".format(total_ports)
+        print "Total number of live ports: {}".format(total_ports_up)
+        for speed in rspeed:
+            print "{} ports with speed: {}".format(rspeed[speed],speed)
+
+        print ""
+        for node in result:
+            print "\tSwitch: {}\tTotal ports: {}\tLive port: {}".format(node.get('id'),node.get('total_ports'),node.get('total_ports_up'))
+            for connector in node.get('ports'):
+                print "\t\tport: {} \tlive: {}\tspeed: {}".format(connector.get('port'),connector.get('up'),connector.get('speed'))
