@@ -16,6 +16,7 @@ from flowmanager.switch import Switch
 from flowmanager.ovs import OVS
 from flowmanager.noviflow import Noviflow
 from flowmanager.utils import check_mandatory_values
+from flowmanager.host import Host
 import flowmanager.openflow as openflow
 
 

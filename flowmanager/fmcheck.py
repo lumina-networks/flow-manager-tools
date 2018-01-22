@@ -62,6 +62,7 @@ import yaml
 import logging
 import coloredlogs
 from flowmanager.topology import Topology
+import flowmanager.openflow
 from docopt.docopt import docopt
 
 
@@ -272,7 +273,9 @@ class Shell(object):
 
         # Get Etree stats
         elif arguments['get-etree-stats-all']:
-            result = topology.get_random_controller().get_etree_stats()
+            result = flowmanager.openflow.get_etrees(
+                topology.get_random_controller())
+            # result = topology.get_random_controller().get_etree_stats()
         elif arguments['get-etree-stats']:
             result = topology.get_random_controller().get_etree_stats(
                 filters=arguments['<filter>'])
@@ -284,7 +287,8 @@ class Shell(object):
 
         # Get Segment Routing info
         elif arguments['get-sr-summary-all']:
-            result = topology.get_random_controller().get_sr_summary_all()
+            result = topology.get_random_controller().get_sr_summary_all(
+                topology.switches_by_openflow_name)
         elif arguments['get-sr-summary']:
             result = topology.get_random_controller().get_sr_summary(
                 source=arguments['<source>'], destination=arguments['<destination>'])
