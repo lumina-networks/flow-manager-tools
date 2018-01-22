@@ -284,12 +284,12 @@ class Shell(object):
 
         # Get Segment Routing info
         elif arguments['get-sr-summary-all']:
-            result = checker.print_sr_summary_all()
+            result = topology.get_random_controller().get_sr_summary_all()
         elif arguments['get-sr-summary']:
-            result = checker.print_sr_summary(
+            result = topology.get_random_controller().get_sr_summary(
                 source=arguments['<source>'], destination=arguments['<destination>'])
         elif arguments['get-node-summary']:
-            result = checker.print_node_summary()
+            result = topology.get_random_controller().get_node_summary()
 
         if not result:
             sys.exit(1)
