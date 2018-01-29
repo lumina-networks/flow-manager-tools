@@ -22,5 +22,5 @@ def contains_filters(filters=None, value=None):
             if fil not in value:
                 return False
         except Exception:
-            logging.error('Filter error')
+            logging.debug('Filter error')
     return True
