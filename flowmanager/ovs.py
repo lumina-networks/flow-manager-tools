@@ -30,7 +30,7 @@ class OVS(Switch):
                 return False
         return True
 
-    def _execute_command(command):
+    def _execute_command(self, command):
         if self.ssh:
             return self.ssh.execute_command(command)
         else:
@@ -120,8 +120,9 @@ class OVS(Switch):
         return groups
 
     def get_controllers_role(self):
+        raise NotImplementedError
         controllers = self._execute_command(
-            "sudo ovs-vsctl  get Bridge {} controller".format(self.name))
+            "sudo ovs-vsctl get Bridge {} controller".format(self.name))
         logging.debug(
             "DEBUG: Controllers UUID received for switch %s are : %s", self.name, controllers)
         if not controllers:
