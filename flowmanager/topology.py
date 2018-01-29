@@ -26,8 +26,8 @@ class Topology(object):
         # Disable warnings
         try:
             from requests.packages.urllib3.exceptions import InsecureRequestWarning
-            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-        except:
+            from requests.packages.urllib3.disable_warnings import InsecureRequestWarning
+        except ImportError:
             pass
 
         self.hosts = {}
