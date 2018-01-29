@@ -43,7 +43,7 @@ class OVS(Switch):
             r'(tcp:\d+\.\d+\.\d+\.\d+\:\d+)', re.IGNORECASE)
         match = controllersRegex.findall(output)
         if not match:
-            logger.error("cannot get controllers for {}".format(self.name))
+            logging.error("cannot get controllers for %s", self.name)
             return False
             controllers = ' '.join(match)
             self._execute_command(
