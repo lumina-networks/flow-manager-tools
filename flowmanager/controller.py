@@ -434,11 +434,13 @@ class Controller(object):
         for command in self.props['isolate_cmd']:
             if not self.execute_command_controller(command):    
                 return False
+        logging.info("Firewall rules added to controller %s", self.name)
         if int(seconds) > 0:
             time.sleep(int(seconds))
         for command in self.props['isolate_undo_cmd']:
             if not self.execute_command_controller(command):
                 return False
+        logging.info("Firewall rules removed from controller %s", self.name)
         return True
     
     def get_sr_summary_all(self, switches):

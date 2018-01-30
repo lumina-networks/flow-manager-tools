@@ -66,19 +66,18 @@ class SSH(object):
     #     return True
 
     def execute_single_command(self, command):
-        print(command)
-        return True
-        # try:
-        #     s = pxssh.pxssh()
-        #     s.login(self.ip, self.user, self.password)
-        #     s.sendline(command)
-        #     s.prompt()
-        #     logging.info(s.before)
-        #     s.logout()
-        #     return True
-        # except pxssh.ExceptionPxssh, msg:
-        #     logging.error(str(msg))
-        #     return False
+        try:
+            s = pxssh.pxssh()
+            s.login(self.ip, self.user, self.password)
+            s.sendline(command)
+            logging.debug("%s@%s > %s", self.user, self.ip, command)
+            s.prompt()
+            logging.info(s.before)
+            s.logout()
+            return True
+        except pxssh.ExceptionPxssh, msg:
+            logging.error(str(msg))
+            return False
 
     def create_session(self):
         ssh_command = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p {} {}@{}'.format(
