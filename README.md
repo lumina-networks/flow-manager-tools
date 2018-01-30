@@ -46,6 +46,11 @@ Usage:
   fmcheck reboot-random-switch [-d] [--topology=FILE]
   fmcheck reboot-switch <name> [-d] [--topology=FILE]
 
+  fmcheck isolate-random-ctrl <seconds> [-d] [--topology=FILE]
+  fmcheck isolate-ctrl <controller_name> <seconds> [-d] [--topology=FILE]
+  fmcheck isolate-random-ctrl-switch <seconds> [-d] [--topology=FILE]
+  fmcheck isolate-ctrl-switch <switch_name> <seconds> [-d] [--topology=FILE]
+
   fmcheck get-flow-stats-all [-d] [--topology=FILE]
   fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
   fmcheck (-h | --help)
@@ -86,11 +91,6 @@ Options:
 
 **Not working**
 ```
-  fmcheck isolate-random-ctrl <seconds> [-d] [--topology=FILE]
-  fmcheck isolate-ctrl <controller_name> <seconds> [-d] [--topology=FILE]
-  fmcheck isolate-random-ctrl-switch <seconds> [-d] [--topology=FILE]
-  fmcheck isolate-ctrl-switch <switch_name> <seconds> [-d] [--topology=FILE]
-
   fmcheck delete-random-groups [-d] [--topology=FILE]
   fmcheck delete-groups <name> [-d] [--topology=FILE]
   fmcheck delete-random-flows [-d] [--topology=FILE]
