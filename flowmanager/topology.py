@@ -563,7 +563,7 @@ def _load_openflow_from_switch(switch):
     try:
         groups = switch.get_groups()
     except:
-        logging.debug("TOPOLOGY: error getting groups from %s(%s)",
+        logging.error("TOPOLOGY: error getting groups from %s(%s)",
                       switch.name, switch.openflow_name)
         pass
     if groups:
@@ -574,7 +574,7 @@ def _load_openflow_from_switch(switch):
     try:
         flows = switch.get_flows()
     except:
-        logging.debug("TOPOLOGY: error getting flows from %s(%s)",
+        logging.error("TOPOLOGY: error getting flows from %s(%s)",
                       switch.name, switch.openflow_name)
         pass
     if flows:
