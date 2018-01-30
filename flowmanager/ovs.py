@@ -37,23 +37,24 @@ class OVS(Switch):
             return subprocess.check_output(command, shell=True)
 
     def reboot(self):
-        output = self._execute_command(
-            "sudo ovs-vsctl get-controller {}".format(self.name))
-        controllersRegex = re.compile(
-            r'(tcp:\d+\.\d+\.\d+\.\d+\:\d+)', re.IGNORECASE)
-        match = controllersRegex.findall(output)
-        if not match:
-            logging.error("cannot get controllers for %s", self.name)
-            return False
-            controllers = ' '.join(match)
-            self._execute_command(
-                "sudo ovs-vsctl del-controller {}".format(self.name))
-            self.delete_flows()
-            self.delete_groups()
-            time.sleep(5)
-            self._execute_command(
-                "sudo ovs-vsctl set-controller {} {}".format(self.name, controllers), shell=True)
-            return True
+        raise NotImplementedError
+        # output = self._execute_command(
+        #     "sudo ovs-vsctl get-controller {}".format(self.name))
+        # controllersRegex = re.compile(
+        #     r'(tcp:\d+\.\d+\.\d+\.\d+\:\d+)', re.IGNORECASE)
+        # match = controllersRegex.findall(output)
+        # if not match:
+        #     logging.error("cannot get controllers for %s", self.name)
+        #     return False
+        #     controllers = ' '.join(match)
+        #     self._execute_command(
+        #         "sudo ovs-vsctl del-controller {}".format(self.name))
+        #     self.delete_flows()
+        #     self.delete_groups()
+        #     time.sleep(5)
+        #     self._execute_command(
+        #         "sudo ovs-vsctl set-controller {} {}".format(self.name, controllers), shell=True)
+        #     return True
 
     def break_gateway(self, seconds=0):
         seconds = int(seconds)

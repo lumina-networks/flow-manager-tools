@@ -30,21 +30,29 @@ class Group(object):
 
     def check(self):
         if self.of_config and not self.switch:
-            print "ERROR: {}({}) group {} is not runnig in the switch. {}".format(self.node, self.node_of_name, self.groupid, self._get_info_msg())
+            logging.error("%s(%s) group %s is not runnig in the switch. %s",
+                          self.node, self.node_of_name, self.groupid, self._get_info_msg())
         elif self.of_config and not self.of_operational:
-            print "ERROR: {}({}) group {} not found in operational datastore. {}".format(self.node, self.node_of_name, self.groupid, self._get_info_msg())
+            logging.error("%s(%s) group %s not found in operational datastore. %s",
+                          self.node, self.node_of_name, self.groupid, self._get_info_msg())
         elif self.of_config and not self.fm:
-            print "ERROR: {}({}) group {} is not being monitored. {}".format(self.node, self.node_of_name, self.groupid, self._get_info_msg())
+            logging.error("%s(%s) group %s is not being monitored. %s",
+                          self.node, self.node_of_name, self.groupid, self._get_info_msg())
         elif self.of_config and not self.calculated:
-            print "ERROR: {}({}) group {} not found in calculated groups. {}".format(self.node, self.node_of_name, self.groupid, self._get_info_msg())
+            logging.error("%s(%s) group %s not found in calculated groups. %s",
+                          self.node, self.node_of_name, self.groupid, self._get_info_msg())
         elif not self.of_config and self.switch:
-            print "ERROR: {}({}) group {} runnig in switch but not configured. {}".format(self.node, self.node_of_name, self.groupid, self._get_info_msg())
+            logging.error("%s(%s) group %s runnig in switch but not configured. %s",
+                          self.node, self.node_of_name, self.groupid, self._get_info_msg())
         elif not self.of_config and self.of_operational:
-            print "ERROR: {}({}) group {} found operational datastore but not in configuration. {}".format(self.node, self.node_of_name, self.groupid, self._get_info_msg())
+            logging.error("%s(%s) group %s found operational datastore but not in configuration. %s",
+                          self.node, self.node_of_name, self.groupid, self._get_info_msg())
         elif not self.of_config and not self.of_operational and not self.switch and self.fm:
-            print "ERROR: {}({}) group {} monitored but not running neither configured. {}".format(self.node, self.node_of_name, self.groupid, self._get_info_msg())
+            logging.error("%s(%s) group %s monitored but not running neither configured. %s",
+                          self.node, self.node_of_name, self.groupid, self._get_info_msg())
         elif not self.of_config and self.calculated:
-            print "ERROR: {}({}) group {} calculated but not configured. {}".format(self.node, self.node_of_name, self.groupid, self._get_info_msg())
+            logging.error("%s(%s) group %s calculated but not configured. %s",
+                          self.node, self.node_of_name, self.groupid, self._get_info_msg())
         else:
             logging.debug("GROUP: OK: %s %s", self.groupid,
                           self._get_info_msg())
