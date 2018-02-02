@@ -45,6 +45,8 @@ Usage:
   fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
   fmcheck reboot-random-switch [-d] [--topology=FILE]
   fmcheck reboot-switch <name> [-d] [--topology=FILE]
+  fmcheck reboot-controller-vm <name> [-d] [--topology=FILE]
+  fmcheck reboot-random-controller-vm [-d] [--topology=FILE]
 
   fmcheck isolate-random-ctrl <seconds> [-d] [--topology=FILE]
   fmcheck isolate-ctrl <controller_name> <seconds> [-d] [--topology=FILE]
