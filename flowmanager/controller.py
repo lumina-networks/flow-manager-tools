@@ -424,6 +424,9 @@ class Controller(object):
             return False
         return True
 
+    def reboot_vm(self):
+        if not self.execute_command_controller('sudo reboot'):
+            return False
     # def reboot_server(self):
     #     return self.execute_command_controller('sudo reboot')
 
