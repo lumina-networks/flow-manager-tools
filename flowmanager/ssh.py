@@ -71,7 +71,10 @@ class SSH(object):
             s.login(self.ip, self.user, self.password)
             s.sendline(command)
             logging.debug("%s@%s > %s", self.user, self.ip, command)
-            s.prompt()
+            try:
+                s.prompt()
+            except Exception, msg:
+                logging.debug(msg)
             logging.info(s.before)
             s.logout()
             return True

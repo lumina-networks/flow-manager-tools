@@ -11,6 +11,8 @@ Usage:
   fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
   fmcheck reboot-random-switch [-d] [--topology=FILE]
   fmcheck reboot-switch <name> [-d] [--topology=FILE]
+  fmcheck reboot-controller-vm <name> [-d] [--topology=FILE]
+  fmcheck reboot-random-controller-vm [-d] [--topology=FILE]
   fmcheck break-random-gw-switch <seconds> [-d] [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [-d] [--topology=FILE]
   fmcheck break-random-ctrl-switch <seconds> [-d] [--topology=FILE]
@@ -171,6 +173,23 @@ class Shell(object):
                 result = switch.reboot()
             else:
                 logging.error("switch %s not found", arguments['<name>'])
+
+        elif arguments['reboot-controller-vm']:
+            ctrl = topology.get_controller(arguments['<name>'])
+            if not ctrl:
+                result = False
+                logging.error("controller %s not found", arguments['<name>'])
+            else:
+                result = topology.get_controller(
+                    arguments['<name>']).reboot_vm()
+
+        elif arguments['reboot-random-controller-vm']:
+            ctrl = topology.get_random_controller()
+            if not ctrl:
+                result = False
+                logging.error("controller not found")
+            else:
+                result = topology.get_random_controller().reboot_vm()
 
         # Break Commands
         elif arguments['break-gw-switch']:
