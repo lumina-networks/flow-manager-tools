@@ -10,8 +10,9 @@ This tool provides a mechanism to test and validate Flow Manager application wit
 ### From source
 
 ```
-git clone https://github.com/lumina-networks/flow-manager-tools
+git clone https://github.com/qasimraz/flow-manager-tools.git
 cd flow-manager-tools
+checkout refactorting
 sudo python setup.py install
 ```
 
