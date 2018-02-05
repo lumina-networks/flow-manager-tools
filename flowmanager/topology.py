@@ -447,7 +447,7 @@ class Topology(object):
                     if match:
                         memberId = int(match[-1])
                         if (memberId <= len(self.controllers)):
-                            return self.controllers['c' + str(memberId - 1)]
+                            return self.controllers['c' + str(memberId)]
                     logging.error(
                         "Owner not found for switch %s", openflow_name)
         else:
