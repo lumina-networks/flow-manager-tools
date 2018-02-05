@@ -41,29 +41,33 @@ class Flow(object):
                                                            node_of_name, get_id(cookie), get_version(cookie))
 
     def add_of_config(self, flow):
-        logging.debug("FLOW: %s mard as configured", self.flowid)
+        logging.debug("FLOW: %s marked as configured", self.flowid)
         self.of_config.append(flow)
-        self.of_config_id = get_id(flow['cookie'])
-        self.of_config_version = get_version(flow['cookie'])
+        logging.debug(flow)
+        try:
+            self.of_config_id = get_id(flow['cookie'])
+            self.of_config_version = get_version(flow['cookie'])
+        except KeyError:
+            logging.error("KeyError, could not find cookie in table/0")
 
     def add_of_operational(self, flow):
-        logging.debug("FLOW: %s mard as operational", self.flowid)
+        logging.debug("FLOW: %s marked as operational", self.flowid)
         self.of_operational.append(flow)
         self.of_operational_id = get_id(flow['cookie'])
         self.of_operational_version = get_version(flow['cookie'])
 
     def add_switch(self, flow):
-        logging.debug("FLOW: %s mard as running in switch", self.flowid)
+        logging.debug("FLOW: %s marked as running in switch", self.flowid)
         self.switch.append(flow)
         self.switch_id = get_id(flow['cookie'])
         self.switch_version = get_version(flow['cookie'])
 
     def add_fm(self, flow):
-        logging.debug("FLOW: %s mard as monitored", self.flowid)
+        logging.debug("FLOW: %s marked as monitored", self.flowid)
         self.fm.append(flow)
 
     def mark_as_calculated(self):
-        logging.debug("FLOW: %s mark as calculated", self.flowid)
+        logging.debug("FLOW: %s marked as calculated", self.flowid)
         self.calculated = True
 
     def check(self):
