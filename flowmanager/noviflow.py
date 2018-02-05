@@ -70,8 +70,9 @@ class Noviflow(Switch):
             return True
 
     def delete_flows(self):
-        raise Exception(
-            'delete flows is not implemented by this switch {}'.format(self.name))
+        if self.ssh.execute_command('del config flow tableid all'):
+            self.ssh.close()
+            return True
 
     def get_flows(self):
         logging.debug("NOVIFLOW: %s(%s) getting flows",
