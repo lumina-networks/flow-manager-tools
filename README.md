@@ -53,14 +53,15 @@ Usage:
   fmcheck isolate-random-ctrl-switch <seconds> [-d] [--topology=FILE]
   fmcheck isolate-ctrl-switch <switch_name> <seconds> [-d] [--topology=FILE]
 
-  fmcheck get-flow-stats-all [-d] [--topology=FILE]
-  fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
-  fmcheck (-h | --help)
-
   fmcheck break-random-gw-switch <seconds> [-d] [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [-d] [--topology=FILE]
   fmcheck break-random-ctrl-switch <seconds> [-d] [--topology=FILE]
   fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [-d] [--topology=FILE]
+
+  fmcheck delete-random-groups [-d] [--topology=FILE]
+  fmcheck delete-groups <name> [-d] [--topology=FILE]
+  fmcheck delete-random-flows [-d] [--topology=FILE]
+  fmcheck delete-flows <name> [-d] [--topology=FILE]
 
   fmcheck get-flow-node-stats-all <node> [-d] [--topology=FILE]
   fmcheck get-flow-node-stats <node> <filter>... [-d] [--topology=FILE]
@@ -80,21 +81,22 @@ Usage:
   fmcheck get-sr-summary <source> <destination> [-d] [--topology=FILE]
   fmcheck get-node-summary [-d] [--topology=FILE]
   
+  fmcheck get-flow-stats-all [-d] [--topology=FILE]
+  fmcheck get-flow-stats <filter>... [-d] [--topology=FILE]
+  fmcheck (-h | --help)
+  
 Options:
   -h --help     Show this screen.
+  -d --debug  Log debug level
   -t, --topology=FILE   Topolofy file name [default: fm-topo.yml].
   -c, --controller=IP   Controller IP address
   -s --stopped      If Mininet is not running.
   -r --segementrouting  Use segment routing topology.
   -a --check-stats  Check flow/groups states with previous check
-  -d --debug  Log debug level
   --version     Show version.
 ```
 
 **Not working**
 ```
-  fmcheck delete-random-groups [-d] [--topology=FILE]
-  fmcheck delete-groups <name> [-d] [--topology=FILE]
-  fmcheck delete-random-flows [-d] [--topology=FILE]
-  fmcheck delete-flows <name> [-d] [--topology=FILE]
+
 ```
