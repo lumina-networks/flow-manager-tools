@@ -96,7 +96,39 @@ Options:
   --version     Show version.
 ```
 
-**Not working**
+**To Do**
+```
+  fmcheck isolate-switch 
+    --Break connection between switch and controller by adding iptable rules into controller
+
+  fmcheck get-sr-summary-all [-d] [--topology=FILE]
+  fmcheck get-sr-summary <source> <destination> [-d] [--topology=FILE]
+    --Catch filter errors
+
+  fmcheck isolate-ctrl-switch <switch_name> <seconds> [-d] [--topology=FILE]
+    --Clean up log messages
+
+  fmcheck reboot-random-controller [-d] [--topology=FILE]
+  fmcheck reboot-controller <name> [-d] [--topology=FILE]
+  fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
+  fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
+    --Check if local or ssh/remote controller
+
+  fmcheck reboot-all-controllers
+  fmcheck reboot-all-switches
+    --New features
+
+  fmcheck get-etree-hop-stats
+    --New feature to measure pathing efficiency for elines and etree
+  
+  fmcheck test-resilience
+    --A test suite that runs continuously and outputs issues with the controller
+
+  fmcheck patch-upload
 ```
 
+**Long Term Project**
+```
+  Cross controller compatibility
+  Abstraction of controller
 ```
