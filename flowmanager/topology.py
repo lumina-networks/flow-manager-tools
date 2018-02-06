@@ -574,12 +574,13 @@ class Topology(object):
 
 def _load_openflow_from_switch(switch):
     groups = None
-    try:
-        groups = switch.get_groups()
-    except:
-        logging.error("TOPOLOGY: error getting groups from %s(%s)",
-                      switch.name, switch.openflow_name)
-        pass
+    groups = switch.get_groups()
+    # try:
+
+    # except:
+    #     logging.error("TOPOLOGY: error getting groups from %s(%s)",
+    #                   switch.name, switch.openflow_name)
+    #     pass
     if groups:
         for group in groups:
             switch.get_group(group['id']).add_switch(group)
