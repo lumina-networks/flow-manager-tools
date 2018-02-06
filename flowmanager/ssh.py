@@ -1,6 +1,6 @@
-"""SSH
+"""
 
-This module contains the primitives to manipulate SSH sessions.
+This module implements methods for SSH sessions.
 
 """
 import threading
@@ -21,7 +21,7 @@ from pexpect import pxssh
 
 class SSH(object):
 
-    """docstring for ClassName"""
+    """SSH Module"""
 
     def __init__(self, ip, user, port=22, password=None, prompt=None, timeout=30):
         self.ip = ip

@@ -1,3 +1,8 @@
+"""
+This module contains the primitives and methods for flows.
+
+"""
+
 import logging
 
 CALCULATED_EXCEPTIONS = ['fm-sr-link-discovery']
