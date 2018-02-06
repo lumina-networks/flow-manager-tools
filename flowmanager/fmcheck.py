@@ -5,6 +5,7 @@ Usage:
   fmcheck nodes [-srd] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-ad] [--topology=FILE] [--controller=IP]...
   fmcheck roles [-d] [--topology=FILE] [--controller=IP]...
+  fmcheck sync-status [-d] [--topology=FILE] [--controller=IP]...
   fmcheck reboot-random-controller [-d] [--topology=FILE]
   fmcheck reboot-controller <name> [-d] [--topology=FILE]
   fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
@@ -135,6 +136,8 @@ class Shell(object):
             result = topology.validate_openflow_elements(
                 check_stats=True if arguments['--check-stats'] else False)
 
+        elif arguments['sync-status']:
+            result = topology.validate_cluster()
         # Reboot Commands
         elif arguments['reboot-random-controller']:
             ctrl = topology.get_random_controller()

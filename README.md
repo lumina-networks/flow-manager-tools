@@ -39,6 +39,7 @@ Usage:
   fmcheck nodes [-srd] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-ad] [--topology=FILE] [--controller=IP]...
   fmcheck roles [-d] [--topology=FILE] [--controller=IP]...
+  fmcheck sync-status [-d] [--topology=FILE] [--controller=IP]...
 
   fmcheck reboot-random-controller [-d] [--topology=FILE]
   fmcheck reboot-controller <name> [-d] [--topology=FILE]
@@ -99,6 +100,10 @@ Options:
 
 **To Do**
 ```
+  replace print statements with logging
+
+    --Check if operational datastore and configurational datastore match
+
   fmcheck isolate-switch 
     --Break connection between switch and controller by adding iptable rules into controller
 
