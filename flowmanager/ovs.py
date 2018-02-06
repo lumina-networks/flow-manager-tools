@@ -61,7 +61,8 @@ class OVS(Switch):
         logging.debug(
             "INFO: trying to break connectivity to the switch %s switch", self.name)
         if 'disable_gw' not in self.props or len(self.props['disable_gw']) <= 0 or 'enable_gw' not in self.props or len(self.props['enable_gw']) <= 0:
-            print "ERROR: enable or disable gw commands not found in switch {} switch".format(self.name)
+            logging.error(
+                "enable or disable gw commands not found in switch %s switch", self.name)
             return False
         if not self._execute_commands(self.props['disable_gw']):
             return False
@@ -96,7 +97,7 @@ class OVS(Switch):
                 flow['packets'] = match.group(3)
                 flow['bytes'] = match.group(4)
                 flows.append(flow)
-
+        logging.debug(flows)
         return flows
 
     def get_groups(self):
@@ -159,9 +160,9 @@ class OVS(Switch):
     def list_ports(self):
         list = self._execute_command(
             "sudo ovs-vsctl list-ports {}".format(self.name))
-        print list
+        logging.info(list)
 
     def port_status(self, port):
         status = self._execute_command(
             "sudo ovs-ofctl -O OpenFlow13 dump-ports-desc {} {}".format(self.name, port))
-        print status
+        logging.info(status)
