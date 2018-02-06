@@ -27,11 +27,14 @@ Following dependencies are installed with the installation.
 
 ## Usage
 
-`fmcheck` validates if links, nodes and flows are in sync between the switch, configuration and operational data store. It also provides the ability to restart a switch or controller and delete all flows or groups directly from a switch. Finally, it also provides commands to obtain flow/group/services stats.
+`fmcheck2` validates if links, nodes and flows are in sync between the switch, configuration and operational data store. It also provides the ability to restart a switch or controller and delete all flows or groups directly from a switch. Finally, it also provides commands to obtain flow/group/services stats.
+
+## fmcheck2
+`fmcheck2` will be the command after installation, despite the output in the help file. This is to allow users to test `fmcheck` and `fmcheck2` side by side. Eventually `fmcheck2` will become `fmcheck`.
 
 **Working:**
 ```
-$ fmcheck -h
+$ fmcheck2 -h
 Flow Manager Testing Tools
 
 Usage:
