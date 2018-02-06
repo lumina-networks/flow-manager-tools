@@ -57,7 +57,7 @@ class Controller(object):
     def is_sync(self):
         url = self.get_base_url() + "/jolokia/read/org.opendaylight.controller:Category=ShardManager,name=shard-manager-operational,type=DistributedOperationalDatastore"
         resp = self.http_get(url)
-        if resp is not None or resp.status_code != 200 or not resp.content:
+        if resp is None or resp.status_code != 200 or not resp.content:
             return False
 
         data = json.loads(resp.content)
@@ -356,7 +356,8 @@ class Controller(object):
 
         resp = self.http_get(self.get_etree_url())
         if resp is None or resp.status_code != 200 or resp.content is None:
-            logging.error('no data found while trying to get openflow information %s', resp.status_code)
+            logging.error(
+                'no data found while trying to get openflow information %s', resp.status_code)
             return
 
         data = json.loads(resp.content)
@@ -433,9 +434,10 @@ class Controller(object):
     def isolate(self, seconds=15):
         import time
         if 'isolate_cmd' not in self.props or len(self.props['isolate_cmd']) <= 0 or 'isolate_undo_cmd' not in self.props or len(self.props['isolate_undo_cmd']) <= 0:
-            raise Exception("ERROR: isolate commands not found in controller {}".format(self.name))
+            raise Exception(
+                "ERROR: isolate commands not found in controller {}".format(self.name))
         for command in self.props['isolate_cmd']:
-            if not self.execute_command_controller(command):    
+            if not self.execute_command_controller(command):
                 return False
         logging.info("Firewall rules added to controller %s", self.name)
         if int(seconds) > 0:
@@ -445,14 +447,15 @@ class Controller(object):
                 return False
         logging.info("Firewall rules removed from controller %s", self.name)
         return True
-    
+
     def get_sr_summary_all(self, switches):
         srnodes = self._get_sr_nodes_paths(switches)
 
         nodeslist = srnodes.keys()
         for fromindex in range(len(nodeslist) - 1):
-            for toindex in range(fromindex + 1,len(nodeslist)):
-                self.get_sr_summary(nodeslist[fromindex], nodeslist[toindex], srnodes)
+            for toindex in range(fromindex + 1, len(nodeslist)):
+                self.get_sr_summary(
+                    nodeslist[fromindex], nodeslist[toindex], srnodes)
 
     def get_sr_summary(self, source, destination, srnodes=None):
         if srnodes is None:
@@ -517,13 +520,15 @@ class Controller(object):
 
         print ""
 
-    def _get_sr_nodes_paths(self,switches):
+    def _get_sr_nodes_paths(self, switches):
         srnodes = {}
-        resp = self.http_get(self.get_operational_url() + '/network-topology:network-topology/topology/flow:1:sr')
+        resp = self.http_get(self.get_operational_url(
+        ) + '/network-topology:network-topology/topology/flow:1:sr')
         if resp is None or resp.status_code != 200 or resp.content is None:
-            logging.error('Error: %s',resp.status_code)
+            logging.error('Error: %s', resp.status_code)
             return None
-        logging.debug('Response Status %s Size: %d', resp.status_code, len(resp.content))
+        logging.debug('Response Status %s Size: %d',
+                      resp.status_code, len(resp.content))
         data = json.loads(resp.content)
         topology = data.get('topology')
         if topology is None or len(topology) <= 0:
@@ -531,7 +536,7 @@ class Controller(object):
         nodes = topology[0].get('node')
         if nodes is None:
             return None
-        
+
         for node in nodes:
             nodeid = node['node-id']
             if not nodeid in switches:
@@ -541,7 +546,8 @@ class Controller(object):
             # print(self.get_rest_sr_url)
             if brocadesr is None:
                 continue
-            srnodes[nodeid] = {'mpls-label': brocadesr.get('mpls-label'), 'primary-paths': {}}
+            srnodes[nodeid] = {
+                'mpls-label': brocadesr.get('mpls-label'), 'primary-paths': {}}
 
             cppaths = brocadesr.get('calculated-primary-paths')
             if cppaths is None:
@@ -551,8 +557,10 @@ class Controller(object):
                 continue
             for cppath in cppaths:
                 path = {}
-                path['group-id'] = 'node/{}/group/{}'.format(nodeid, cppath['group-id'])
-                path['flow-id'] = 'node/{}/table/{}/flow/{}'.format(nodeid, cppath['table-id'], cppath['flow-name'])
+                path['group-id'] = 'node/{}/group/{}'.format(
+                    nodeid, cppath['group-id'])
+                path['flow-id'] = 'node/{}/table/{}/flow/{}'.format(
+                    nodeid, cppath['table-id'], cppath['flow-name'])
                 srnodes[nodeid]['primary-paths'][cppath['node-id']] = path
 
             cpaths = brocadesr.get('calculated-paths')
@@ -573,7 +581,8 @@ class Controller(object):
                         continue
                     if nexthop not in orderedHops:
                         orderedHops.append(nexthop)
-                srnodes[nodeid]['primary-paths'][cpath['name']]['next-hops']= orderedHops
+                srnodes[nodeid]['primary-paths'][cpath['name']
+                                                 ]['next-hops'] = orderedHops
 
         return srnodes
 
@@ -581,7 +590,8 @@ class Controller(object):
         logging.debug(self.get_operational_openflow())
         resp = self.http_get(self.get_operational_openflow())
         if resp is None or resp.status_code != 200 or resp.content is None:
-            logging.error('no data found while trying to get openflow information %s', resp.status_code)
+            logging.error(
+                'no data found while trying to get openflow information %s', resp.status_code)
             return
         logging.debug(len(resp.content))
         data = json.loads(resp.content)
@@ -617,41 +627,47 @@ class Controller(object):
                         continue
 
                     num_ports += 1
-                    port_number = connector.get('flow-node-inventory:port-number')
-                    port_number = port_number if port_number else connector.get('port-number')
+                    port_number = connector.get(
+                        'flow-node-inventory:port-number')
+                    port_number = port_number if port_number else connector.get(
+                        'port-number')
                     port_number = port_number if port_number else "unkown"
 
-                    current_speed = connector.get('flow-node-inventory:current-speed')
-                    current_speed = current_speed if current_speed else connector.get('current-speed')
+                    current_speed = connector.get(
+                        'flow-node-inventory:current-speed')
+                    current_speed = current_speed if current_speed else connector.get(
+                        'current-speed')
                     current_speed = current_speed if current_speed else 0
-                    current_speed = "{} gbps".format(current_speed/1000000)
+                    current_speed = "{} gbps".format(current_speed / 1000000)
 
                     if current_speed not in rspeed:
-                        rspeed[current_speed]=0
+                        rspeed[current_speed] = 0
                     rspeed[current_speed] += 1
 
                     state = connector.get('flow-node-inventory:state')
                     state = state if state else connector.get('state')
 
-                    is_up = state and not state.get('blocked') and not state.get('link-down') and state.get('live')
+                    is_up = state and not state.get('blocked') and not state.get(
+                        'link-down') and state.get('live')
                     if is_up:
                         num_ports_up += 1
 
-                    rconnectors.append({'port':port_number,'up':is_up,'speed': current_speed})
+                    rconnectors.append(
+                        {'port': port_number, 'up': is_up, 'speed': current_speed})
 
             total_ports += num_ports
             total_ports_up += num_ports_up
-            result.append({'id':nodeid, 'ports': rconnectors, 'total_ports': num_ports, 'total_ports_up': num_ports_up})
-
+            result.append({'id': nodeid, 'ports': rconnectors,
+                           'total_ports': num_ports, 'total_ports_up': num_ports_up})
 
         print "Total number of switches: {}".format(len(result))
         print "Total number of ports: {}".format(total_ports)
         print "Total number of live ports: {}".format(total_ports_up)
         for speed in rspeed:
-            print "{} ports with speed: {}".format(rspeed[speed],speed)
+            print "{} ports with speed: {}".format(rspeed[speed], speed)
 
         print ""
         for node in result:
-            print "\tSwitch: {}\tTotal ports: {}\tLive port: {}".format(node.get('id'),node.get('total_ports'),node.get('total_ports_up'))
+            print "\tSwitch: {}\tTotal ports: {}\tLive port: {}".format(node.get('id'), node.get('total_ports'), node.get('total_ports_up'))
             for connector in node.get('ports'):
-                print "\t\tport: {} \tlive: {}\tspeed: {}".format(connector.get('port'),connector.get('up'),connector.get('speed'))
+                print "\t\tport: {} \tlive: {}\tspeed: {}".format(connector.get('port'), connector.get('up'), connector.get('speed'))

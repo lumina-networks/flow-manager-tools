@@ -232,6 +232,18 @@ class Topology(object):
             logging.info('All links detected')
         return result
 
+    def validate_cluster(self):
+        result = True
+        for controller in self.controllers.values():
+            if controller.is_sync():
+                logging.info('Controller %s is in sync', controller.name)
+            else:
+                logging.info('Controller %s is not in sync', controller.name)
+                result = False
+        logging.info('All controller are in sync') if result else logging.error(
+            'Controllers are not in sync')
+        return result
+
     def load_links(self):
         """Populates switches dict by links"""
         logging.info('Loading links...')
