@@ -131,6 +131,12 @@ Options:
     --A test suite that runs continuously and outputs issues with the controller
 
   fmcheck patch-upload
+
+  fmcheck execute-on-controller <controller> <command>
+  fmcheck execute-on-all-controllers <command>
+
+  fmcheck execute-on-switch <controller> <command>
+  fmcheck execute-on-all-switches <command>
 ```
 
 **Long Term Project**
