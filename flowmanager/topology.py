@@ -490,7 +490,8 @@ class Topology(object):
             oname = switch.openflow_name
             roles = [i.lower() for i in switch.get_controllers_role()]
             owner = self.get_node_cluster_owner_name(oname)
-            if owner and roles and 'master' not in roles:
+            logging.debug(roles)
+            if owner and roles and 'master' not in roles and 'slave' in roles:
                 logging.error(
                     "%s(%s) node does not contain master in the switch. Current roles in switch%s", switch.name, oname, roles)
                 found_error = True
@@ -516,7 +517,8 @@ class Topology(object):
                     logging.error("%s(%s) node master member id %s(%s) is out of range. Current roles in switch %s",
                                   switch.name, oname, memberId, owner, roles)
                     found_error = True
-                elif roles[memberId - 1] != 'master':
+                # elif roles[memberId - 1] != 'master':
+                elif roles[memberId - 1] == 'slave':
                     logging.info(roles[memberId - 1])
                     logging.error("%s(%s) node, member %s(%s) is not master on the switch as expected by the controller. Current roles in switch %s",
                                   switch.name, oname, memberId, owner, roles)
