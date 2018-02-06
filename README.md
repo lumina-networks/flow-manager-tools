@@ -100,6 +100,14 @@ Options:
 
 **To Do**
 ```
+  
+  
+  fmcheck download controller logs
+  fmcheck clear controller logs
+    
+  fmcheck versions of controllers
+  fmcheck versions of switches
+
   replace print statements with logging
 
     --Check if operational datastore and configurational datastore match

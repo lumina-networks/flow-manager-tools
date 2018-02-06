@@ -1,3 +1,8 @@
+"""
+This module contains the primitives and methods for groups.
+
+"""
+
 import logging
 
 
