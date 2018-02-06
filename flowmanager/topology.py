@@ -240,7 +240,7 @@ class Topology(object):
             else:
                 logging.info('Controller %s is not in sync', controller.name)
                 result = False
-        logging.info('All controller are in sync') if result else logging.error(
+        logging.info('Controllers are in sync') if result else logging.error(
             'Controllers are not in sync')
         return result
 
