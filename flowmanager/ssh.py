@@ -65,7 +65,7 @@ class SSH(object):
 
     #     return True
 
-    def execute_single_command(self, command):
+    def execute_single_command(self, command, output=False):
         try:
             s = pxssh.pxssh()
             s.login(self.ip, self.user, self.password)
@@ -75,7 +75,9 @@ class SSH(object):
                 s.prompt()
             except Exception, msg:
                 logging.debug(msg)
-            # logging.info(s.before)
+            logging.debug(s.before)
+            if output:
+                return s.before
             s.logout()
             return True
         except pxssh.ExceptionPxssh, msg:
