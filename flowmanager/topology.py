@@ -49,7 +49,7 @@ class Topology(object):
                     new_switch = OVS(properties, True)
 
                 self.add_switch(new_switch)
-                logging.info(self.switches.values())
+                # logging.info(self.switches.values())
 
         self.controllers = {}
         self.ctrl_name = None

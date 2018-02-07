@@ -31,10 +31,13 @@ class OVS(Switch):
         return True
 
     def _execute_command(self, command):
-        if self.ssh:
-            return self.ssh.execute_command(command)
-        else:
+        # if self.ssh:
+            # return self.ssh.execute_command(command)
+        # else:
+        try:
             return subprocess.check_output(command, shell=True)
+        except Exception, msg:
+            logging.error(msg)
 
     def reboot(self):
         raise NotImplementedError
