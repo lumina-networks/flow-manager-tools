@@ -129,25 +129,25 @@ class OVS(Switch):
             'OVS switches roles not implemented, default set to equal')
         return 'equal'
 
-        controllers = self._execute_command(
-            "sudo ovs-vsctl get Bridge {} controller".format(self.name))
-        logging.debug(
-            "DEBUG: Controllers UUID received for switch %s are : %s", self.name, controllers)
-        if not controllers:
-            return None
-        regex = re.compile(r'([0-9a-fA-F-]+)', re.IGNORECASE)
-        roles = []
-        for line in controllers.split(','):
-            for match in regex.finditer(line):
-                if match:
-                    controller = match.group(1)
-                    role = self._execute_command(
-                        "sudo ovs-vsctl  get controller {} role".format(controller))
-                    logging.debug(
-                        "DEBUG: Controller with uuid %s on switch %s has role : %s", controller, self.name, role)
-                    if role:
-                        roles.append(role.strip('\n'))
-        return roles
+        # controllers = self._execute_command(
+        #     "sudo ovs-vsctl get Bridge {} controller".format(self.name))
+        # logging.debug(
+        #     "DEBUG: Controllers UUID received for switch %s are : %s", self.name, controllers)
+        # if not controllers:
+        #     return None
+        # regex = re.compile(r'([0-9a-fA-F-]+)', re.IGNORECASE)
+        # roles = []
+        # for line in controllers.split(','):
+        #     for match in regex.finditer(line):
+        #         if match:
+        #             controller = match.group(1)
+        #             role = self._execute_command(
+        #                 "sudo ovs-vsctl  get controller {} role".format(controller))
+        #             logging.debug(
+        #                 "DEBUG: Controller with uuid %s on switch %s has role : %s", controller, self.name, role)
+        #             if role:
+        #                 roles.append(role.strip('\n'))
+        # return roles
 
     def shutdown_port(self, port):
         shut = self._execute_command(
