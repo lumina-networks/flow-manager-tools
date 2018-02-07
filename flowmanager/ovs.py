@@ -111,6 +111,7 @@ class OVS(Switch):
             "sudo ovs-ofctl dump-group-stats {} --protocol=Openflow13".format(self.name))
         if not output:
             return None
+        logging.info(output)
         regex = re.compile(r'(group_id=.*)', re.IGNORECASE)
         regexvalues = re.compile(
             r'group_id=(\d+),duration=[\d]*.[\d]*s,ref_count=[\d]*,packet_count=(\d+),byte_count=(\d+)', re.IGNORECASE)
