@@ -125,7 +125,10 @@ class OVS(Switch):
         return groups
 
     def get_controllers_role(self):
-        raise NotImplementedError
+        logging.info(
+            'OVS switches roles not implemented, default set to equal')
+        return 'equal'
+
         controllers = self._execute_command(
             "sudo ovs-vsctl get Bridge {} controller".format(self.name))
         logging.debug(
