@@ -39,7 +39,8 @@ class OVS(Switch):
             except Exception, msg:
                 logging.error(msg)
         else:
-            return self.ssh.execute_command(command)
+            return self.ssh.execute_single_command(command)
+            # return self.ssh.execute_command(command)
 
     def reboot(self):
         raise NotImplementedError
