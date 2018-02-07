@@ -129,7 +129,7 @@ class Noviflow(Switch):
                 continue
 
         self.ssh.close()
-        logging.info(flows)
+        # logging.info(flows)
         return flows
 
     def get_groups(self):
