@@ -21,8 +21,10 @@ class OVS(Switch):
         # if IP address and user is not given
         # then we need to assume OVS is running locally
         self.execute_local = not props.get('ip') and not props.get('user')
-        self.ssh = None if not self.execute_local else SSH(
-            self.ip, self.user, self.port, self.port, self.password)
+        # self.ssh = None if not self.execute_local else SSH(
+        #     ip=self.ip, user=self.user, port=self.port, password=self.password)
+        self.ssh = None if self.execute_local else SSH(ip=self.ip, user=self.user,
+                                                       port=self.port, password=self.password)
 
     def _execute_commands(self, commands):
         for command in commands:
@@ -31,13 +33,13 @@ class OVS(Switch):
         return True
 
     def _execute_command(self, command):
-        # if self.ssh:
-            # return self.ssh.execute_command(command)
-        # else:
-        try:
-            return subprocess.check_output(command, shell=True)
-        except Exception, msg:
-            logging.error(msg)
+        if not self.ssh:
+            try:
+                return subprocess.check_output(command, shell=True)
+            except Exception, msg:
+                logging.error(msg)
+        else:
+            return self.ssh.execute_command(command)
 
     def reboot(self):
         raise NotImplementedError
