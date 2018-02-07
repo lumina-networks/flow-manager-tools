@@ -102,7 +102,7 @@ Options:
 
 **To Do**
 ```
-  OVS compatibility
+  Optimize flows/groups gathering from remote OVS switches
 
   Documentation
 
