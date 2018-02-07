@@ -99,7 +99,21 @@ Options:
   -a --check-stats  Check flow/groups states with previous check
   --version     Show version.
 ```
+**Known Bugs**
+```
+Exception in thread Thread-4:
+Traceback (most recent call last):
+  File "/usr/lib/python2.7/threading.py", line 810, in __bootstrap_inner
+    self.run()
+  File "/usr/lib/python2.7/threading.py", line 763, in run
+    self.__target(*self.__args, **self.__kwargs)
+  File "/home/lab/flow-manager-tools-new/flowmanager/topology.py", line 578, in _load_openflow_from_switch
+    groups = switch.get_groups()
+  File "/home/lab/flow-manager-tools-new/flowmanager/ovs.py", line 119, in get_groups
+    for linematch in regex.finditer(output):
+TypeError: expected string or buffer
 
+```
 **To Do**
 ```
   Optimize flows/groups gathering from remote OVS switches
