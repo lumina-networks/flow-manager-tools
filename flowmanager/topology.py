@@ -149,6 +149,9 @@ class Topology(object):
     def get_random_controller_name(self):
         return random.choice(self.controllers.keys())
 
+    def get_all_controllers(self):
+        return [controller for controller in self.controllers.values()]
+
     def add_switch(self, switch):
         self.switches[switch.name] = switch
         self.switches_by_openflow_name[switch.openflow_name] = switch

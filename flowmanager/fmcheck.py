@@ -8,6 +8,7 @@ Usage:
   fmcheck sync-status [-d] [--topology=FILE] [--controller=IP]...
   fmcheck reboot-random-controller [-d] [--topology=FILE]
   fmcheck reboot-controller <name> [-d] [--topology=FILE]
+  fmcheck reboot-controller-all [-d] [--topology=FILE]
   fmcheck reboot-controller-by-switch <name> [-d] [--topology=FILE]
   fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
   fmcheck reboot-random-switch [-d] [--topology=FILE]
@@ -154,6 +155,17 @@ class Shell(object):
                 logging.error("controller %s not found", arguments['<name>'])
             else:
                 result = topology.get_controller(arguments['<name>']).reboot()
+
+        elif arguments['reboot-controller-all']:
+            ctrl = topology.get_all_controllers()
+            if not ctrl:
+                result = False
+                logging.error("controller %s not found", arguments['<name>'])
+            else:
+                result = [controller.reboot() for controller in ctrl]
+                if result:
+                    logging.info(
+                        '%d controllers have been rebooted', len(ctrl))
 
         elif arguments['reboot-controller-by-switch']:
             result = topology.get_node_cluster_owner(
