@@ -75,6 +75,10 @@ class Shell(object):
     def __init__(self):
         arguments = docopt(__doc__, version='Flow Manager Testing Tools 1.1')
 
+        # Reduce urllib3 logging messages
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+        # Colored logging
         if arguments['--debug']:
             logging.getLogger().setLevel(logging.DEBUG)
             coloredlogs.install(level='DEBUG')
