@@ -146,7 +146,6 @@ TypeError: expected string or buffer
   fmcheck reboot-controller-by-random-switch [-d] [--topology=FILE]
     --Check if local or ssh/remote controller
 
-  fmcheck reboot-all-controllers
   fmcheck reboot-all-switches
     --New features
 
