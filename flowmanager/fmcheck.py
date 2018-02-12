@@ -165,7 +165,7 @@ class Shell(object):
                 result = [controller.reboot() for controller in ctrl]
                 if result:
                     logging.info(
-                        '%d controllers have been rebooted', len(ctrl))
+                        '%d controllers have been successfully rebooted', len(ctrl))
 
         elif arguments['reboot-controller-by-switch']:
             result = topology.get_node_cluster_owner(
