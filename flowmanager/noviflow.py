@@ -27,15 +27,52 @@ class Noviflow(Switch):
     def break_gateway(self, seconds=0):
         raise Exception(
             'break method is not implemented by this switch {}'.format(self.name))
+        # switch = self.switches.get(name)
+        # if not switch:
+        #     print "ERROR: {} switch does not exists".format(name)
+        #     return False
+        # seconds = int(seconds)
+        # seconds = 0 if not seconds or seconds <=0 else seconds
+        # print "INFO: trying to break connectivity to the switch {} switch".format(name)
+        # if 'disable_gw' not in switch or len(switch['disable_gw']) <=0 or 'enable_gw' not in switch or len(switch['enable_gw']) <=0:
+        #     print "ERROR: enable or disable gw commands not found in switch {} switch".format(name)
+        #     return False
+        # if switch['type'] == 'noviflow':
+        #     if not _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],switch['disable_gw']):
+        #         return False
+        #     time.sleep(seconds)
+        #     return _execute_commands_in_switch_noviflow(switch['ip'], switch['port'],switch['user'],switch['password'],switch['enable_gw'])
+        # else:
+        #     if not _execute_commands_locally(switch['disable_gw']):
+        #         return False
+        #     time.sleep(seconds)
+        #     return _execute_commands_locally(switch['enable_gw'])
+
+    def break_controller_switch(self, controller_name, seconds=30):
+        raise Exception(
+            'break method is not implemented by this switch {}'.format(self.name))
+        # switch = self
+        # if not switch:
+        #     print "ERROR: {} switch does not exists".format(sw_name)
+        #     return False
+        # seconds = int(seconds)
+        # seconds = 0 if not seconds or seconds <=0 else seconds
+        # print "INFO: trying to break controller {} connection in the switch {} switch".format(controller_name, sw_name)
+        # all_ctrl_config = switch.get('controller_config')
+        # ctrl_config = all_ctrl_config.get(controller_name) if all_ctrl_config else None
+        # if not ctrl_config or 'remove_controller' not in ctrl_config or len(ctrl_config['remove_controller']) <= 0:
+        #     print "ERROR: remove controller commands not found in switch {} for controller {}".format(sw_name, controller_name)
+        #     return False
 
     def delete_groups(self):
         if self.ssh.execute_command('del config group groupid all'):
-            ssh.close()
+            self.ssh.close()
             return True
 
     def delete_flows(self):
-        raise Exception(
-            'delete flows is not implemented by this switch {}'.format(self.name))
+        if self.ssh.execute_command('del config flow tableid all'):
+            self.ssh.close()
+            return True
 
     def get_flows(self):
         logging.debug("NOVIFLOW: %s(%s) getting flows",
@@ -91,7 +128,8 @@ class Noviflow(Switch):
                 current_flow['bytes'] = match[0]
                 continue
 
-        ssh.close()
+        self.ssh.close()
+        # logging.info(flows)
         return flows
 
     def get_groups(self):
@@ -129,11 +167,11 @@ class Noviflow(Switch):
                     current_group = None
                 continue
 
-        ssh.close()
+        self.ssh.close()
         return groups
 
     def get_controllers_role(self):
-        ssh = self._get_ssh()
+        ssh = self.ssh
         if not ssh.create_session():
             return None
         text_groups = self.ssh.execute_command('show status ofchannel')
@@ -166,3 +204,11 @@ class Noviflow(Switch):
     def restart_port(self, port, seconds=0):
         raise Exception(
             'restart port method is not implemented by this switch {}'.format(self.name))
+
+    def get_flow_stats(self, filters=None):
+        raise Exception(
+            'get_flow_stats method is not implemented by this switch {}'.format(self.name))
+
+    def get_group_stats(self, filters=None):
+        raise Exception(
+            'get_group_stats method is not implemented by this switch {}'.format(self.name))

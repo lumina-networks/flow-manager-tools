@@ -4,21 +4,21 @@ from setuptools import setup
 setup(
     zip_safe=True,
     name='flow-manager-tools',
-    version='1.0',
+    version='1.1',
     author='jcastro',
     author_email='jcastro@brocade.com',
     packages=[
         'docopt',
-        'fmtopo'
+        'flowmanager'
     ],
     description='Flow Manager tools',
     license='LICENSE',
     install_requires=[
-        "pyyaml","requests",'pexpect'
+        "pyyaml","requests",'pexpect','coloredlogs'
     ],
     entry_points={
         'console_scripts': [
-            'fmcheck = fmtopo.shell:main'
+            'fmcheck2 = flowmanager.fmcheck:main'
         ]
     }
 

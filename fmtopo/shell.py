@@ -5,24 +5,29 @@ Usage:
   fmcheck nodes [-s] [-r] [--topology=FILE] [--controller=IP]...
   fmcheck flows [-a] [--topology=FILE] [--controller=IP]...
   fmcheck roles [--topology=FILE] [--controller=IP]...
-  fmcheck random-reboot-controller [--topology=FILE]
+
+  fmcheck reboot-random-controller [--topology=FILE]
   fmcheck reboot-controller <name> [--topology=FILE]
   fmcheck reboot-controller-by-switch <name> [--topology=FILE]
   fmcheck reboot-controller-by-random-switch [--topology=FILE]
-  fmcheck random-reboot-switch [--topology=FILE]
+  fmcheck reboot-random-switch [--topology=FILE]
   fmcheck reboot-switch <name> [--topology=FILE]
-  fmcheck random-break-gw-switch <seconds> [--topology=FILE]
+
+  fmcheck break-random-gw-switch <seconds> [--topology=FILE]
   fmcheck break-gw-switch <name> <seconds> [--topology=FILE]
-  fmcheck random-break-ctrl-switch <seconds> [--topology=FILE]
+  fmcheck break-random-ctrl-switch <seconds> [--topology=FILE]
   fmcheck break-ctrl-switch <switch_name> <controller_name> <seconds> [--topology=FILE]
-  fmcheck random-isolate-ctrl <seconds> [--topology=FILE]
+
+  fmcheck isolate-random-ctrl <seconds> [--topology=FILE]
   fmcheck isolate-ctrl <controller_name> <seconds> [--topology=FILE]
-  fmcheck random-isolate-ctrl-switch <seconds> [--topology=FILE]
+  fmcheck isolate-random-ctrl-switch <seconds> [--topology=FILE]
   fmcheck isolate-ctrl-switch <switch_name> <seconds> [--topology=FILE]
-  fmcheck random-delete-groups [--topology=FILE]
+
+  fmcheck delete-random-groups [--topology=FILE]
   fmcheck delete-groups <name> [--topology=FILE]
-  fmcheck random-delete-flows [--topology=FILE]
+  fmcheck delete-random-flows [--topology=FILE]
   fmcheck delete-flows <name> [--topology=FILE]
+
   fmcheck get-flow-stats-all [--topology=FILE]
   fmcheck get-flow-stats <filter>... [--topology=FILE]
   fmcheck get-flow-node-stats-all <node> [--topology=FILE]
@@ -126,7 +131,7 @@ class Shell(object):
                 result = checker.check_nodes()
         elif arguments['roles']:
             result = checker.check_roles()
-        elif arguments['random-reboot-controller']:
+        elif arguments['reboot-random-controller']:
             result = checker.reboot_controller(checker.get_random_controller())
         elif arguments['reboot-controller']:
             result = checker.reboot_controller(arguments['<name>'])
@@ -134,34 +139,34 @@ class Shell(object):
             result = checker.reboot_controller(checker.get_master_controller_name(arguments['<name>']))
         elif arguments['reboot-controller-by-random-switch']:
             result = checker.reboot_controller(checker.get_master_controller_name(checker.get_random_switch()))
-        elif arguments['random-reboot-switch']:
+        elif arguments['reboot-random-switch']:
             result = checker.reboot_switch(checker.get_random_switch())
         elif arguments['break-gw-switch']:
             result = checker.break_gw_switch(arguments['<name>'],arguments['<seconds>'])
-        elif arguments['random-break-gw-switch']:
+        elif arguments['break-random-gw-switch']:
             result = checker.break_gw_switch(checker.get_random_switch(), arguments['<seconds>'])
         elif arguments['break-ctrl-switch']:
             result = checker.break_controller_switch(arguments['<switch_name>'],arguments['<controller_name>'],arguments['<seconds>'])
-        elif arguments['random-break-ctrl-switch']:
+        elif arguments['break-random-ctrl-switch']:
             name = checker.get_random_switch()
             result = checker.break_controller_switch(name, checker.get_master_controller_name(name), arguments['<seconds>'])
         elif arguments['isolate-ctrl']:
             result = checker.isolate_controller(arguments['<controller_name>'],arguments['<seconds>'])
-        elif arguments['random-isolate-ctrl']:
+        elif arguments['isolate-random-ctrl']:
             name = checker.get_random_controller()
             result = checker.isolate_controller(name, arguments['<seconds>'])
         elif arguments['isolate-ctrl-switch']:
             result = checker.isolate_controller(checker.get_master_controller_name(arguments['<switch_name>']),arguments['<seconds>'])
-        elif arguments['random-isolate-ctrl-switch']:
+        elif arguments['isolate-random-ctrl-switch']:
             name = checker.get_random_switch()
             result = checker.isolate_controller(checker.get_master_controller_name(name), arguments['<seconds>'])
         elif arguments['reboot-switch']:
             result = checker.reboot_switch(arguments['<name>'])
-        elif arguments['random-delete-groups']:
+        elif arguments['delete-random-groups']:
             result = checker.delete_groups(checker.get_random_switch())
         elif arguments['delete-groups']:
             result = checker.delete_groups(arguments['<name>'])
-        elif arguments['random-delete-flows']:
+        elif arguments['delete-random-flows']:
             result = checker.delete_flows(checker.get_random_switch())
         elif arguments['delete-flows']:
             result = checker.delete_flows(arguments['<name>'])

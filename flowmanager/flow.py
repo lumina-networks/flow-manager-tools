@@ -1,6 +1,12 @@
+"""
+This module contains the primitives and methods for flows.
+
+"""
+
 import logging
 
-CALCULATED_EXCEPTIONS=['fm-sr-link-discovery']
+CALCULATED_EXCEPTIONS = ['fm-sr-link-discovery']
+
 
 def get_prefix(cookie):
     return int(cookie) >> 54
@@ -30,37 +36,43 @@ class Flow(object):
         self.name = name
 
         if table is not None and name is not None and cookie is not None:
-            self.flowid = "{}({})/table/{}/name/{}/id/{}/version/{}".format(node, node_of_name, table, name, get_id(cookie), get_version(cookie))
+            self.flowid = "{}({})/table/{}/name/{}/id/{}/version/{}".format(
+                node, node_of_name, table, name, get_id(cookie), get_version(cookie))
         elif table is not None and name is not None:
-            self.flowid = "{}({})/table/{}/name/{}".format(node, node_of_name, table, name)
+            self.flowid = "{}({})/table/{}/name/{}".format(node,
+                                                           node_of_name, table, name)
         else:
-            self.flowid = "{}({})/id/{}/version/{}".format(node, node_of_name, get_id(cookie), get_version(cookie))
+            self.flowid = "{}({})/id/{}/version/{}".format(node,
+                                                           node_of_name, get_id(cookie), get_version(cookie))
 
     def add_of_config(self, flow):
-        logging.debug("FLOW: %s mard as configured",self.flowid)
+        logging.debug("FLOW: %s marked as configured", self.flowid)
         self.of_config.append(flow)
-        self.of_config_id = get_id(flow['cookie'])
-        self.of_config_version = get_version(flow['cookie'])
+        logging.debug(flow)
+        try:
+            self.of_config_id = get_id(flow['cookie'])
+            self.of_config_version = get_version(flow['cookie'])
+        except KeyError:
+            logging.error("KeyError, could not find cookie in table/0")
 
     def add_of_operational(self, flow):
-        logging.debug("FLOW: %s mard as operational",self.flowid)
+        logging.debug("FLOW: %s marked as operational", self.flowid)
         self.of_operational.append(flow)
         self.of_operational_id = get_id(flow['cookie'])
         self.of_operational_version = get_version(flow['cookie'])
 
-
     def add_switch(self, flow):
-        logging.debug("FLOW: %s mard as running in switch",self.flowid)
+        logging.debug("FLOW: %s marked as running in switch", self.flowid)
         self.switch.append(flow)
         self.switch_id = get_id(flow['cookie'])
         self.switch_version = get_version(flow['cookie'])
 
     def add_fm(self, flow):
-        logging.debug("FLOW: %s mard as monitored",self.flowid)
+        logging.debug("FLOW: %s marked as monitored", self.flowid)
         self.fm.append(flow)
 
     def mark_as_calculated(self):
-        logging.debug("FLOW: %s mark as calculated",self.flowid)
+        logging.debug("FLOW: %s marked as calculated", self.flowid)
         self.calculated = True
 
     def check(self):
@@ -70,35 +82,50 @@ class Flow(object):
         fm = len(self.fm) > 0
 
         if (len(self.of_config) > 1):
-            print "ERROR: flow {} duplicated in configuration. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s duplicated in configuration. %s",
+                          self.flowid, self._get_info_msg())
         elif (len(self.of_operational) > 1):
-            print "ERROR: flow {} duplicated in operational. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s duplicated in operational. %s",
+                          self.flowid, self._get_info_msg())
         elif (len(self.switch) > 1):
-            print "ERROR: flow {} duplicated in switch. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s duplicated in switch. %s",
+                          self.flowid, self._get_info_msg())
         elif (len(self.fm) > 1):
-            print "ERROR: flow {} duplicated in monitored. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s duplicated in monitored. %s",
+                          self.flowid, self._get_info_msg())
         elif config and not switch:
-            print "ERROR: flow {} is not runnig in the switch. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s is not runnig in the switch. %s",
+                          self.flowid, self._get_info_msg())
         elif config and not operational:
-            print "ERROR: flow {} not found in operational datastore. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s not found in operational datastore. %s",
+                          self.flowid, self._get_info_msg())
         elif config and not fm:
-            print "ERROR: flow {} is not being monitored. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s is not being monitored. %s",
+                          self.flowid, self._get_info_msg())
         elif config and not self.calculated and str(self.of_config[0]['id']) not in CALCULATED_EXCEPTIONS:
-            print "ERROR: flow {} not found in calculated flows. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s not found in calculated flows. %s",
+                          self.flowid, self._get_info_msg())
         elif not config and switch:
-            print "ERROR: flow {} runnig in switch but not configured. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s runnig in switch but not configured. %s",
+                          self.flowid, self._get_info_msg())
         elif not config and operational:
-            print "ERROR: flow {} found operational datastore but not in configuration. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s found operational datastore but not in configuration. %s",
+                          self.flowid, self._get_info_msg())
         elif not config and not operational and not switch and fm:
-            print "ERROR: flow {} monitored but not running neither configured. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s monitored but not running neither configured. %s",
+                          self.flowid, self._get_info_msg())
         elif config and switch and self.of_config_version != self.switch_version:
-            print "ERROR: flow {} config and switch version is different. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s config and switch version is different. %s",
+                          self.flowid, self._get_info_msg())
         elif config and operational and self.of_config_version != self.of_operational_version:
-            print "ERROR: flow {} config and operational version is different. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s config and operational version is different. %s",
+                          self.flowid, self._get_info_msg())
         elif config and switch and self.of_config_id != self.switch_id:
-            print "ERROR: flow {} config and switch id is different. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s config and switch id is different. %s",
+                          self.flowid, self._get_info_msg())
         elif config and operational and self.of_config_id != self.of_operational_id:
-            print "ERROR: flow {} config and operational id is different. {}".format(self.flowid, self._get_info_msg())
+            logging.error("flow %s config and operational id is different. %s",
+                          self.flowid, self._get_info_msg())
         else:
             logging.debug("FLOW: OK: %s %s", self.flowid, self._get_info_msg())
             return True
@@ -107,13 +134,17 @@ class Flow(object):
         msg = "{}({})".format(self.node, self.node_of_name)
         if (len(self.of_config) > 0):
             flow = self.of_config[0]
-            msg = msg + ", " + "config table/{}/name/{}/id/{}/version/{}".format(flow['table_id'],flow['id'],get_id(flow['cookie']),get_version(flow['cookie']))
+            msg = msg + ", " + "config table/{}/name/{}/id/{}/version/{}".format(
+                flow['table_id'], flow['id'], get_id(flow['cookie']), get_version(flow['cookie']))
         if (len(self.of_operational) > 0):
             flow = self.of_operational[0]
-            msg = msg + ", " + "operational table/{}/name/{}/id/{}/version/{}".format(flow['table_id'],flow['id'],get_id(flow['cookie']),get_version(flow['cookie']))
+            msg = msg + ", " + "operational table/{}/name/{}/id/{}/version/{}".format(
+                flow['table_id'], flow['id'], get_id(flow['cookie']), get_version(flow['cookie']))
         if (len(self.switch) > 0):
             flow = self.switch[0]
-            msg = msg + ", " + "switch id/{}/version/{}".format(get_id(flow['cookie']),get_version(flow['cookie']))
+            msg = msg + ", " + \
+                "switch id/{}/version/{}".format(
+                    get_id(flow['cookie']), get_version(flow['cookie']))
         if (len(self.fm) > 0):
             flow = self.fm[0]
             msg = msg + ", " + "monitored name/{}".format(flow['id'])
